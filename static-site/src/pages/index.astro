@@ -2,133 +2,347 @@
 import Layout from '../layouts/Layout.astro';
 ---
 
-<Layout title="Crédito Villanueva — Microcréditos accesibles">
+<Layout title="Prestia — Plataforma de gestión de microcréditos">
   <!-- Navigation -->
   <nav class="nav">
     <div class="nav-container">
-      <div class="logo">Crédito Villanueva</div>
+      <div class="logo">Prestia</div>
       <div class="nav-links">
-        <a href="#features">Servicios</a>
-        <a href="#how-it-works">Cómo funciona</a>
-        <a href="http://localhost:3000/login" class="btn-nav">Ingresar</a>
+        <a href="#que-es">Qué es</a>
+        <a href="#funcionalidades">Funcionalidades</a>
+        <a href="#modulos">Módulos</a>
+        <a href="#tecnologia">Tecnología</a>
+        <a href="#contacto" class="btn-nav">Solicitar demo</a>
       </div>
+      <button class="mobile-menu-btn" aria-label="Menú">
+        <span></span><span></span><span></span>
+      </button>
     </div>
   </nav>
 
   <!-- Hero -->
   <section class="hero">
     <div class="hero-content">
-      <h1>Microcréditos accesibles para tu crecimiento</h1>
-      <p>Obtené financiamiento rápido y transparente con cuotas que se adaptan a tu capacidad de pago. Sistema francés o alemán de amortización.</p>
+      <div class="hero-badge">Software de gestión financiera</div>
+      <h1>La plataforma integral para administrar tu operación de microcréditos</h1>
+      <p>Gestioná clientes, líneas de crédito, préstamos, cobranzas y una red de comercios adheridos desde un solo lugar. Diseñado para financieras, cooperativas y empresas de crédito en Argentina.</p>
       <div class="hero-buttons">
-        <a href="http://localhost:3000/register" class="btn-primary">Solicitar crédito</a>
-        <a href="#features" class="btn-secondary">Conocer más</a>
+        <a href="#contacto" class="btn-primary">Solicitar una demo</a>
+        <a href="#funcionalidades" class="btn-secondary">Ver funcionalidades</a>
       </div>
       <div class="hero-stats">
         <div class="stat">
-          <span class="stat-value">500+</span>
-          <span class="stat-label">Clientes activos</span>
+          <span class="stat-value">3 roles</span>
+          <span class="stat-label">Admin, Cliente, Comercio</span>
         </div>
         <div class="stat">
-          <span class="stat-value">$50M+</span>
-          <span class="stat-label">Créditos otorgados</span>
+          <span class="stat-value">100%</span>
+          <span class="stat-label">Auditable</span>
         </div>
         <div class="stat">
-          <span class="stat-value">48hs</span>
-          <span class="stat-label">Aprobación rápida</span>
+          <span class="stat-value">Cloud</span>
+          <span class="stat-label">Desplegable en la nube</span>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- Features -->
-  <section id="features" class="features">
-    <h2>Nuestros servicios</h2>
-    <div class="feature-grid">
-      <div class="feature-card">
-        <div class="feature-icon">💰</div>
-        <h3>Líneas de crédito</h3>
-        <p>Accedé a líneas de crédito con montos desde $50.000 hasta $1.000.000 según tu perfil.</p>
-      </div>
-      <div class="feature-card">
-        <div class="feature-icon">📊</div>
-        <h3>Amortización flexible</h3>
-        <p>Elegí entre sistema francés (cuota fija) o alemán (capital fijo) según tu conveniencia.</p>
-      </div>
-      <div class="feature-card">
-        <div class="feature-icon">📱</div>
-        <h3>Gestión online</h3>
-        <p>Consultá tu cuenta, cuotas y pagos desde cualquier dispositivo, las 24 horas.</p>
-      </div>
-      <div class="feature-card">
-        <div class="feature-icon">🔒</div>
-        <h3>Seguridad total</h3>
-        <p>Todas las operaciones son auditadas y tu información está protegida.</p>
-      </div>
-      <div class="feature-card">
-        <div class="feature-icon">💳</div>
-        <h3>Múltiples medios de pago</h3>
-        <p>Pagá tus cuotas en efectivo, transferencia o MercadoPago.</p>
-      </div>
-      <div class="feature-card">
-        <div class="feature-icon">📄</div>
-        <h3>Cancelación anticipada</h3>
-        <p>Cancelá tu préstamo antes de tiempo sin penalidades ocultas.</p>
+  <!-- Qué es -->
+  <section id="que-es" class="what-is">
+    <div class="section-container">
+      <h2>Qué es Prestia</h2>
+      <div class="what-is-grid">
+        <div class="what-is-text">
+          <p class="lead">Es un <strong>sistema completo de gestión de microcréditos</strong> que digitaliza toda la operación de una financiera: desde el alta de clientes y la aprobación de líneas de crédito, hasta el desembolso de préstamos, la cobranza de cuotas y la gestión de comercios adheridos.</p>
+          <p>Pensado para el mercado argentino, soporta CUIT/DNI, múltiples medios de pago (efectivo, transferencia, MercadoPago), sistemas de amortización francés y alemán, y genera un registro de auditoría completo de cada operación.</p>
+          <p>El sistema tiene tres portales integrados:</p>
+          <ul class="check-list">
+            <li><strong>Portal Administrativo</strong> — Gestión completa de la cartera, aprobación de créditos, KPIs y auditoría.</li>
+            <li><strong>Portal del Cliente</strong> — Consulta de cuenta corriente, cuotas, pagos e historial.</li>
+            <li><strong>Portal de Comercios</strong> — Los comercios adheridos registran ventas a crédito y consultan su saldo.</li>
+          </ul>
+        </div>
+        <div class="what-is-visual">
+          <div class="dashboard-preview">
+            <div class="preview-header">
+              <div class="preview-dots"><span></span><span></span><span></span></div>
+              Panel Administrativo
+            </div>
+            <div class="preview-body">
+              <div class="preview-kpi">
+                <div class="kpi-card">
+                  <span class="kpi-label">Cartera activa</span>
+                  <span class="kpi-value">$12.5M</span>
+                </div>
+                <div class="kpi-card">
+                  <span class="kpi-label">Tasa de cobro</span>
+                  <span class="kpi-value">94.2%</span>
+                </div>
+                <div class="kpi-card">
+                  <span class="kpi-label">Clientes</span>
+                  <span class="kpi-value">847</span>
+                </div>
+                <div class="kpi-card">
+                  <span class="kpi-label">Mora >30d</span>
+                  <span class="kpi-value">3.1%</span>
+                </div>
+              </div>
+              <div class="preview-table">
+                <div class="table-row header">
+                  <span>Cliente</span><span>Monto</span><span>Estado</span>
+                </div>
+                <div class="table-row">
+                  <span>Juan Pérez</span><span>$85.000</span><span class="badge green">Aprobado</span>
+                </div>
+                <div class="table-row">
+                  <span>María López</span><span>$120.000</span><span class="badge yellow">Pendiente</span>
+                </div>
+                <div class="table-row">
+                  <span>Carlos Ruiz</span><span>$45.000</span><span class="badge blue">Desembolsado</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </section>
 
-  <!-- How it works -->
-  <section id="how-it-works" class="how-it-works">
-    <h2>Cómo funciona</h2>
-    <div class="steps">
-      <div class="step">
-        <div class="step-number">1</div>
-        <h3>Registrate</h3>
-        <p>Creá tu cuenta con tus datos personales y documentación.</p>
+  <!-- Funcionalidades -->
+  <section id="funcionalidades" class="features">
+    <div class="section-container">
+      <h2>Funcionalidades principales</h2>
+      <p class="section-subtitle">Todo lo que necesitás para operar tu financiera de forma profesional y eficiente.</p>
+      <div class="feature-grid">
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#1565C0" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          </div>
+          <h3>Gestión de clientes</h3>
+          <p>Alta, consulta, bloqueo y desbloqueo de clientes. Cada uno con cuenta corriente, historial de créditos y perfil completo con validación de DNI y CUIT.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#1565C0" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+          </div>
+          <h3>Líneas de crédito</h3>
+          <p>Creación y aprobación de líneas de crédito con monto máximo, tasa de interés y plazo configurable. Control de saldo disponible y utilizado.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#1565C0" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          </div>
+          <h3>Préstamos y amortización</h3>
+          <p>Solicitud, aprobación y desembolso de préstamos. Simulador integrado con sistemas francés (cuota fija) y alemán (capital fijo). Cancelación anticipada.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#1565C0" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          </div>
+          <h3>Dashboard con KPIs</h3>
+          <p>Panel con métricas en tiempo real: cartera activa, tasa de cobro, morosidad (PAR 30/60/90), tendencias de desembolso y cobranza.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#1565C0" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          </div>
+          <h3>Cobranzas y pagos</h3>
+          <p>Registro de pagos por efectivo, transferencia o MercadoPago. Ajuste de pagos con motivo y trazabilidad. Historial completo por cliente y por préstamo.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#1565C0" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          </div>
+          <h3>Auditoría completa</h3>
+          <p>Registro de cada acción: usuario, fecha, IP, user-agent y descripción. Consultable desde el panel de administración con filtros y paginación.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#1565C0" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+          </div>
+          <h3>Red de comercios</h3>
+          <p>Los comercios adheridos registran ventas a crédito contra la línea del cliente. El sistema gestiona el saldo del comercio y los pagos del administrador.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#1565C0" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+          </div>
+          <h3>Cuenta corriente</h3>
+          <p>Cada cliente tiene cuenta corriente con movimientos detallados: créditos por desembolso, débitos por compras en comercios, con saldo en tiempo real.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#1565C0" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          </div>
+          <h3>Multi-rol configurable</h3>
+          <p>Tres roles con permisos diferenciados: administrador (gestión total), cliente (autoservicio) y comercio (ventas a crédito). Cada uno con su portal.</p>
+        </div>
       </div>
-      <div class="step">
-        <div class="step-number">2</div>
-        <h3>Solicitá tu crédito</h3>
-        <p>Elegí el monto, cantidad de cuotas y tipo de amortización.</p>
+    </div>
+  </section>
+
+  <!-- Módulos -->
+  <section id="modulos" class="modules">
+    <div class="section-container">
+      <h2>Módulos del sistema</h2>
+      <p class="section-subtitle">Cada módulo resuelve una parte clave de la operación crediticia.</p>
+
+      <div class="module-list">
+        <div class="module-card">
+          <div class="module-header">
+            <div class="module-icon admin">A</div>
+            <div>
+              <h3>Módulo Administrativo</h3>
+              <span class="module-role">Rol: Administrador</span>
+            </div>
+          </div>
+          <ul>
+            <li>Dashboard con KPIs de cartera, morosidad y cobranza</li>
+            <li>Alta y gestión de clientes (bloqueo, consulta, historial)</li>
+            <li>Aprobación/rechazo de líneas de crédito</li>
+            <li>Aprobación, desembolso y cancelación de préstamos</li>
+            <li>Ajuste de pagos con trazabilidad</li>
+            <li>Gestión de comercios: alta, activación, pagos</li>
+            <li>Log de auditoría completo</li>
+          </ul>
+        </div>
+
+        <div class="module-card">
+          <div class="module-header">
+            <div class="module-icon client">C</div>
+            <div>
+              <h3>Módulo del Cliente</h3>
+              <span class="module-role">Rol: Cliente</span>
+            </div>
+          </div>
+          <ul>
+            <li>Registro con validación de DNI/CUIT</li>
+            <li>Consulta de cuenta corriente y movimientos</li>
+            <li>Solicitud de préstamos con simulador integrado</li>
+            <li>Visualización de cuotas y calendario de pagos</li>
+            <li>Historial de pagos realizados</li>
+            <li>Gestión de perfil y datos de MercadoPago</li>
+          </ul>
+        </div>
+
+        <div class="module-card">
+          <div class="module-header">
+            <div class="module-icon vendor">V</div>
+            <div>
+              <h3>Módulo de Comercios</h3>
+              <span class="module-role">Rol: Comercio adherido</span>
+            </div>
+          </div>
+          <ul>
+            <li>Registro de ventas a crédito contra la línea del cliente</li>
+            <li>Búsqueda de clientes y consulta de líneas disponibles</li>
+            <li>Alta de clientes nuevos y solicitud de línea de crédito</li>
+            <li>Consulta de saldo (lo que la financiera le debe)</li>
+            <li>Historial de ventas y pagos recibidos</li>
+            <li>Gestión de perfil del comercio</li>
+          </ul>
+        </div>
       </div>
-      <div class="step">
-        <div class="step-number">3</div>
-        <h3>Aprobación rápida</h3>
-        <p>Tu solicitud es evaluada y aprobada en menos de 48 horas.</p>
+    </div>
+  </section>
+
+  <!-- Flujo operativo -->
+  <section class="workflow">
+    <div class="section-container">
+      <h2>Cómo funciona la operación</h2>
+      <p class="section-subtitle">El flujo completo desde el alta del cliente hasta la cobranza.</p>
+      <div class="workflow-steps">
+        <div class="workflow-step">
+          <div class="step-number">1</div>
+          <h3>Alta de cliente</h3>
+          <p>El cliente se registra o el comercio lo da de alta. Se validan DNI y CUIT.</p>
+        </div>
+        <div class="workflow-arrow"></div>
+        <div class="workflow-step">
+          <div class="step-number">2</div>
+          <h3>Línea de crédito</h3>
+          <p>Se solicita una línea de crédito. El administrador la evalúa y aprueba con monto y tasa.</p>
+        </div>
+        <div class="workflow-arrow"></div>
+        <div class="workflow-step">
+          <div class="step-number">3</div>
+          <h3>Préstamo o compra</h3>
+          <p>El cliente solicita un préstamo o el comercio registra una venta a crédito contra la línea aprobada.</p>
+        </div>
+        <div class="workflow-arrow"></div>
+        <div class="workflow-step">
+          <div class="step-number">4</div>
+          <h3>Cobranza</h3>
+          <p>Se registran los pagos de cuotas. El sistema calcula intereses, capital y saldo pendiente.</p>
+        </div>
       </div>
-      <div class="step">
-        <div class="step-number">4</div>
-        <h3>Recibí tu dinero</h3>
-        <p>El monto se acredita en tu cuenta corriente al instante.</p>
+    </div>
+  </section>
+
+  <!-- Tecnología -->
+  <section id="tecnologia" class="tech">
+    <div class="section-container">
+      <h2>Tecnología y arquitectura</h2>
+      <p class="section-subtitle">Construido con tecnologías modernas, pensado para escalar.</p>
+      <div class="tech-grid">
+        <div class="tech-item">
+          <h4>Backend en Go</h4>
+          <p>API REST de alto rendimiento con Gin y arquitectura hexagonal. Rápido, seguro y fácil de mantener.</p>
+        </div>
+        <div class="tech-item">
+          <h4>Frontend en React</h4>
+          <p>Interfaz moderna con Material UI, responsive y accesible desde cualquier dispositivo.</p>
+        </div>
+        <div class="tech-item">
+          <h4>PostgreSQL</h4>
+          <p>Base de datos relacional robusta para la integridad de las operaciones financieras.</p>
+        </div>
+        <div class="tech-item">
+          <h4>Autenticación segura</h4>
+          <p>JWT + Firebase Auth. Control de acceso por roles con permisos granulares.</p>
+        </div>
+        <div class="tech-item">
+          <h4>Deploy con Docker</h4>
+          <p>Contenedores listos para desplegar en Google Cloud Platform o cualquier infraestructura.</p>
+        </div>
+        <div class="tech-item">
+          <h4>Auditoría integrada</h4>
+          <p>Cada operación queda registrada con usuario, IP, timestamp y descripción de la acción.</p>
+        </div>
       </div>
     </div>
   </section>
 
   <!-- CTA -->
-  <section class="cta">
-    <h2>Empezá hoy</h2>
-    <p>Registrate y accedé a tu primera línea de crédito.</p>
-    <a href="http://localhost:3000/register" class="btn-primary btn-large">Crear cuenta gratuita</a>
+  <section id="contacto" class="cta">
+    <div class="section-container">
+      <h2>Digitalizá tu operación de créditos</h2>
+      <p>Escribinos para coordinar una demostración del sistema y ver cómo se adapta a tu negocio.</p>
+      <div class="cta-buttons">
+        <a href="mailto:info@prestia.com.ar" class="btn-primary btn-large">Contactar por email</a>
+        <a href="https://wa.me/5491100000000" class="btn-outline btn-large" target="_blank" rel="noopener">Escribir por WhatsApp</a>
+      </div>
+    </div>
   </section>
 
   <!-- Footer -->
   <footer class="footer">
     <div class="footer-content">
       <div class="footer-brand">
-        <div class="logo">Crédito Villanueva</div>
-        <p>Sistema de microcréditos para Argentina.</p>
+        <div class="logo">Prestia</div>
+        <p>Sistema de gestión de microcréditos para Argentina.</p>
       </div>
       <div class="footer-links">
-        <p>&copy; 2026 Crédito Villanueva. Todos los derechos reservados.</p>
+        <p>&copy; 2026 Prestia. Todos los derechos reservados.</p>
       </div>
     </div>
   </footer>
 </Layout>
 
 <style>
+  /* Nav */
   .nav {
-    position: fixed; top: 0; width: 100%; background: rgba(255,255,255,0.95);
+    position: fixed; top: 0; width: 100%; background: rgba(255,255,255,0.97);
     backdrop-filter: blur(10px); z-index: 100; border-bottom: 1px solid #e0e0e0;
   }
   .nav-container {
@@ -137,78 +351,234 @@ import Layout from '../layouts/Layout.astro';
   }
   .logo { font-size: 1.4rem; font-weight: 700; color: #1565C0; }
   .nav-links { display: flex; gap: 2rem; align-items: center; }
-  .nav-links a { font-weight: 500; color: #444; transition: color 0.2s; }
+  .nav-links a { font-weight: 500; color: #444; transition: color 0.2s; font-size: 0.95rem; }
   .nav-links a:hover { color: #1565C0; }
   .btn-nav {
     background: #1565C0; color: white !important; padding: 0.5rem 1.5rem;
     border-radius: 8px; font-weight: 600;
   }
+  .btn-nav:hover { background: #0D47A1; }
+  .mobile-menu-btn { display: none; background: none; border: none; cursor: pointer; padding: 0.5rem; }
+  .mobile-menu-btn span {
+    display: block; width: 24px; height: 2px; background: #444;
+    margin: 5px 0; transition: 0.3s;
+  }
 
+  /* Sections common */
+  .section-container { max-width: 1200px; margin: 0 auto; padding: 0 2rem; }
+  .section-subtitle { color: #666; font-size: 1.15rem; margin-bottom: 3rem; text-align: center; }
+
+  /* Hero */
   .hero {
-    padding: 8rem 2rem 4rem; background: linear-gradient(135deg, #E3F2FD 0%, #BBDEFB 100%);
+    padding: 9rem 2rem 5rem; background: linear-gradient(135deg, #E3F2FD 0%, #BBDEFB 50%, #E8EAF6 100%);
     text-align: center;
   }
-  .hero-content { max-width: 800px; margin: 0 auto; }
-  .hero h1 { font-size: 3rem; font-weight: 700; color: #0D47A1; margin-bottom: 1.5rem; line-height: 1.2; }
-  .hero p { font-size: 1.2rem; color: #455A64; margin-bottom: 2rem; line-height: 1.6; }
-  .hero-buttons { display: flex; gap: 1rem; justify-content: center; margin-bottom: 3rem; }
+  .hero-content { max-width: 850px; margin: 0 auto; }
+  .hero-badge {
+    display: inline-block; background: rgba(21,101,192,0.1); color: #1565C0;
+    padding: 0.4rem 1.2rem; border-radius: 20px; font-size: 0.85rem; font-weight: 600;
+    margin-bottom: 1.5rem; letter-spacing: 0.5px; text-transform: uppercase;
+  }
+  .hero h1 { font-size: 2.8rem; font-weight: 700; color: #0D47A1; margin-bottom: 1.5rem; line-height: 1.2; }
+  .hero p { font-size: 1.15rem; color: #455A64; margin-bottom: 2.5rem; line-height: 1.7; }
+  .hero-buttons { display: flex; gap: 1rem; justify-content: center; margin-bottom: 3.5rem; }
   .btn-primary {
-    background: #1565C0; color: white; padding: 0.8rem 2rem;
+    background: #1565C0; color: white; padding: 0.85rem 2rem;
     border-radius: 8px; font-weight: 600; font-size: 1rem; transition: background 0.2s;
+    display: inline-block;
   }
   .btn-primary:hover { background: #0D47A1; }
   .btn-secondary {
-    border: 2px solid #1565C0; color: #1565C0; padding: 0.8rem 2rem;
-    border-radius: 8px; font-weight: 600; font-size: 1rem;
+    border: 2px solid #1565C0; color: #1565C0; padding: 0.85rem 2rem;
+    border-radius: 8px; font-weight: 600; font-size: 1rem; display: inline-block;
   }
-  .btn-large { padding: 1rem 3rem; font-size: 1.1rem; }
+  .btn-secondary:hover { background: rgba(21,101,192,0.05); }
+  .btn-outline {
+    border: 2px solid white; color: white; padding: 0.85rem 2rem;
+    border-radius: 8px; font-weight: 600; font-size: 1rem; display: inline-block;
+  }
+  .btn-outline:hover { background: rgba(255,255,255,0.15); }
+  .btn-large { padding: 1rem 2.5rem; font-size: 1.05rem; }
   .hero-stats { display: flex; justify-content: center; gap: 4rem; }
   .stat { display: flex; flex-direction: column; }
-  .stat-value { font-size: 2rem; font-weight: 700; color: #1565C0; }
-  .stat-label { font-size: 0.9rem; color: #666; }
+  .stat-value { font-size: 1.6rem; font-weight: 700; color: #1565C0; }
+  .stat-label { font-size: 0.85rem; color: #666; margin-top: 0.2rem; }
 
-  .features { padding: 5rem 2rem; max-width: 1200px; margin: 0 auto; text-align: center; }
-  .features h2 { font-size: 2.2rem; color: #1a1a2e; margin-bottom: 3rem; }
-  .feature-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem; }
-  .feature-card {
-    padding: 2rem; border-radius: 12px; border: 1px solid #e0e0e0;
-    transition: box-shadow 0.3s; text-align: center;
+  /* What is */
+  .what-is { padding: 6rem 0; background: #fff; }
+  .what-is h2 { font-size: 2.2rem; color: #0D47A1; margin-bottom: 3rem; text-align: center; }
+  .what-is-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: start; }
+  .what-is-text .lead { font-size: 1.1rem; color: #333; line-height: 1.7; margin-bottom: 1rem; }
+  .what-is-text p { color: #555; line-height: 1.7; margin-bottom: 1rem; }
+  .check-list { list-style: none; padding: 0; margin-top: 1.5rem; }
+  .check-list li {
+    padding: 0.7rem 0 0.7rem 1.8rem; position: relative; color: #444; line-height: 1.5;
+    border-bottom: 1px solid #f0f0f0;
   }
-  .feature-card:hover { box-shadow: 0 8px 30px rgba(0,0,0,0.1); }
-  .feature-icon { font-size: 2.5rem; margin-bottom: 1rem; }
-  .feature-card h3 { font-size: 1.2rem; margin-bottom: 0.5rem; color: #1565C0; }
-  .feature-card p { color: #666; line-height: 1.5; }
+  .check-list li:last-child { border-bottom: none; }
+  .check-list li::before {
+    content: "✓"; position: absolute; left: 0; color: #1565C0; font-weight: 700; font-size: 1.1rem;
+  }
 
-  .how-it-works { padding: 5rem 2rem; background: #F5F5F5; text-align: center; }
-  .how-it-works h2 { font-size: 2.2rem; margin-bottom: 3rem; }
-  .steps { display: flex; justify-content: center; gap: 3rem; max-width: 1000px; margin: 0 auto; }
-  .step { flex: 1; }
-  .step-number {
-    width: 50px; height: 50px; border-radius: 50%; background: #1565C0; color: white;
-    display: flex; align-items: center; justify-content: center; font-size: 1.3rem;
+  /* Dashboard preview */
+  .dashboard-preview {
+    background: #fff; border-radius: 12px; border: 1px solid #e0e0e0;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.08); overflow: hidden;
+  }
+  .preview-header {
+    background: #1a1a2e; color: #fff; padding: 0.8rem 1.2rem; font-size: 0.85rem;
+    font-weight: 600; display: flex; align-items: center; gap: 0.8rem;
+  }
+  .preview-dots { display: flex; gap: 6px; }
+  .preview-dots span {
+    width: 10px; height: 10px; border-radius: 50%;
+  }
+  .preview-dots span:nth-child(1) { background: #ff5f56; }
+  .preview-dots span:nth-child(2) { background: #ffbd2e; }
+  .preview-dots span:nth-child(3) { background: #27c93f; }
+  .preview-body { padding: 1.2rem; }
+  .preview-kpi { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.8rem; margin-bottom: 1.2rem; }
+  .kpi-card {
+    background: #f8f9fa; border-radius: 8px; padding: 0.8rem;
+    display: flex; flex-direction: column; gap: 0.2rem;
+  }
+  .kpi-label { font-size: 0.7rem; color: #888; text-transform: uppercase; letter-spacing: 0.5px; }
+  .kpi-value { font-size: 1.2rem; font-weight: 700; color: #1565C0; }
+  .preview-table { font-size: 0.8rem; }
+  .table-row {
+    display: grid; grid-template-columns: 1fr 0.7fr 0.8fr; padding: 0.5rem 0.3rem;
+    border-bottom: 1px solid #f0f0f0; align-items: center;
+  }
+  .table-row.header { font-weight: 600; color: #888; font-size: 0.7rem; text-transform: uppercase; }
+  .badge {
+    font-size: 0.7rem; padding: 0.15rem 0.5rem; border-radius: 4px; font-weight: 600;
+    display: inline-block; width: fit-content;
+  }
+  .badge.green { background: #e8f5e9; color: #2e7d32; }
+  .badge.yellow { background: #fff8e1; color: #f57f17; }
+  .badge.blue { background: #e3f2fd; color: #1565c0; }
+
+  /* Features */
+  .features { padding: 6rem 0; background: #f8f9fa; }
+  .features h2 { font-size: 2.2rem; color: #0D47A1; margin-bottom: 0.8rem; text-align: center; }
+  .feature-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
+  .feature-card {
+    background: #fff; padding: 2rem; border-radius: 12px; border: 1px solid #e8e8e8;
+    transition: box-shadow 0.3s, transform 0.2s;
+  }
+  .feature-card:hover { box-shadow: 0 8px 30px rgba(0,0,0,0.08); transform: translateY(-2px); }
+  .feature-icon {
+    width: 48px; height: 48px; border-radius: 10px; background: #E3F2FD;
+    display: flex; align-items: center; justify-content: center; margin-bottom: 1rem;
+  }
+  .feature-card h3 { font-size: 1.1rem; margin-bottom: 0.5rem; color: #1a1a2e; }
+  .feature-card p { color: #666; line-height: 1.6; font-size: 0.95rem; }
+
+  /* Modules */
+  .modules { padding: 6rem 0; background: #fff; }
+  .modules h2 { font-size: 2.2rem; color: #0D47A1; margin-bottom: 0.8rem; text-align: center; }
+  .module-list { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem; }
+  .module-card {
+    background: #fff; padding: 2rem; border-radius: 12px; border: 1px solid #e0e0e0;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+  }
+  .module-header { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; }
+  .module-icon {
+    width: 44px; height: 44px; border-radius: 10px; display: flex;
+    align-items: center; justify-content: center; font-weight: 700; font-size: 1.2rem; color: white;
+  }
+  .module-icon.admin { background: #0D47A1; }
+  .module-icon.client { background: #2E7D32; }
+  .module-icon.vendor { background: #E65100; }
+  .module-header h3 { font-size: 1.1rem; color: #1a1a2e; margin: 0; }
+  .module-role { font-size: 0.8rem; color: #888; }
+  .module-card ul { list-style: none; padding: 0; }
+  .module-card li {
+    padding: 0.45rem 0 0.45rem 1.4rem; position: relative; color: #555;
+    font-size: 0.92rem; line-height: 1.5;
+  }
+  .module-card li::before {
+    content: "—"; position: absolute; left: 0; color: #bbb;
+  }
+
+  /* Workflow */
+  .workflow { padding: 6rem 0; background: #f8f9fa; }
+  .workflow h2 { font-size: 2.2rem; color: #0D47A1; margin-bottom: 0.8rem; text-align: center; }
+  .workflow-steps {
+    display: flex; justify-content: center; align-items: flex-start; gap: 0;
+    max-width: 1000px; margin: 0 auto;
+  }
+  .workflow-step { flex: 1; text-align: center; padding: 0 1rem; }
+  .workflow-step .step-number {
+    width: 48px; height: 48px; border-radius: 50%; background: #1565C0; color: white;
+    display: flex; align-items: center; justify-content: center; font-size: 1.2rem;
     font-weight: 700; margin: 0 auto 1rem;
   }
-  .step h3 { margin-bottom: 0.5rem; color: #1565C0; }
-  .step p { color: #666; line-height: 1.5; }
+  .workflow-step h3 { margin-bottom: 0.5rem; color: #1a1a2e; font-size: 1.05rem; }
+  .workflow-step p { color: #666; line-height: 1.5; font-size: 0.92rem; }
+  .workflow-arrow {
+    width: 40px; height: 2px; background: #ccc; margin-top: 23px; flex-shrink: 0;
+    position: relative;
+  }
+  .workflow-arrow::after {
+    content: ""; position: absolute; right: -1px; top: -4px;
+    border: solid #ccc; border-width: 0 2px 2px 0; padding: 3px; transform: rotate(-45deg);
+  }
 
+  /* Tech */
+  .tech { padding: 6rem 0; background: #fff; }
+  .tech h2 { font-size: 2.2rem; color: #0D47A1; margin-bottom: 0.8rem; text-align: center; }
+  .tech-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem; }
+  .tech-item {
+    padding: 1.5rem; border-left: 3px solid #1565C0; background: #f8f9fa; border-radius: 0 8px 8px 0;
+  }
+  .tech-item h4 { color: #1a1a2e; margin-bottom: 0.5rem; font-size: 1rem; }
+  .tech-item p { color: #666; line-height: 1.5; font-size: 0.92rem; }
+
+  /* CTA */
   .cta {
-    padding: 5rem 2rem; text-align: center;
-    background: linear-gradient(135deg, #1565C0, #0D47A1); color: white;
+    padding: 6rem 2rem; text-align: center;
+    background: linear-gradient(135deg, #1565C0, #0D47A1);
+    color: white;
   }
   .cta h2 { font-size: 2.2rem; margin-bottom: 1rem; }
-  .cta p { font-size: 1.1rem; margin-bottom: 2rem; opacity: 0.9; }
+  .cta p { font-size: 1.15rem; margin-bottom: 2.5rem; opacity: 0.9; max-width: 600px; margin-left: auto; margin-right: auto; }
+  .cta-buttons { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
   .cta .btn-primary { background: white; color: #1565C0; }
   .cta .btn-primary:hover { background: #E3F2FD; }
 
+  /* Footer */
   .footer { padding: 2rem; background: #1a1a2e; color: #999; }
-  .footer-content { max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; }
+  .footer-content {
+    max-width: 1200px; margin: 0 auto; display: flex;
+    justify-content: space-between; align-items: center;
+  }
   .footer .logo { color: #64B5F6; margin-bottom: 0.5rem; }
 
+  /* Responsive */
+  @media (max-width: 1024px) {
+    .feature-grid { grid-template-columns: repeat(2, 1fr); }
+    .module-list { grid-template-columns: 1fr; }
+    .tech-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+
   @media (max-width: 768px) {
+    .nav-links { display: none; }
+    .mobile-menu-btn { display: block; }
+    .hero { padding: 7rem 1.5rem 3rem; }
     .hero h1 { font-size: 2rem; }
+    .hero p { font-size: 1rem; }
+    .hero-buttons { flex-direction: column; align-items: center; }
+    .hero-stats { flex-direction: column; gap: 1.2rem; }
+    .what-is-grid { grid-template-columns: 1fr; }
+    .dashboard-preview { margin-top: 2rem; }
     .feature-grid { grid-template-columns: 1fr; }
-    .steps { flex-direction: column; }
-    .hero-stats { flex-direction: column; gap: 1rem; }
+    .workflow-steps { flex-direction: column; gap: 1.5rem; }
+    .workflow-arrow { width: 2px; height: 30px; margin: 0 auto; }
+    .workflow-arrow::after { right: -4px; top: auto; bottom: -1px; transform: rotate(45deg); }
+    .tech-grid { grid-template-columns: 1fr; }
     .footer-content { flex-direction: column; text-align: center; gap: 1rem; }
+    .section-container { padding: 0 1.5rem; }
+    .cta-buttons { flex-direction: column; align-items: center; }
   }
 </style>

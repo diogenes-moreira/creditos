@@ -13,6 +13,7 @@ type UserRole string
 const (
 	RoleAdmin  UserRole = "admin"
 	RoleClient UserRole = "client"
+	RoleVendor UserRole = "vendor"
 )
 
 type User struct {
@@ -34,7 +35,7 @@ func NewUser(firebaseUID, email string, role UserRole) (*User, error) {
 	if email == "" {
 		return nil, fmt.Errorf("email is required")
 	}
-	if role != RoleAdmin && role != RoleClient {
+	if role != RoleAdmin && role != RoleClient && role != RoleVendor {
 		return nil, fmt.Errorf("invalid role: %s", role)
 	}
 
@@ -62,4 +63,8 @@ func (u *User) RecordLogin() {
 
 func (u *User) IsAdmin() bool {
 	return u.Role == RoleAdmin
+}
+
+func (u *User) IsVendor() bool {
+	return u.Role == RoleVendor
 }

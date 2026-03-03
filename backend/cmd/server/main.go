@@ -50,6 +50,11 @@ func main() {
 		&model.Installment{},
 		&model.Payment{},
 		&model.AuditLog{},
+		&model.Vendor{},
+		&model.VendorAccount{},
+		&model.VendorMovement{},
+		&model.Purchase{},
+		&model.VendorPayment{},
 	); err != nil {
 		log.Fatalf("Failed to migrate database: %v", err)
 	}

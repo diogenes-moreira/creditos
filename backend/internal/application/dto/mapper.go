@@ -197,6 +197,96 @@ func ToAuditLogResponses(logs []model.AuditLog) []AuditLogResponse {
 	return result
 }
 
+func ToVendorResponse(v *model.Vendor, email string) VendorResponse {
+	return VendorResponse{
+		ID:           v.ID.String(),
+		BusinessName: v.BusinessName,
+		CUIT:         v.CUIT,
+		Phone:        v.Phone,
+		Address:      v.Address,
+		City:         v.City,
+		Province:     v.Province,
+		IsActive:     v.IsActive,
+		Email:        email,
+		CreatedAt:    v.CreatedAt.Format("2006-01-02T15:04:05Z"),
+	}
+}
+
+func ToVendorAccountResponse(a *model.VendorAccount) VendorAccountResponse {
+	return VendorAccountResponse{
+		ID:       a.ID.String(),
+		VendorID: a.VendorID.String(),
+		Balance:  a.Balance.StringFixed(2),
+	}
+}
+
+func ToVendorMovementResponse(m *model.VendorMovement) VendorMovementResponse {
+	return VendorMovementResponse{
+		ID:           m.ID.String(),
+		Type:         string(m.Type),
+		Amount:       m.Amount.StringFixed(2),
+		BalanceAfter: m.BalanceAfter.StringFixed(2),
+		Description:  m.Description,
+		Reference:    m.Reference,
+		CreatedAt:    m.CreatedAt.Format("2006-01-02T15:04:05Z"),
+	}
+}
+
+func ToVendorMovementResponses(movements []model.VendorMovement) []VendorMovementResponse {
+	result := make([]VendorMovementResponse, len(movements))
+	for i, m := range movements {
+		result[i] = ToVendorMovementResponse(&m)
+	}
+	return result
+}
+
+func ToPurchaseResponse(p *model.Purchase) PurchaseResponse {
+	resp := PurchaseResponse{
+		ID:           p.ID.String(),
+		VendorID:     p.VendorID.String(),
+		ClientID:     p.ClientID.String(),
+		CreditLineID: p.CreditLineID.String(),
+		Amount:       p.Amount.StringFixed(2),
+		Description:  p.Description,
+		CreatedAt:    p.CreatedAt.Format("2006-01-02T15:04:05Z"),
+	}
+	if p.Vendor.BusinessName != "" {
+		resp.VendorName = p.Vendor.BusinessName
+	}
+	if p.Client.FirstName != "" {
+		resp.ClientName = p.Client.FullName()
+	}
+	return resp
+}
+
+func ToPurchaseResponses(purchases []model.Purchase) []PurchaseResponse {
+	result := make([]PurchaseResponse, len(purchases))
+	for i, p := range purchases {
+		result[i] = ToPurchaseResponse(&p)
+	}
+	return result
+}
+
+func ToVendorPaymentResponse(p *model.VendorPayment) VendorPaymentResponse {
+	return VendorPaymentResponse{
+		ID:        p.ID.String(),
+		VendorID:  p.VendorID.String(),
+		Amount:    p.Amount.StringFixed(2),
+		Method:    string(p.Method),
+		Reference: p.Reference,
+		PaidBy:    p.PaidBy.String(),
+		CreatedAt: p.CreatedAt.Format("2006-01-02T15:04:05Z"),
+	}
+}
+
+func ToVendorPaymentResponses(payments []model.VendorPayment) []VendorPaymentResponse {
+	result := make([]VendorPaymentResponse, len(payments))
+	for i, p := range payments {
+		result[i] = ToVendorPaymentResponse(&p)
+	}
+	return result
+}
+
 func ToPortfolioResponse(p *PortfolioData) PortfolioResponse {
 	return PortfolioResponse{
 		TotalClients:     p.TotalClients,

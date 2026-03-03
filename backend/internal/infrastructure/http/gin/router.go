@@ -47,6 +47,11 @@ func (r *Router) setupRoutes(jwtSecret string) {
 	paymentRepo := postgres.NewPaymentRepository(r.db)
 	auditLogRepo := postgres.NewAuditLogRepository(r.db)
 	dashboardRepo := postgres.NewDashboardRepository(r.db)
+	vendorRepo := postgres.NewVendorRepository(r.db)
+	vendorAccountRepo := postgres.NewVendorAccountRepository(r.db)
+	vendorMovementRepo := postgres.NewVendorMovementRepository(r.db)
+	purchaseRepo := postgres.NewPurchaseRepository(r.db)
+	vendorPaymentRepo := postgres.NewVendorPaymentRepository(r.db)
 
 	// Adapters
 	authService := auth.NewLocalAuthService(jwtSecret, 24)
@@ -61,6 +66,9 @@ func (r *Router) setupRoutes(jwtSecret string) {
 	accountService := service.NewAccountService(accountRepo, movementRepo)
 	dashboardService := service.NewDashboardService(dashboardRepo)
 	_ = service.NewPDFAppService(pdfGenerator, localStorage, loanRepo, clientRepo, paymentRepo)
+	vendorService := service.NewVendorService(userRepo, vendorRepo, vendorAccountRepo, authService, auditService)
+	purchaseService := service.NewPurchaseService(purchaseRepo, creditLineRepo, accountRepo, movementRepo, vendorRepo, vendorAccountRepo, vendorMovementRepo, clientRepo, auditService)
+	vendorPaymentService := service.NewVendorPaymentService(vendorPaymentRepo, vendorAccountRepo, vendorMovementRepo, vendorRepo, auditService)
 
 	// Handlers
 	healthHandler := handler.NewHealthHandler(r.db)
@@ -72,6 +80,7 @@ func (r *Router) setupRoutes(jwtSecret string) {
 	paymentHandler := handler.NewPaymentHandler(paymentService, clientRepo)
 	dashboardHandler := handler.NewDashboardHandler(dashboardService)
 	auditHandler := handler.NewAuditHandler(auditService)
+	vendorHandler := handler.NewVendorHandler(vendorService, purchaseService, vendorPaymentService, vendorRepo, vendorAccountRepo, vendorMovementRepo, clientService, creditService)
 
 	// Health
 	r.engine.GET("/health", healthHandler.Health)
@@ -109,6 +118,22 @@ func (r *Router) setupRoutes(jwtSecret string) {
 	// Loan simulation (any authenticated user)
 	authenticated.POST("/loans/simulate", loanHandler.Simulate)
 
+	// Vendor routes
+	vendorRoutes := authenticated.Group("/me/vendor")
+	vendorRoutes.Use(middleware.RequireRole(userRepo, model.RoleVendor))
+	{
+		vendorRoutes.GET("/profile", vendorHandler.GetProfile)
+		vendorRoutes.PUT("/profile", vendorHandler.UpdateProfile)
+		vendorRoutes.GET("/account", vendorHandler.GetAccount)
+		vendorRoutes.GET("/account/movements", vendorHandler.GetMovements)
+		vendorRoutes.GET("/purchases", vendorHandler.GetPurchases)
+		vendorRoutes.POST("/purchases", vendorHandler.RecordPurchase)
+		vendorRoutes.GET("/clients/search", vendorHandler.SearchClients)
+		vendorRoutes.POST("/clients/register", vendorHandler.RegisterClient)
+		vendorRoutes.GET("/clients/:id/credit-lines", vendorHandler.GetClientCreditLines)
+		vendorRoutes.POST("/clients/:id/credit-lines", vendorHandler.RequestCreditLine)
+	}
+
 	// Admin routes
 	adminRoutes := authenticated.Group("/admin")
 	adminRoutes.Use(middleware.RequireRole(userRepo, model.RoleAdmin))
@@ -139,5 +164,15 @@ func (r *Router) setupRoutes(jwtSecret string) {
 		adminRoutes.GET("/dashboard/trends/collections", dashboardHandler.GetCollectionTrend)
 
 		adminRoutes.GET("/audit", auditHandler.GetAuditLogs)
+
+		// Vendor management (admin)
+		adminRoutes.GET("/vendors", vendorHandler.AdminListVendors)
+		adminRoutes.GET("/vendors/:id", vendorHandler.AdminGetVendor)
+		adminRoutes.POST("/vendors", vendorHandler.AdminRegisterVendor)
+		adminRoutes.POST("/vendors/:id/activate", vendorHandler.AdminActivateVendor)
+		adminRoutes.POST("/vendors/:id/deactivate", vendorHandler.AdminDeactivateVendor)
+		adminRoutes.GET("/vendors/:id/purchases", vendorHandler.AdminGetVendorPurchases)
+		adminRoutes.GET("/vendors/:id/payments", vendorHandler.AdminGetVendorPayments)
+		adminRoutes.POST("/vendors/:id/payments", vendorHandler.AdminRecordVendorPayment)
 	}
 }

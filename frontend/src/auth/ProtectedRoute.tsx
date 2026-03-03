@@ -5,7 +5,7 @@ import { CircularProgress, Box } from "@mui/material";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
-  requiredRole?: "admin" | "client";
+  requiredRole?: "admin" | "client" | "vendor";
 }
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requiredRole }) => {
@@ -25,7 +25,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requiredRole 
   }
 
   if (requiredRole && user?.role !== requiredRole) {
-    const redirectPath = user?.role === "admin" ? "/admin/dashboard" : "/dashboard";
+    const redirectPath = user?.role === "admin" ? "/admin/dashboard" : user?.role === "vendor" ? "/vendor/dashboard" : "/dashboard";
     return <Navigate to={redirectPath} replace />;
   }
 

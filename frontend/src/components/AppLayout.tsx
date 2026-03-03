@@ -34,6 +34,8 @@ import {
   ExitToApp as LogoutIcon,
   AdminPanelSettings as AdminIcon,
   RequestQuote as RequestQuoteIcon,
+  ShoppingCart as ShoppingCartIcon,
+  Store as StoreIcon,
 } from "@mui/icons-material";
 import { useAuth } from "../auth/AuthContext";
 import { useTranslation } from "react-i18next";
@@ -67,6 +69,14 @@ const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     { label: t("nav.profile"), path: "/profile", icon: <PersonIcon /> },
   ];
 
+  const vendorNavItemsI18n: NavItem[] = [
+    { label: t("nav.vendorDashboard"), path: "/vendor/dashboard", icon: <DashboardIcon /> },
+    { label: t("nav.newPurchase"), path: "/vendor/purchases/new", icon: <ShoppingCartIcon /> },
+    { label: t("nav.purchaseHistory"), path: "/vendor/purchases", icon: <ReceiptIcon /> },
+    { label: t("nav.vendorBalance"), path: "/vendor/balance", icon: <AccountIcon /> },
+    { label: t("nav.vendorProfile"), path: "/vendor/profile", icon: <PersonIcon /> },
+  ];
+
   const adminNavItemsI18n: NavItem[] = [
     { label: t("nav.dashboard"), path: "/admin/dashboard", icon: <DashboardIcon /> },
     { label: t("nav.clients"), path: "/admin/clients", icon: <PeopleIcon /> },
@@ -74,9 +84,10 @@ const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     { label: t("nav.loanManagement"), path: "/admin/loans", icon: <GavelIcon /> },
     { label: t("nav.paymentAdjustment"), path: "/admin/payments", icon: <ReceiptIcon /> },
     { label: t("nav.auditLog"), path: "/admin/audit", icon: <HistoryIcon /> },
+    { label: t("nav.vendors"), path: "/admin/vendors", icon: <StoreIcon /> },
   ];
 
-  const navItems = user?.role === "admin" ? adminNavItemsI18n : clientNavItemsI18n;
+  const navItems = user?.role === "admin" ? adminNavItemsI18n : user?.role === "vendor" ? vendorNavItemsI18n : clientNavItemsI18n;
 
   const handleDrawerToggle = () => setMobileOpen(!mobileOpen);
 

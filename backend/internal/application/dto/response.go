@@ -159,6 +159,57 @@ type PaginatedResponse struct {
 	Limit      int         `json:"limit"`
 }
 
+type VendorResponse struct {
+	ID           string `json:"id"`
+	BusinessName string `json:"businessName"`
+	CUIT         string `json:"cuit"`
+	Phone        string `json:"phone"`
+	Address      string `json:"address"`
+	City         string `json:"city"`
+	Province     string `json:"province"`
+	IsActive     bool   `json:"isActive"`
+	Email        string `json:"email"`
+	CreatedAt    string `json:"createdAt"`
+}
+
+type VendorAccountResponse struct {
+	ID       string `json:"id"`
+	VendorID string `json:"vendorId"`
+	Balance  string `json:"balance"`
+}
+
+type VendorMovementResponse struct {
+	ID           string `json:"id"`
+	Type         string `json:"type"`
+	Amount       string `json:"amount"`
+	BalanceAfter string `json:"balanceAfter"`
+	Description  string `json:"description"`
+	Reference    string `json:"reference,omitempty"`
+	CreatedAt    string `json:"createdAt"`
+}
+
+type PurchaseResponse struct {
+	ID           string `json:"id"`
+	VendorID     string `json:"vendorId"`
+	VendorName   string `json:"vendorName,omitempty"`
+	ClientID     string `json:"clientId"`
+	ClientName   string `json:"clientName,omitempty"`
+	CreditLineID string `json:"creditLineId"`
+	Amount       string `json:"amount"`
+	Description  string `json:"description"`
+	CreatedAt    string `json:"createdAt"`
+}
+
+type VendorPaymentResponse struct {
+	ID        string `json:"id"`
+	VendorID  string `json:"vendorId"`
+	Amount    string `json:"amount"`
+	Method    string `json:"method"`
+	Reference string `json:"reference,omitempty"`
+	PaidBy    string `json:"paidBy"`
+	CreatedAt string `json:"createdAt"`
+}
+
 type ErrorResponse struct {
 	Error   string `json:"error"`
 	Message string `json:"message,omitempty"`

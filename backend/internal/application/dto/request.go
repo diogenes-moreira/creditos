@@ -84,3 +84,57 @@ type PaginationRequest struct {
 	Offset int `form:"offset"`
 	Limit  int `form:"limit"`
 }
+
+type RegisterVendorRequest struct {
+	Email        string `json:"email" binding:"required,email"`
+	Password     string `json:"password" binding:"required,min=8"`
+	BusinessName string `json:"businessName" binding:"required"`
+	CUIT         string `json:"cuit" binding:"required"`
+	Phone        string `json:"phone" binding:"required"`
+	Address      string `json:"address" binding:"required"`
+	City         string `json:"city" binding:"required"`
+	Province     string `json:"province" binding:"required"`
+}
+
+type UpdateVendorProfileRequest struct {
+	Phone    string `json:"phone"`
+	Address  string `json:"address"`
+	City     string `json:"city"`
+	Province string `json:"province"`
+}
+
+type RecordPurchaseRequest struct {
+	ClientID     string `json:"clientId" binding:"required,uuid"`
+	CreditLineID string `json:"creditLineId" binding:"required,uuid"`
+	Amount       string `json:"amount" binding:"required"`
+	Description  string `json:"description" binding:"required"`
+}
+
+type RecordVendorPaymentRequest struct {
+	VendorID  string `json:"vendorId" binding:"required,uuid"`
+	Amount    string `json:"amount" binding:"required"`
+	Method    string `json:"method" binding:"required,oneof=cash transfer"`
+	Reference string `json:"reference"`
+}
+
+type RegisterClientByVendorRequest struct {
+	Email       string `json:"email" binding:"required,email"`
+	Password    string `json:"password" binding:"required,min=8"`
+	FirstName   string `json:"firstName" binding:"required"`
+	LastName    string `json:"lastName" binding:"required"`
+	DNI         string `json:"dni" binding:"required"`
+	CUIT        string `json:"cuit" binding:"required"`
+	DateOfBirth string `json:"dateOfBirth" binding:"required"`
+	Phone       string `json:"phone" binding:"required"`
+	Address     string `json:"address" binding:"required"`
+	City        string `json:"city" binding:"required"`
+	Province    string `json:"province" binding:"required"`
+	IsPEP       bool   `json:"isPEP"`
+}
+
+type RequestCreditLineByVendorRequest struct {
+	ClientID        string `json:"clientId" binding:"required,uuid"`
+	MaxAmount       string `json:"maxAmount" binding:"required"`
+	InterestRate    string `json:"interestRate" binding:"required"`
+	MaxInstallments int    `json:"maxInstallments" binding:"required,min=1,max=60"`
+}

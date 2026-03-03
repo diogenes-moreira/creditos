@@ -25,13 +25,25 @@ import CreditApproval from "./pages/admin/CreditApproval";
 import LoanManagement from "./pages/admin/LoanManagement";
 import PaymentAdjustment from "./pages/admin/PaymentAdjustment";
 import AuditLog from "./pages/admin/AuditLog";
+import VendorListAdmin from "./pages/admin/VendorList";
+import VendorDetailAdmin from "./pages/admin/VendorDetail";
+
+// Vendor pages
+import VendorDashboard from "./pages/vendor/Dashboard";
+import NewPurchase from "./pages/vendor/NewPurchase";
+import VendorPurchaseHistory from "./pages/vendor/PurchaseHistory";
+import VendorBalance from "./pages/vendor/VendorBalance";
+import VendorProfile from "./pages/vendor/VendorProfile";
+import VendorClientRegister from "./pages/vendor/ClientRegister";
 
 const App: React.FC = () => {
   const { isAuthenticated, user } = useAuth();
 
   const defaultRedirect = () => {
     if (!isAuthenticated) return "/login";
-    return user?.role === "admin" ? "/admin/dashboard" : "/dashboard";
+    if (user?.role === "admin") return "/admin/dashboard";
+    if (user?.role === "vendor") return "/vendor/dashboard";
+    return "/dashboard";
   };
 
   return (
@@ -81,6 +93,38 @@ const App: React.FC = () => {
         </ProtectedRoute>
       } />
 
+      {/* Vendor routes */}
+      <Route path="/vendor/dashboard" element={
+        <ProtectedRoute requiredRole="vendor">
+          <AppLayout><VendorDashboard /></AppLayout>
+        </ProtectedRoute>
+      } />
+      <Route path="/vendor/purchases/new" element={
+        <ProtectedRoute requiredRole="vendor">
+          <AppLayout><NewPurchase /></AppLayout>
+        </ProtectedRoute>
+      } />
+      <Route path="/vendor/purchases" element={
+        <ProtectedRoute requiredRole="vendor">
+          <AppLayout><VendorPurchaseHistory /></AppLayout>
+        </ProtectedRoute>
+      } />
+      <Route path="/vendor/balance" element={
+        <ProtectedRoute requiredRole="vendor">
+          <AppLayout><VendorBalance /></AppLayout>
+        </ProtectedRoute>
+      } />
+      <Route path="/vendor/profile" element={
+        <ProtectedRoute requiredRole="vendor">
+          <AppLayout><VendorProfile /></AppLayout>
+        </ProtectedRoute>
+      } />
+      <Route path="/vendor/clients/register" element={
+        <ProtectedRoute requiredRole="vendor">
+          <AppLayout><VendorClientRegister /></AppLayout>
+        </ProtectedRoute>
+      } />
+
       {/* Admin routes */}
       <Route path="/admin/dashboard" element={
         <ProtectedRoute requiredRole="admin">
@@ -115,6 +159,16 @@ const App: React.FC = () => {
       <Route path="/admin/audit" element={
         <ProtectedRoute requiredRole="admin">
           <AppLayout><AuditLog /></AppLayout>
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/vendors" element={
+        <ProtectedRoute requiredRole="admin">
+          <AppLayout><VendorListAdmin /></AppLayout>
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/vendors/:id" element={
+        <ProtectedRoute requiredRole="admin">
+          <AppLayout><VendorDetailAdmin /></AppLayout>
         </ProtectedRoute>
       } />
 

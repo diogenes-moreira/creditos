@@ -24,7 +24,7 @@ export interface AuthResponse {
 export interface User {
   id: string;
   email: string;
-  role: "admin" | "client";
+  role: "admin" | "client" | "vendor";
   firstName?: string;
   lastName?: string;
 }
@@ -231,6 +231,112 @@ export interface AuditEntry {
   ipAddress: string;
   userAgent: string;
   createdAt: string;
+}
+
+// ---- Vendor ----
+export interface Vendor {
+  id: string;
+  businessName: string;
+  cuit: string;
+  phone: string;
+  address: string;
+  city: string;
+  province: string;
+  isActive: boolean;
+  email: string;
+  createdAt: string;
+}
+
+export interface VendorAccount {
+  id: string;
+  vendorId: string;
+  balance: string;
+}
+
+export interface VendorMovement {
+  id: string;
+  type: string;
+  amount: string;
+  balanceAfter: string;
+  description: string;
+  reference?: string;
+  createdAt: string;
+}
+
+export interface Purchase {
+  id: string;
+  vendorId: string;
+  vendorName?: string;
+  clientId: string;
+  clientName?: string;
+  creditLineId: string;
+  amount: string;
+  description: string;
+  createdAt: string;
+}
+
+export interface VendorPayment {
+  id: string;
+  vendorId: string;
+  amount: string;
+  method: string;
+  reference?: string;
+  paidBy: string;
+  createdAt: string;
+}
+
+export interface RegisterVendorRequest {
+  email: string;
+  password: string;
+  businessName: string;
+  cuit: string;
+  phone: string;
+  address: string;
+  city: string;
+  province: string;
+}
+
+export interface UpdateVendorProfileRequest {
+  phone: string;
+  address: string;
+  city: string;
+  province: string;
+}
+
+export interface RecordPurchaseRequest {
+  clientId: string;
+  creditLineId: string;
+  amount: string;
+  description: string;
+}
+
+export interface RecordVendorPaymentRequest {
+  vendorId: string;
+  amount: string;
+  method: string;
+  reference?: string;
+}
+
+export interface RegisterClientByVendorRequest {
+  email: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+  dni: string;
+  cuit: string;
+  dateOfBirth: string;
+  phone: string;
+  address: string;
+  city: string;
+  province: string;
+  isPEP: boolean;
+}
+
+export interface RequestCreditLineByVendorRequest {
+  clientId: string;
+  maxAmount: string;
+  interestRate: string;
+  maxInstallments: number;
 }
 
 // ---- Pagination ----

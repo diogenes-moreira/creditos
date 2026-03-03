@@ -82,6 +82,39 @@ type AuditLogRepository interface {
 	FindAll(ctx context.Context, offset, limit int) ([]model.AuditLog, int64, error)
 }
 
+type VendorRepository interface {
+	Create(ctx context.Context, vendor *model.Vendor) error
+	FindByID(ctx context.Context, id uuid.UUID) (*model.Vendor, error)
+	FindByUserID(ctx context.Context, userID uuid.UUID) (*model.Vendor, error)
+	FindByCUIT(ctx context.Context, cuit string) (*model.Vendor, error)
+	FindAll(ctx context.Context, offset, limit int) ([]model.Vendor, int64, error)
+	Search(ctx context.Context, query string, offset, limit int) ([]model.Vendor, int64, error)
+	Update(ctx context.Context, vendor *model.Vendor) error
+}
+
+type VendorAccountRepository interface {
+	Create(ctx context.Context, account *model.VendorAccount) error
+	FindByVendorID(ctx context.Context, vendorID uuid.UUID) (*model.VendorAccount, error)
+	Update(ctx context.Context, account *model.VendorAccount) error
+}
+
+type VendorMovementRepository interface {
+	Create(ctx context.Context, movement *model.VendorMovement) error
+	FindByAccountID(ctx context.Context, accountID uuid.UUID, offset, limit int) ([]model.VendorMovement, int64, error)
+}
+
+type PurchaseRepository interface {
+	Create(ctx context.Context, purchase *model.Purchase) error
+	FindByID(ctx context.Context, id uuid.UUID) (*model.Purchase, error)
+	FindByVendorID(ctx context.Context, vendorID uuid.UUID, offset, limit int) ([]model.Purchase, int64, error)
+	FindByClientID(ctx context.Context, clientID uuid.UUID, offset, limit int) ([]model.Purchase, int64, error)
+}
+
+type VendorPaymentRepository interface {
+	Create(ctx context.Context, payment *model.VendorPayment) error
+	FindByVendorID(ctx context.Context, vendorID uuid.UUID, offset, limit int) ([]model.VendorPayment, int64, error)
+}
+
 type DashboardRepository interface {
 	PortfolioSummary(ctx context.Context) (*PortfolioSummary, error)
 	DelinquencyRates(ctx context.Context) (*DelinquencyStats, error)
