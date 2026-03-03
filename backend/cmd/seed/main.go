@@ -1,0 +1,362 @@
+package main
+
+import (
+	"fmt"
+	"log"
+	"math/rand"
+	"time"
+
+	"github.com/diogenes-moreira/creditos/backend/internal/domain/model"
+	"github.com/diogenes-moreira/creditos/backend/internal/infrastructure/config"
+	"github.com/diogenes-moreira/creditos/backend/internal/infrastructure/persistence/postgres"
+	"github.com/google/uuid"
+	"github.com/shopspring/decimal"
+	"gorm.io/gorm"
+)
+
+func main() {
+	cfg := config.Load()
+	db, err := postgres.NewConnection(cfg.DB)
+	if err != nil {
+		log.Fatalf("Failed to connect to database: %v", err)
+	}
+
+	if err := postgres.AutoMigrate(db,
+		&model.User{},
+		&model.Client{},
+		&model.CurrentAccount{},
+		&model.Movement{},
+		&model.CreditLine{},
+		&model.Loan{},
+		&model.Installment{},
+		&model.Payment{},
+		&model.AuditLog{},
+	); err != nil {
+		log.Fatalf("Failed to migrate: %v", err)
+	}
+
+	log.Println("Seeding database...")
+	seedAdmins(db)
+	clients := seedClients(db, 50)
+	creditLines := seedCreditLines(db, clients, 30)
+	loans := seedLoans(db, clients, creditLines, 40)
+	seedPayments(db, loans)
+	log.Println("Seed completed successfully!")
+}
+
+func seedAdmins(db *gorm.DB) {
+	admins := []struct{ email, name string }{
+		{"admin@creditovillanueva.com", "Admin Principal"},
+		{"supervisor@creditovillanueva.com", "Supervisor"},
+	}
+	for _, a := range admins {
+		user := &model.User{
+			ID:          uuid.New(),
+			FirebaseUID: uuid.New().String(),
+			Email:       a.email,
+			Role:        model.RoleAdmin,
+			IsActive:    true,
+		}
+		if err := db.FirstOrCreate(user, "email = ?", a.email).Error; err != nil {
+			log.Printf("Admin %s: %v", a.email, err)
+		} else {
+			log.Printf("Admin created: %s (ID: %s)", a.email, user.ID)
+		}
+	}
+}
+
+var (
+	firstNames = []string{"Juan", "María", "Carlos", "Ana", "Luis", "Laura", "Pedro", "Sofía", "Diego", "Valentina", "Martín", "Camila", "Jorge", "Lucía", "Fernando", "Paula", "Ricardo", "Florencia", "Alejandro", "Julieta", "Roberto", "Daniela", "Sebastián", "Agustina", "Gabriel", "Antonella"}
+	lastNames  = []string{"González", "Rodríguez", "López", "Martínez", "García", "Fernández", "Pérez", "Sánchez", "Romero", "Torres", "Díaz", "Álvarez", "Ruiz", "Ramírez", "Flores", "Acosta", "Medina", "Herrera", "Suárez", "Castro", "Morales", "Ortiz", "Gutiérrez", "Silva", "Rojas", "Vega"}
+	provinces  = []string{"Buenos Aires", "Córdoba", "Santa Fe", "Mendoza", "Tucumán", "Entre Ríos", "Salta", "Misiones", "Chaco", "Corrientes"}
+	cities     = []string{"Villanueva", "San Fernando", "Moreno", "Merlo", "Quilmes", "La Plata", "Tigre", "Pilar", "Campana", "Zárate"}
+)
+
+func seedClients(db *gorm.DB, count int) []model.Client {
+	var clients []model.Client
+	for i := 0; i < count; i++ {
+		fn := firstNames[rand.Intn(len(firstNames))]
+		ln := lastNames[rand.Intn(len(lastNames))]
+		email := fmt.Sprintf("%s.%s.%d@email.com", fn, ln, i)
+
+		user := &model.User{
+			ID:          uuid.New(),
+			FirebaseUID: uuid.New().String(),
+			Email:       email,
+			Role:        model.RoleClient,
+			IsActive:    true,
+		}
+		db.Create(user)
+
+		dniNum := 20000000 + rand.Intn(30000000)
+		dniStr := fmt.Sprintf("%d", dniNum)
+
+		// Generate a valid CUIT with correct check digit
+		prefix := "20"
+		if rand.Intn(2) == 0 {
+			prefix = "27"
+		}
+		body := fmt.Sprintf("%08d", dniNum)
+		cuitBase := prefix + body
+		checkDigit := calculateCUITCheckDigit(cuitBase)
+		cuit := fmt.Sprintf("%s%s%d", prefix, body, checkDigit)
+
+		age := 22 + rand.Intn(40)
+		dob := time.Now().AddDate(-age, -rand.Intn(12), -rand.Intn(28))
+
+		client := model.Client{
+			ID:          uuid.New(),
+			UserID:      user.ID,
+			FirstName:   fn,
+			LastName:    ln,
+			DNI:         dniStr,
+			CUIT:        cuit,
+			DateOfBirth: dob,
+			Phone:       fmt.Sprintf("11%d", 40000000+rand.Intn(20000000)),
+			Address:     fmt.Sprintf("Calle %d #%d", rand.Intn(200)+1, rand.Intn(5000)+100),
+			City:        cities[rand.Intn(len(cities))],
+			Province:    provinces[rand.Intn(len(provinces))],
+			IsPEP:       rand.Intn(20) == 0,
+		}
+		db.Create(&client)
+
+		account := model.CurrentAccount{
+			ID:       uuid.New(),
+			ClientID: client.ID,
+			Balance:  decimal.NewFromInt(0),
+		}
+		db.Create(&account)
+
+		clients = append(clients, client)
+		if (i+1)%10 == 0 {
+			log.Printf("Created %d/%d clients", i+1, count)
+		}
+	}
+	return clients
+}
+
+func calculateCUITCheckDigit(base string) int {
+	weights := []int{5, 4, 3, 2, 7, 6, 5, 4, 3, 2}
+	sum := 0
+	for i, w := range weights {
+		d := int(base[i] - '0')
+		sum += d * w
+	}
+	remainder := sum % 11
+	switch remainder {
+	case 0:
+		return 0
+	case 1:
+		return 9
+	default:
+		return 11 - remainder
+	}
+}
+
+func seedCreditLines(db *gorm.DB, clients []model.Client, count int) []model.CreditLine {
+	var cls []model.CreditLine
+	adminID := uuid.New()
+	amounts := []int64{50000, 100000, 200000, 500000, 1000000}
+	rates := []string{"0.35", "0.40", "0.45", "0.50", "0.55"}
+
+	for i := 0; i < count && i < len(clients); i++ {
+		amount := decimal.NewFromInt(amounts[rand.Intn(len(amounts))])
+		rate, _ := decimal.NewFromString(rates[rand.Intn(len(rates))])
+		maxInst := []int{6, 12, 18, 24, 36}[rand.Intn(5)]
+
+		cl := model.CreditLine{
+			ID:              uuid.New(),
+			ClientID:        clients[i].ID,
+			MaxAmount:       amount,
+			UsedAmount:      decimal.NewFromInt(0),
+			InterestRate:    rate,
+			MaxInstallments: maxInst,
+			Status:          model.CreditLinePending,
+		}
+
+		// Approve most
+		if rand.Intn(5) != 0 {
+			cl.Status = model.CreditLineApproved
+			cl.ApprovedBy = &adminID
+			now := time.Now().AddDate(0, -rand.Intn(6), -rand.Intn(28))
+			cl.ApprovedAt = &now
+		}
+
+		db.Create(&cl)
+		cls = append(cls, cl)
+	}
+	log.Printf("Created %d credit lines", len(cls))
+	return cls
+}
+
+func seedLoans(db *gorm.DB, clients []model.Client, cls []model.CreditLine, count int) []model.Loan {
+	var loans []model.Loan
+	adminID := uuid.New()
+
+	approvedCLs := make([]model.CreditLine, 0)
+	for _, cl := range cls {
+		if cl.Status == model.CreditLineApproved {
+			approvedCLs = append(approvedCLs, cl)
+		}
+	}
+
+	for i := 0; i < count && i < len(approvedCLs); i++ {
+		cl := approvedCLs[i]
+		principal := cl.MaxAmount.Mul(decimal.NewFromFloat(0.3 + rand.Float64()*0.7)).Round(2)
+		numInst := []int{3, 6, 12}[rand.Intn(3)]
+		if numInst > cl.MaxInstallments {
+			numInst = cl.MaxInstallments
+		}
+		amortType := model.AmortizationFrench
+		if rand.Intn(3) == 0 {
+			amortType = model.AmortizationGerman
+		}
+
+		disbursedMonthsAgo := rand.Intn(12) + 1
+		startDate := time.Now().AddDate(0, -disbursedMonthsAgo, 0)
+
+		loan := model.Loan{
+			ID:               uuid.New(),
+			ClientID:         cl.ClientID,
+			CreditLineID:     cl.ID,
+			Principal:        principal,
+			InterestRate:     cl.InterestRate,
+			NumInstallments:  numInst,
+			AmortizationType: amortType,
+			Status:           model.LoanActive,
+			DisbursedAt:      &startDate,
+			ApprovedBy:       &adminID,
+			ApprovedAt:       &startDate,
+		}
+
+		// Generate installments
+		var schedule model.AmortizationSchedule
+		if amortType == model.AmortizationFrench {
+			schedule = model.CalculateFrenchAmortization(principal, cl.InterestRate, numInst, startDate)
+		} else {
+			schedule = model.CalculateGermanAmortization(principal, cl.InterestRate, numInst, startDate)
+		}
+
+		var installments []model.Installment
+		allPaid := true
+		for _, calc := range schedule.Installments {
+			inst := model.Installment{
+				ID:              uuid.New(),
+				LoanID:          loan.ID,
+				Number:          calc.Number,
+				DueDate:         calc.DueDate,
+				CapitalAmount:   calc.Capital,
+				InterestAmount:  calc.Interest,
+				TotalAmount:     calc.Total,
+				PaidAmount:      decimal.NewFromInt(0),
+				RemainingAmount: calc.Total,
+				Status:          model.InstallmentPending,
+			}
+
+			// Pay installments that are past due (with some missed for delinquency)
+			if calc.DueDate.Before(time.Now()) {
+				if rand.Intn(5) != 0 { // 80% paid on time
+					inst.PaidAmount = inst.TotalAmount
+					inst.RemainingAmount = decimal.NewFromInt(0)
+					inst.Status = model.InstallmentPaid
+					paidAt := calc.DueDate.Add(time.Duration(rand.Intn(5)) * 24 * time.Hour)
+					inst.PaidAt = &paidAt
+				} else {
+					inst.Status = model.InstallmentOverdue
+					allPaid = false
+				}
+			} else {
+				allPaid = false
+			}
+			installments = append(installments, inst)
+		}
+
+		if allPaid {
+			loan.Status = model.LoanCompleted
+			now := time.Now()
+			loan.CompletedAt = &now
+		}
+
+		// Some loans in other states
+		switch rand.Intn(10) {
+		case 8:
+			if !allPaid {
+				loan.Status = model.LoanDefaulted
+			}
+		case 9:
+			loan.Status = model.LoanCancelled
+			now := time.Now()
+			loan.CancelledAt = &now
+		}
+
+		db.Create(&loan)
+		for _, inst := range installments {
+			db.Create(&inst)
+		}
+
+		// Update credit line used amount
+		cl.UsedAmount = cl.UsedAmount.Add(principal)
+		db.Save(&cl)
+
+		// Create payments for paid installments
+		for _, inst := range installments {
+			if inst.Status == model.InstallmentPaid {
+				methods := []model.PaymentMethod{model.PaymentCash, model.PaymentTransfer, model.PaymentMercadoPago}
+				payment := model.Payment{
+					ID:        uuid.New(),
+					LoanID:    loan.ID,
+					Amount:    inst.TotalAmount,
+					Method:    methods[rand.Intn(len(methods))],
+					CreatedAt: *inst.PaidAt,
+					UpdatedAt: *inst.PaidAt,
+				}
+				db.Create(&payment)
+			}
+		}
+
+		// Credit account on disbursement
+		var account model.CurrentAccount
+		if db.Where("client_id = ?", cl.ClientID).First(&account).Error == nil {
+			account.Balance = account.Balance.Add(principal)
+			db.Save(&account)
+
+			movement := model.Movement{
+				ID:           uuid.New(),
+				AccountID:    account.ID,
+				Type:         model.MovementTypeCredit,
+				Amount:       principal,
+				BalanceAfter: account.Balance,
+				Description:  "Loan disbursement",
+				Reference:    loan.ID.String(),
+				CreatedAt:    startDate,
+			}
+			db.Create(&movement)
+		}
+
+		loans = append(loans, loan)
+		if (i+1)%10 == 0 {
+			log.Printf("Created %d/%d loans", i+1, count)
+		}
+	}
+	log.Printf("Created %d loans total", len(loans))
+	return loans
+}
+
+func seedPayments(db *gorm.DB, loans []model.Loan) {
+	// Audit log entries
+	actions := []string{"register", "login", "create_credit_line", "approve_credit_line", "request_loan", "approve_loan", "disburse_loan", "record_payment"}
+	for i := 0; i < 100; i++ {
+		log := model.AuditLog{
+			ID:          uuid.New(),
+			Action:      actions[rand.Intn(len(actions))],
+			EntityType:  "system",
+			EntityID:    uuid.New().String(),
+			Description: fmt.Sprintf("Seed audit log entry %d", i),
+			IP:          fmt.Sprintf("192.168.1.%d", rand.Intn(255)),
+			UserAgent:   "Seed/1.0",
+			CreatedAt:   time.Now().AddDate(0, 0, -rand.Intn(90)),
+		}
+		db.Create(&log)
+	}
+	fmt.Println("Created 100 audit log entries")
+}

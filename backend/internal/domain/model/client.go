@@ -1,0 +1,113 @@
+package model
+
+import (
+	"fmt"
+	"time"
+
+	"github.com/diogenes-moreira/creditos/backend/pkg/validator"
+	"github.com/google/uuid"
+	"gorm.io/gorm"
+)
+
+type Client struct {
+	ID              uuid.UUID      `gorm:"type:uuid;primaryKey"`
+	UserID          uuid.UUID      `gorm:"type:uuid;uniqueIndex;not null"`
+	User            User           `gorm:"foreignKey:UserID"`
+	FirstName       string         `gorm:"not null"`
+	LastName        string         `gorm:"not null"`
+	DNI             string         `gorm:"uniqueIndex;not null"`
+	CUIT            string         `gorm:"uniqueIndex;not null"`
+	DateOfBirth     time.Time      `gorm:"not null"`
+	Phone           string         `gorm:"not null"`
+	Address         string         `gorm:"not null"`
+	City            string         `gorm:"not null"`
+	Province        string         `gorm:"not null"`
+	IsPEP           bool           `gorm:"not null;default:false"`
+	MercadoPagoLink string         `gorm:""`
+	IsBlocked       bool           `gorm:"not null;default:false"`
+	CreatedAt       time.Time      `gorm:"not null"`
+	UpdatedAt       time.Time      `gorm:"not null"`
+	DeletedAt       gorm.DeletedAt `gorm:"index"`
+}
+
+func NewClient(userID uuid.UUID, firstName, lastName, dni, cuit string, dob time.Time, phone, address, city, province string, isPEP bool) (*Client, error) {
+	if firstName == "" || lastName == "" {
+		return nil, fmt.Errorf("first name and last name are required")
+	}
+
+	if err := validator.ValidateDNI(dni); err != nil {
+		return nil, fmt.Errorf("invalid DNI: %w", err)
+	}
+
+	if err := validator.ValidateCUIT(cuit); err != nil {
+		return nil, fmt.Errorf("invalid CUIT: %w", err)
+	}
+
+	if err := validateAge(dob); err != nil {
+		return nil, err
+	}
+
+	if phone == "" {
+		return nil, fmt.Errorf("phone is required")
+	}
+
+	return &Client{
+		ID:          uuid.New(),
+		UserID:      userID,
+		FirstName:   firstName,
+		LastName:    lastName,
+		DNI:         dni,
+		CUIT:        cuit,
+		DateOfBirth: dob,
+		Phone:       phone,
+		Address:     address,
+		City:        city,
+		Province:    province,
+		IsPEP:       isPEP,
+	}, nil
+}
+
+func validateAge(dob time.Time) error {
+	age := time.Now().Year() - dob.Year()
+	if time.Now().YearDay() < dob.YearDay() {
+		age--
+	}
+	if age < 18 {
+		return fmt.Errorf("client must be at least 18 years old, got %d", age)
+	}
+	if age > 120 {
+		return fmt.Errorf("invalid date of birth")
+	}
+	return nil
+}
+
+func (c *Client) FullName() string {
+	return c.FirstName + " " + c.LastName
+}
+
+func (c *Client) Block() {
+	c.IsBlocked = true
+}
+
+func (c *Client) Unblock() {
+	c.IsBlocked = false
+}
+
+func (c *Client) SetMercadoPagoLink(link string) {
+	c.MercadoPagoLink = link
+}
+
+func (c *Client) UpdateProfile(phone, address, city, province string) {
+	if phone != "" {
+		c.Phone = phone
+	}
+	if address != "" {
+		c.Address = address
+	}
+	if city != "" {
+		c.City = city
+	}
+	if province != "" {
+		c.Province = province
+	}
+}

@@ -1,0 +1,86 @@
+package dto
+
+type RegisterRequest struct {
+	Email       string `json:"email" binding:"required,email"`
+	Password    string `json:"password" binding:"required,min=8"`
+	FirstName   string `json:"firstName" binding:"required"`
+	LastName    string `json:"lastName" binding:"required"`
+	DNI         string `json:"dni" binding:"required"`
+	CUIT        string `json:"cuit" binding:"required"`
+	DateOfBirth string `json:"dateOfBirth" binding:"required"`
+	Phone       string `json:"phone" binding:"required"`
+	Address     string `json:"address" binding:"required"`
+	City        string `json:"city" binding:"required"`
+	Province    string `json:"province" binding:"required"`
+	IsPEP       bool   `json:"isPEP"`
+}
+
+type LoginRequest struct {
+	Email    string `json:"email" binding:"required,email"`
+	Password string `json:"password" binding:"required"`
+}
+
+type UpdateProfileRequest struct {
+	Phone    string `json:"phone"`
+	Address  string `json:"address"`
+	City     string `json:"city"`
+	Province string `json:"province"`
+}
+
+type MercadoPagoLinkRequest struct {
+	Link string `json:"link" binding:"required"`
+}
+
+type CreateCreditLineRequest struct {
+	ClientID        string `json:"clientId" binding:"required,uuid"`
+	MaxAmount       string `json:"maxAmount" binding:"required"`
+	InterestRate    string `json:"interestRate" binding:"required"`
+	MaxInstallments int    `json:"maxInstallments" binding:"required,min=1,max=60"`
+}
+
+type ApproveCreditLineRequest struct {
+	ApprovedBy string `json:"-"`
+}
+
+type RejectCreditLineRequest struct {
+	Reason string `json:"reason" binding:"required"`
+}
+
+type SimulateLoanRequest struct {
+	CreditLineID     string `json:"creditLineId" binding:"required,uuid"`
+	Amount           string `json:"amount" binding:"required"`
+	NumInstallments  int    `json:"numInstallments" binding:"required,min=1"`
+	AmortizationType string `json:"amortizationType" binding:"required,oneof=french german"`
+}
+
+type RequestLoanRequest struct {
+	CreditLineID     string `json:"creditLineId" binding:"required,uuid"`
+	Amount           string `json:"amount" binding:"required"`
+	NumInstallments  int    `json:"numInstallments" binding:"required,min=1"`
+	AmortizationType string `json:"amortizationType" binding:"required,oneof=french german"`
+}
+
+type RecordPaymentRequest struct {
+	Amount    string `json:"amount" binding:"required"`
+	Method    string `json:"method" binding:"required,oneof=cash transfer mercado_pago"`
+	Reference string `json:"reference"`
+}
+
+type AdjustPaymentRequest struct {
+	Note string `json:"note" binding:"required"`
+}
+
+type PrepayLoanRequest struct {
+	Amount string `json:"amount" binding:"required"`
+}
+
+type SearchClientsRequest struct {
+	Query  string `form:"q"`
+	Offset int    `form:"offset"`
+	Limit  int    `form:"limit"`
+}
+
+type PaginationRequest struct {
+	Offset int `form:"offset"`
+	Limit  int `form:"limit"`
+}

@@ -1,0 +1,1401 @@
+basePath: /api/v1
+definitions:
+  dto.AccountResponse:
+    properties:
+      balance:
+        type: string
+      clientId:
+        type: string
+      id:
+        type: string
+    type: object
+  dto.AdjustPaymentRequest:
+    properties:
+      note:
+        type: string
+    required:
+    - note
+    type: object
+  dto.AuthResponse:
+    properties:
+      token:
+        type: string
+      user:
+        $ref: '#/definitions/dto.UserResponse'
+    type: object
+  dto.ClientResponse:
+    properties:
+      address:
+        type: string
+      city:
+        type: string
+      createdAt:
+        type: string
+      cuit:
+        type: string
+      dateOfBirth:
+        type: string
+      dni:
+        type: string
+      email:
+        type: string
+      firstName:
+        type: string
+      id:
+        type: string
+      isBlocked:
+        type: boolean
+      isPEP:
+        type: boolean
+      lastName:
+        type: string
+      mercadoPagoLink:
+        type: string
+      phone:
+        type: string
+      province:
+        type: string
+    type: object
+  dto.CreateCreditLineRequest:
+    properties:
+      clientId:
+        type: string
+      interestRate:
+        type: string
+      maxAmount:
+        type: string
+      maxInstallments:
+        maximum: 60
+        minimum: 1
+        type: integer
+    required:
+    - clientId
+    - interestRate
+    - maxAmount
+    - maxInstallments
+    type: object
+  dto.CreditLineResponse:
+    properties:
+      approvedAt:
+        type: string
+      availableAmount:
+        type: string
+      clientId:
+        type: string
+      clientName:
+        type: string
+      createdAt:
+        type: string
+      id:
+        type: string
+      interestRate:
+        type: string
+      maxAmount:
+        type: string
+      maxInstallments:
+        type: integer
+      rejectionReason:
+        type: string
+      status:
+        type: string
+      usedAmount:
+        type: string
+    type: object
+  dto.DelinquencyResponse:
+    properties:
+      delinquencyRate:
+        type: string
+      overdueCount:
+        type: integer
+      par30:
+        type: string
+      par60:
+        type: string
+      par90:
+        type: string
+      totalOverdue:
+        type: string
+    type: object
+  dto.ErrorResponse:
+    properties:
+      error:
+        type: string
+      message:
+        type: string
+    type: object
+  dto.InstallmentResponse:
+    properties:
+      capitalAmount:
+        type: string
+      dueDate:
+        type: string
+      id:
+        type: string
+      interestAmount:
+        type: string
+      number:
+        type: integer
+      paidAmount:
+        type: string
+      paidAt:
+        type: string
+      remainingAmount:
+        type: string
+      status:
+        type: string
+      totalAmount:
+        type: string
+    type: object
+  dto.KPIResponse:
+    properties:
+      delinquency:
+        $ref: '#/definitions/dto.DelinquencyResponse'
+      portfolio:
+        $ref: '#/definitions/dto.PortfolioResponse'
+    type: object
+  dto.LoanResponse:
+    properties:
+      amortizationType:
+        type: string
+      clientId:
+        type: string
+      createdAt:
+        type: string
+      creditLineId:
+        type: string
+      disbursedAt:
+        type: string
+      id:
+        type: string
+      installments:
+        items:
+          $ref: '#/definitions/dto.InstallmentResponse'
+        type: array
+      interestRate:
+        type: string
+      numInstallments:
+        type: integer
+      principal:
+        type: string
+      status:
+        type: string
+      totalPaid:
+        type: string
+      totalRemaining:
+        type: string
+    type: object
+  dto.LoginRequest:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  dto.MercadoPagoLinkRequest:
+    properties:
+      link:
+        type: string
+    required:
+    - link
+    type: object
+  dto.PaginatedResponse:
+    properties:
+      data: {}
+      limit:
+        type: integer
+      offset:
+        type: integer
+      total:
+        type: integer
+    type: object
+  dto.PaymentResponse:
+    properties:
+      adjustmentNote:
+        type: string
+      amount:
+        type: string
+      createdAt:
+        type: string
+      id:
+        type: string
+      installmentId:
+        type: string
+      isAdjustment:
+        type: boolean
+      loanId:
+        type: string
+      method:
+        type: string
+      reference:
+        type: string
+    type: object
+  dto.PortfolioResponse:
+    properties:
+      activeLoans:
+        type: integer
+      pendingApprovals:
+        type: integer
+      totalClients:
+        type: integer
+      totalCollected:
+        type: string
+      totalDisbursed:
+        type: string
+      totalOutstanding:
+        type: string
+    type: object
+  dto.PrepayLoanRequest:
+    properties:
+      amount:
+        type: string
+    required:
+    - amount
+    type: object
+  dto.RecordPaymentRequest:
+    properties:
+      amount:
+        type: string
+      method:
+        enum:
+        - cash
+        - transfer
+        - mercado_pago
+        type: string
+      reference:
+        type: string
+    required:
+    - amount
+    - method
+    type: object
+  dto.RegisterRequest:
+    properties:
+      address:
+        type: string
+      city:
+        type: string
+      cuit:
+        type: string
+      dateOfBirth:
+        type: string
+      dni:
+        type: string
+      email:
+        type: string
+      firstName:
+        type: string
+      isPEP:
+        type: boolean
+      lastName:
+        type: string
+      password:
+        minLength: 8
+        type: string
+      phone:
+        type: string
+      province:
+        type: string
+    required:
+    - address
+    - city
+    - cuit
+    - dateOfBirth
+    - dni
+    - email
+    - firstName
+    - lastName
+    - password
+    - phone
+    - province
+    type: object
+  dto.RejectCreditLineRequest:
+    properties:
+      reason:
+        type: string
+    required:
+    - reason
+    type: object
+  dto.RequestLoanRequest:
+    properties:
+      amortizationType:
+        enum:
+        - french
+        - german
+        type: string
+      amount:
+        type: string
+      creditLineId:
+        type: string
+      numInstallments:
+        minimum: 1
+        type: integer
+    required:
+    - amortizationType
+    - amount
+    - creditLineId
+    - numInstallments
+    type: object
+  dto.SimulateLoanRequest:
+    properties:
+      amortizationType:
+        enum:
+        - french
+        - german
+        type: string
+      amount:
+        type: string
+      creditLineId:
+        type: string
+      numInstallments:
+        minimum: 1
+        type: integer
+    required:
+    - amortizationType
+    - amount
+    - creditLineId
+    - numInstallments
+    type: object
+  dto.SimulationResponse:
+    properties:
+      installments:
+        items:
+          $ref: '#/definitions/dto.InstallmentResponse'
+        type: array
+      interestRate:
+        type: string
+      principal:
+        type: string
+      totalInterest:
+        type: string
+      totalPayment:
+        type: string
+    type: object
+  dto.TrendPointResponse:
+    properties:
+      amount:
+        type: string
+      count:
+        type: integer
+      date:
+        type: string
+    type: object
+  dto.UpdateProfileRequest:
+    properties:
+      address:
+        type: string
+      city:
+        type: string
+      phone:
+        type: string
+      province:
+        type: string
+    type: object
+  dto.UserResponse:
+    properties:
+      email:
+        type: string
+      id:
+        type: string
+      role:
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact:
+    email: support@creditovillanueva.com
+    name: API Support
+  description: Microcredit management system API for Argentina
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  termsOfService: http://swagger.io/terms/
+  title: Crédito Villanueva API
+  version: "1.0"
+paths:
+  /admin/audit:
+    get:
+      description: Returns a paginated list of audit log entries recording all system
+        operations
+      parameters:
+      - default: 0
+        description: Pagination offset
+        in: query
+        name: offset
+        type: integer
+      - default: 50
+        description: Pagination limit
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.PaginatedResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get audit logs
+      tags:
+      - Audit
+  /admin/clients:
+    get:
+      description: Returns a paginated list of clients, optionally filtered by a search
+        query
+      parameters:
+      - description: Search query (name, DNI, CUIT)
+        in: query
+        name: q
+        type: string
+      - default: 0
+        description: Pagination offset
+        in: query
+        name: offset
+        type: integer
+      - default: 20
+        description: Pagination limit
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.PaginatedResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List or search clients
+      tags:
+      - Admin Clients
+  /admin/clients/{id}:
+    get:
+      description: Returns the details of a specific client by their UUID
+      parameters:
+      - description: Client UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ClientResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get a client by ID
+      tags:
+      - Admin Clients
+  /admin/clients/{id}/block:
+    post:
+      description: Blocks a client account, preventing them from performing operations
+      parameters:
+      - description: Client UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Block a client
+      tags:
+      - Admin Clients
+  /admin/clients/{id}/unblock:
+    post:
+      description: Unblocks a previously blocked client account
+      parameters:
+      - description: Client UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Unblock a client
+      tags:
+      - Admin Clients
+  /admin/credit-lines:
+    post:
+      consumes:
+      - application/json
+      description: Creates a new credit line for a client with specified limits and
+        interest rate
+      parameters:
+      - description: Credit line data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateCreditLineRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.CreditLineResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Create a credit line
+      tags:
+      - Credit Lines
+  /admin/credit-lines/{id}/approve:
+    post:
+      description: Approves a pending credit line, making it available for the client
+        to request loans
+      parameters:
+      - description: Credit Line UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.CreditLineResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Approve a credit line
+      tags:
+      - Credit Lines
+  /admin/credit-lines/{id}/reject:
+    post:
+      consumes:
+      - application/json
+      description: Rejects a pending credit line with a reason
+      parameters:
+      - description: Credit Line UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Rejection reason
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.RejectCreditLineRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.CreditLineResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Reject a credit line
+      tags:
+      - Credit Lines
+  /admin/credit-lines/pending:
+    get:
+      description: Returns a paginated list of credit lines awaiting approval
+      parameters:
+      - default: 0
+        description: Pagination offset
+        in: query
+        name: offset
+        type: integer
+      - default: 20
+        description: Pagination limit
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.PaginatedResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List pending credit lines
+      tags:
+      - Credit Lines
+  /admin/dashboard/delinquency:
+    get:
+      description: Returns delinquency metrics including PAR30, PAR60, PAR90, and
+        overall delinquency rate
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.DelinquencyResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get delinquency statistics
+      tags:
+      - Dashboard
+  /admin/dashboard/kpis:
+    get:
+      description: Returns combined portfolio and delinquency KPIs in a single response
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.KPIResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get combined KPIs
+      tags:
+      - Dashboard
+  /admin/dashboard/portfolio:
+    get:
+      description: Returns portfolio statistics including total clients, active loans,
+        disbursed and outstanding amounts
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.PortfolioResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get portfolio summary
+      tags:
+      - Dashboard
+  /admin/dashboard/trends/collections:
+    get:
+      description: Returns monthly collection trend data for the last 12 months
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dto.TrendPointResponse'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get collection trends
+      tags:
+      - Dashboard
+  /admin/dashboard/trends/disbursements:
+    get:
+      description: Returns monthly disbursement trend data for the last 12 months
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dto.TrendPointResponse'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get disbursement trends
+      tags:
+      - Dashboard
+  /admin/loans/{id}/approve:
+    post:
+      description: Approves a pending loan request
+      parameters:
+      - description: Loan UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.LoanResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Approve a loan
+      tags:
+      - Admin Loans
+  /admin/loans/{id}/cancel:
+    post:
+      description: Cancels a loan that has not yet been fully disbursed
+      parameters:
+      - description: Loan UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.LoanResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Cancel a loan
+      tags:
+      - Admin Loans
+  /admin/loans/{id}/disburse:
+    post:
+      description: Disburses an approved loan, crediting the funds to the client's
+        account
+      parameters:
+      - description: Loan UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.LoanResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Disburse a loan
+      tags:
+      - Admin Loans
+  /admin/loans/{id}/prepay:
+    post:
+      consumes:
+      - application/json
+      description: Processes an early cancellation or partial prepayment of a loan
+      parameters:
+      - description: Loan UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Prepayment amount
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.PrepayLoanRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.LoanResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Early loan prepayment
+      tags:
+      - Admin Loans
+  /admin/loans/pending:
+    get:
+      description: Returns a paginated list of loans awaiting approval
+      parameters:
+      - default: 0
+        description: Pagination offset
+        in: query
+        name: offset
+        type: integer
+      - default: 20
+        description: Pagination limit
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.PaginatedResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List pending loans
+      tags:
+      - Admin Loans
+  /admin/payments/{id}/adjust:
+    put:
+      consumes:
+      - application/json
+      description: Applies an administrative adjustment to an existing payment with
+        a note
+      parameters:
+      - description: Payment UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Adjustment note
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.AdjustPaymentRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.PaymentResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Adjust a payment
+      tags:
+      - Admin Payments
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Validates credentials and returns a JWT token for API access
+      parameters:
+      - description: Login credentials
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.AuthResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Authenticate a user
+      tags:
+      - Auth
+  /auth/register:
+    post:
+      consumes:
+      - application/json
+      description: Creates a new user account and client profile with the provided
+        personal information
+      parameters:
+      - description: Registration data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.RegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.AuthResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Register a new client
+      tags:
+      - Auth
+  /health:
+    get:
+      description: Returns the health status of the service
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Health check
+      tags:
+      - Health
+  /health/ready:
+    get:
+      description: Checks if the service is ready to accept requests by verifying
+        the database connection
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "503":
+          description: Service Unavailable
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Readiness check
+      tags:
+      - Health
+  /loans/simulate:
+    post:
+      consumes:
+      - application/json
+      description: Calculates an amortization schedule for a given loan amount, installments,
+        and type (French or German)
+      parameters:
+      - description: Simulation parameters
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.SimulateLoanRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.SimulationResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Simulate a loan
+      tags:
+      - Loans
+  /me/account:
+    get:
+      description: Returns the current account details for the authenticated client
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.AccountResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get current account
+      tags:
+      - Account
+  /me/account/movements:
+    get:
+      description: Returns a paginated list of movements for the authenticated client's
+        account
+      parameters:
+      - default: 0
+        description: Pagination offset
+        in: query
+        name: offset
+        type: integer
+      - default: 20
+        description: Pagination limit
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.PaginatedResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get account movements
+      tags:
+      - Account
+  /me/loans:
+    get:
+      description: Returns a paginated list of loans belonging to the authenticated
+        client
+      parameters:
+      - default: 0
+        description: Pagination offset
+        in: query
+        name: offset
+        type: integer
+      - default: 20
+        description: Pagination limit
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.PaginatedResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List my loans
+      tags:
+      - Loans
+    post:
+      consumes:
+      - application/json
+      description: Submits a loan request against an approved credit line for the
+        authenticated client
+      parameters:
+      - description: Loan request data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.RequestLoanRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.LoanResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Request a new loan
+      tags:
+      - Loans
+  /me/loans/{id}:
+    get:
+      description: Returns the full details of a specific loan including its installment
+        schedule
+      parameters:
+      - description: Loan UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.LoanResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get loan details
+      tags:
+      - Loans
+  /me/loans/{loanId}/payments:
+    post:
+      consumes:
+      - application/json
+      description: Records a payment against a specific loan for the authenticated
+        client
+      parameters:
+      - description: Loan UUID
+        in: path
+        name: loanId
+        required: true
+        type: string
+      - description: Payment data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.RecordPaymentRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.PaymentResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Record a payment
+      tags:
+      - Payments
+  /me/mercadopago:
+    put:
+      consumes:
+      - application/json
+      description: Sets or updates the MercadoPago payment link for the authenticated
+        client
+      parameters:
+      - description: MercadoPago link
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.MercadoPagoLinkRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Update MercadoPago payment link
+      tags:
+      - Client Profile
+  /me/payments:
+    get:
+      description: Returns a paginated list of all payments made by the authenticated
+        client
+      parameters:
+      - default: 0
+        description: Pagination offset
+        in: query
+        name: offset
+        type: integer
+      - default: 20
+        description: Pagination limit
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.PaginatedResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List my payments
+      tags:
+      - Payments
+  /me/profile:
+    get:
+      description: Returns the profile of the currently authenticated client
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ClientResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get current client profile
+      tags:
+      - Client Profile
+    put:
+      consumes:
+      - application/json
+      description: Updates the contact information of the currently authenticated
+        client
+      parameters:
+      - description: Profile update data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateProfileRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ClientResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Update current client profile
+      tags:
+      - Client Profile
+securityDefinitions:
+  BearerAuth:
+    description: 'Enter your bearer token in the format: Bearer {token}'
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

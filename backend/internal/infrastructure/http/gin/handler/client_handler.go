@@ -1,0 +1,195 @@
+package handler
+
+import (
+	"net/http"
+
+	"github.com/diogenes-moreira/creditos/backend/internal/application/dto"
+	"github.com/diogenes-moreira/creditos/backend/internal/application/service"
+	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
+)
+
+type ClientHandler struct {
+	clientService *service.ClientService
+}
+
+func NewClientHandler(clientService *service.ClientService) *ClientHandler {
+	return &ClientHandler{clientService: clientService}
+}
+
+// GetProfile godoc
+// @Summary Get current client profile
+// @Description Returns the profile of the currently authenticated client
+// @Tags Client Profile
+// @Produce json
+// @Success 200 {object} dto.ClientResponse
+// @Failure 404 {object} dto.ErrorResponse
+// @Security BearerAuth
+// @Router /me/profile [get]
+func (h *ClientHandler) GetProfile(c *gin.Context) {
+	userID := c.MustGet("userID").(uuid.UUID)
+	client, err := h.clientService.GetByUserID(c.Request.Context(), userID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, dto.ErrorResponse{Error: "client not found"})
+		return
+	}
+	c.JSON(http.StatusOK, dto.ToClientResponse(client, client.User.Email))
+}
+
+// UpdateProfile godoc
+// @Summary Update current client profile
+// @Description Updates the contact information of the currently authenticated client
+// @Tags Client Profile
+// @Accept json
+// @Produce json
+// @Param request body dto.UpdateProfileRequest true "Profile update data"
+// @Success 200 {object} dto.ClientResponse
+// @Failure 400 {object} dto.ErrorResponse
+// @Security BearerAuth
+// @Router /me/profile [put]
+func (h *ClientHandler) UpdateProfile(c *gin.Context) {
+	userID := c.MustGet("userID").(uuid.UUID)
+	var req dto.UpdateProfileRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
+		return
+	}
+	client, err := h.clientService.UpdateProfile(c.Request.Context(), userID, req.Phone, req.Address, req.City, req.Province)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, dto.ToClientResponse(client, client.User.Email))
+}
+
+// SetMercadoPagoLink godoc
+// @Summary Update MercadoPago payment link
+// @Description Sets or updates the MercadoPago payment link for the authenticated client
+// @Tags Client Profile
+// @Accept json
+// @Produce json
+// @Param request body dto.MercadoPagoLinkRequest true "MercadoPago link"
+// @Success 200 {object} map[string]string
+// @Failure 400 {object} dto.ErrorResponse
+// @Security BearerAuth
+// @Router /me/mercadopago [put]
+func (h *ClientHandler) SetMercadoPagoLink(c *gin.Context) {
+	userID := c.MustGet("userID").(uuid.UUID)
+	var req dto.MercadoPagoLinkRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
+		return
+	}
+	if err := h.clientService.SetMercadoPagoLink(c.Request.Context(), userID, req.Link); err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "MercadoPago link updated"})
+}
+
+// ListClients godoc
+// @Summary List or search clients
+// @Description Returns a paginated list of clients, optionally filtered by a search query
+// @Tags Admin Clients
+// @Produce json
+// @Param q query string false "Search query (name, DNI, CUIT)"
+// @Param offset query int false "Pagination offset" default(0)
+// @Param limit query int false "Pagination limit" default(20)
+// @Success 200 {object} dto.PaginatedResponse
+// @Failure 400 {object} dto.ErrorResponse
+// @Failure 500 {object} dto.ErrorResponse
+// @Security BearerAuth
+// @Router /admin/clients [get]
+func (h *ClientHandler) ListClients(c *gin.Context) {
+	var req dto.SearchClientsRequest
+	if err := c.ShouldBindQuery(&req); err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
+		return
+	}
+	if req.Limit <= 0 {
+		req.Limit = 20
+	}
+	clients, total, err := h.clientService.Search(c.Request.Context(), req.Query, req.Offset, req.Limit)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
+		return
+	}
+	responses := make([]dto.ClientResponse, len(clients))
+	for i, cl := range clients {
+		responses[i] = dto.ToClientResponse(&cl, cl.User.Email)
+	}
+	c.JSON(http.StatusOK, dto.PaginatedResponse{Data: responses, Total: total, Offset: req.Offset, Limit: req.Limit})
+}
+
+// GetClient godoc
+// @Summary Get a client by ID
+// @Description Returns the details of a specific client by their UUID
+// @Tags Admin Clients
+// @Produce json
+// @Param id path string true "Client UUID"
+// @Success 200 {object} dto.ClientResponse
+// @Failure 400 {object} dto.ErrorResponse
+// @Failure 404 {object} dto.ErrorResponse
+// @Security BearerAuth
+// @Router /admin/clients/{id} [get]
+func (h *ClientHandler) GetClient(c *gin.Context) {
+	id, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "invalid client ID"})
+		return
+	}
+	client, err := h.clientService.GetByID(c.Request.Context(), id)
+	if err != nil {
+		c.JSON(http.StatusNotFound, dto.ErrorResponse{Error: "client not found"})
+		return
+	}
+	c.JSON(http.StatusOK, dto.ToClientResponse(client, client.User.Email))
+}
+
+// BlockClient godoc
+// @Summary Block a client
+// @Description Blocks a client account, preventing them from performing operations
+// @Tags Admin Clients
+// @Produce json
+// @Param id path string true "Client UUID"
+// @Success 200 {object} map[string]string
+// @Failure 400 {object} dto.ErrorResponse
+// @Security BearerAuth
+// @Router /admin/clients/{id}/block [post]
+func (h *ClientHandler) BlockClient(c *gin.Context) {
+	adminID := c.MustGet("userID").(uuid.UUID)
+	clientID, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "invalid client ID"})
+		return
+	}
+	if err := h.clientService.Block(c.Request.Context(), adminID, clientID); err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "client blocked"})
+}
+
+// UnblockClient godoc
+// @Summary Unblock a client
+// @Description Unblocks a previously blocked client account
+// @Tags Admin Clients
+// @Produce json
+// @Param id path string true "Client UUID"
+// @Success 200 {object} map[string]string
+// @Failure 400 {object} dto.ErrorResponse
+// @Security BearerAuth
+// @Router /admin/clients/{id}/unblock [post]
+func (h *ClientHandler) UnblockClient(c *gin.Context) {
+	adminID := c.MustGet("userID").(uuid.UUID)
+	clientID, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "invalid client ID"})
+		return
+	}
+	if err := h.clientService.Unblock(c.Request.Context(), adminID, clientID); err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "client unblocked"})
+}
