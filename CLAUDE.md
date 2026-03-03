@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**Crédito Villanueva** — a microcredit management system for Argentina. Clients get current accounts, credit lines, and can request loans with French or German amortization. Admins approve credits, adjust payments, and manage the portfolio. Includes audit trail, PDF generation, early cancellation, and a dashboard with KPIs (delinquency, portfolio status).
+**Prestia** — a microcredit management system for Argentina. Clients get current accounts, credit lines, and can request loans with French or German amortization. Admins approve credits, adjust payments, and manage the portfolio. Includes audit trail, PDF generation, early cancellation, and a dashboard with KPIs (delinquency, portfolio status).
 
 ## Architecture
 

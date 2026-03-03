@@ -12,7 +12,7 @@ const docTemplate = `{
         "termsOfService": "http://swagger.io/terms/",
         "contact": {
             "name": "API Support",
-            "email": "support@creditovillanueva.com"
+            "email": "support@prestia.com.ar"
         },
         "license": {
             "name": "MIT",
@@ -2158,7 +2158,7 @@ var SwaggerInfo = &swag.Spec{
 	Host:             "localhost:8080",
 	BasePath:         "/api/v1",
 	Schemes:          []string{},
-	Title:            "Crédito Villanueva API",
+	Title:            "Prestia API",
 	Description:      "Microcredit management system API for Argentina",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,

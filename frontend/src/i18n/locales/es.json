@@ -1,6 +1,6 @@
 {
   "common": {
-    "appName": "Crédito Villanueva",
+    "appName": "Prestia",
     "loading": "Cargando...",
     "save": "Guardar",
     "cancel": "Cancelar",
@@ -321,7 +321,7 @@
     "noPurchases": "No hay compras registradas",
     "balance": "Saldo",
     "balanceTitle": "Mi saldo",
-    "balanceDescription": "Monto que Crédito Villanueva te adeuda",
+    "balanceDescription": "Monto que Prestia te adeuda",
     "movements": "Movimientos",
     "noMovements": "No hay movimientos",
     "profile": "Perfil del vendedor",

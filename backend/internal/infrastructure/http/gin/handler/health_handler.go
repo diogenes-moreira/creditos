@@ -25,7 +25,7 @@ func NewHealthHandler(db *gorm.DB) *HealthHandler {
 func (h *HealthHandler) Health(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"status":  "ok",
-		"service": "credito-villanueva",
+		"service": "prestia",
 	})
 }
 

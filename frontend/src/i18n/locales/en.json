@@ -1,6 +1,6 @@
 {
   "common": {
-    "appName": "Crédito Villanueva",
+    "appName": "Prestia",
     "loading": "Loading...",
     "save": "Save",
     "cancel": "Cancel",
@@ -321,7 +321,7 @@
     "noPurchases": "No purchases recorded",
     "balance": "Balance",
     "balanceTitle": "My Balance",
-    "balanceDescription": "Amount owed to you by Crédito Villanueva",
+    "balanceDescription": "Amount owed to you by Prestia",
     "movements": "Movements",
     "noMovements": "No movements",
     "profile": "Vendor Profile",

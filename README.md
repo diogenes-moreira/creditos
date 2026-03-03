@@ -1,6 +1,6 @@
-# Crédito Villanueva
+# Prestia
 
-Sistema de gestión de microcréditos para Argentina. Clientes obtienen cuentas corrientes, líneas de crédito y pueden solicitar préstamos con amortización francesa o alemana. Administradores aprueban créditos, ajustan pagos y gestionan el portafolio con dashboard de KPIs.
+Sistema de gestión de microcréditos para Argentina. Clientes obtienen cuentas corrientes, líneas de crédito y pueden solicitar préstamos con amortización francesa o alemana. Administradores aprueban créditos, ajustan pagos y gestionan el portafolio con dashboard de KPIs. Comercios adheridos registran ventas a crédito y consultan su saldo.
 
 ## Arquitectura
 
@@ -66,7 +66,7 @@ make seed
 ```
 
 El seed genera:
-- 2 administradores (`admin@creditovillanueva.com` / `admin123`, `admin2@creditovillanueva.com` / `admin123`)
+- 2 administradores (`admin@prestia.com.ar` / `admin123`, `supervisor@prestia.com.ar` / `admin123`)
 - 50 clientes con datos argentinos (DNI, CUIT válidos)
 - 30 líneas de crédito en distintos estados
 - 40 préstamos con cuotas y pagos
@@ -244,7 +244,8 @@ frontend/src/
 ├── pages/
 │   ├── auth/            # Login, Register
 │   ├── client/          # Dashboard, Account, Loans, Payments, Profile
-│   └── admin/           # Dashboard, Clients, Credits, Loans, Payments, Audit
+│   ├── admin/           # Dashboard, Clients, Credits, Loans, Payments, Audit, Vendors
+│   └── vendor/          # Dashboard, NewPurchase, PurchaseHistory, Balance, Profile
 └── theme.ts             # Tema MUI personalizado
 ```
 
@@ -334,7 +335,7 @@ El idioma se detecta automáticamente del navegador. Se puede cambiar desde el s
 ```nginx
 server {
     listen 80;
-    server_name creditovillanueva.com;
+    server_name prestia.com.ar;
 
     location / {
         proxy_pass http://localhost:3000;

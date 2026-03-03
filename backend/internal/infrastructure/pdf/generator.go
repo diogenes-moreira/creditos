@@ -20,7 +20,7 @@ func (g *Generator) GenerateLoanSchedule(loan *model.Loan, installments []model.
 	pdf.AddPage()
 
 	pdf.SetFont("Arial", "B", 16)
-	pdf.Cell(190, 10, "Credito Villanueva - Loan Schedule")
+	pdf.Cell(190, 10, "Prestia - Loan Schedule")
 	pdf.Ln(15)
 
 	pdf.SetFont("Arial", "", 11)
@@ -71,7 +71,7 @@ func (g *Generator) GeneratePaymentReceipt(payment *model.Payment, loan *model.L
 	pdf.AddPage()
 
 	pdf.SetFont("Arial", "B", 16)
-	pdf.Cell(190, 10, "Credito Villanueva - Payment Receipt")
+	pdf.Cell(190, 10, "Prestia - Payment Receipt")
 	pdf.Ln(15)
 
 	pdf.SetFont("Arial", "", 11)

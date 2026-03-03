@@ -404,14 +404,14 @@ definitions:
 host: localhost:8080
 info:
   contact:
-    email: support@creditovillanueva.com
+    email: support@prestia.com.ar
     name: API Support
   description: Microcredit management system API for Argentina
   license:
     name: MIT
     url: https://opensource.org/licenses/MIT
   termsOfService: http://swagger.io/terms/
-  title: Crédito Villanueva API
+  title: Prestia API
   version: "1.0"
 paths:
   /admin/audit:

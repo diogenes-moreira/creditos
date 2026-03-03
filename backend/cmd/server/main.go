@@ -12,13 +12,13 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// @title Crédito Villanueva API
+// @title Prestia API
 // @version 1.0
 // @description Microcredit management system API for Argentina
 // @termsOfService http://swagger.io/terms/
 
 // @contact.name API Support
-// @contact.email support@creditovillanueva.com
+// @contact.email support@prestia.com.ar
 
 // @license.name MIT
 // @license.url https://opensource.org/licenses/MIT
