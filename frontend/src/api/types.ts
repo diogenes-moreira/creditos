@@ -10,10 +10,13 @@ export interface RegisterRequest {
   firstName: string;
   lastName: string;
   dni: string;
+  cuit: string;
+  dateOfBirth: string;
   phone: string;
   address: string;
   city: string;
   province: string;
+  isPEP: boolean;
 }
 
 export interface AuthResponse {
@@ -36,12 +39,12 @@ export interface Profile {
   firstName: string;
   lastName: string;
   dni: string;
+  cuit: string;
   phone: string;
   address: string;
   city: string;
   province: string;
-  mercadoPagoAlias?: string;
-  mercadoPagoCvu?: string;
+  mercadoPagoLink?: string;
   createdAt: string;
 }
 
@@ -63,19 +66,16 @@ export interface UpdateMercadoPagoRequest {
 export interface Account {
   id: string;
   clientId: string;
-  balance: number;
-  currency: string;
-  status: string;
-  createdAt: string;
+  balance: string;
 }
 
 export interface Movement {
   id: string;
-  accountId: string;
   type: string;
-  amount: number;
-  balance: number;
+  amount: string;
+  balanceAfter: string;
   description: string;
+  reference?: string;
   createdAt: string;
 }
 
@@ -84,18 +84,26 @@ export interface CreditLine {
   id: string;
   clientId: string;
   clientName?: string;
-  maxAmount: number;
-  currentAmount: number;
-  interestRate: number;
+  maxAmount: string;
+  usedAmount: string;
+  availableAmount: string;
+  interestRate: string;
+  maxInstallments: number;
   status: string;
   approvedAt?: string;
+  rejectionReason?: string;
   createdAt: string;
 }
 
 export interface CreateCreditLineRequest {
   clientId: string;
-  maxAmount: number;
-  interestRate: number;
+  maxAmount: string;
+  interestRate: string;
+  maxInstallments: number;
+}
+
+export interface UpdateCreditLineRequest {
+  maxAmount: string;
 }
 
 // ---- Loans ----
@@ -104,27 +112,30 @@ export interface Loan {
   clientId: string;
   clientName?: string;
   creditLineId: string;
-  amount: number;
-  totalAmount: number;
-  interestRate: number;
-  installments: number;
-  amortizationType: "french" | "german";
+  principal: string;
+  interestRate: string;
+  numInstallments: number;
+  amortizationType: string;
   status: string;
+  totalPaid: string;
+  totalRemaining: string;
   disbursedAt?: string;
   createdAt: string;
 }
 
 export interface LoanDetail extends Loan {
-  schedule: Installment[];
+  installments: Installment[];
 }
 
 export interface Installment {
+  id: string;
   number: number;
   dueDate: string;
-  principal: number;
-  interest: number;
-  total: number;
-  balance: number;
+  capitalAmount: string;
+  interestAmount: string;
+  totalAmount: string;
+  paidAmount: string;
+  remainingAmount: string;
   status: string;
   paidAt?: string;
 }
@@ -144,28 +155,27 @@ export interface SimulateRequest {
 }
 
 export interface SimulationResult {
-  schedule: Installment[];
-  totalAmount: number;
-  totalInterest: number;
-  monthlyPayment?: number;
+  principal: string;
+  interestRate: string;
+  totalInterest: string;
+  totalPayment: string;
+  installments: Installment[];
 }
 
 // ---- Payments ----
 export interface Payment {
   id: string;
   loanId: string;
-  installmentNumber: number;
-  amount: number;
+  installmentId?: string;
+  amount: string;
   method: string;
-  status: string;
-  adjustedAmount?: number;
-  adjustmentReason?: string;
-  paidAt: string;
+  reference?: string;
+  isAdjustment: boolean;
+  adjustmentNote?: string;
   createdAt: string;
 }
 
 export interface RecordPaymentRequest {
-  installmentNumber: number;
   amount: number;
   method: string;
 }
@@ -182,11 +192,14 @@ export interface Client {
   firstName: string;
   lastName: string;
   dni: string;
+  cuit: string;
+  dateOfBirth: string;
   phone: string;
   address: string;
   city: string;
   province: string;
-  status: string;
+  isPEP: boolean;
+  isBlocked: boolean;
   createdAt: string;
 }
 
@@ -196,14 +209,13 @@ export interface PortfolioSummary {
   activeLoans: number;
   totalDisbursed: number;
   totalCollected: number;
-  pendingAmount: number;
+  pendingApprovals: number;
 }
 
 export interface DelinquencySummary {
   delinquencyRate: number;
-  overdueLoans: number;
-  overdueAmount: number;
-  averageDaysOverdue: number;
+  overdueCount: number;
+  totalOverdue: number;
 }
 
 export interface KPIs {
@@ -224,11 +236,12 @@ export interface TrendData {
 // ---- Admin: Audit ----
 export interface AuditEntry {
   id: string;
-  userId: string;
-  userEmail: string;
+  userId?: string;
   action: string;
+  entityType: string;
+  entityId: string;
   description: string;
-  ipAddress: string;
+  ip: string;
   userAgent: string;
   createdAt: string;
 }
@@ -343,7 +356,6 @@ export interface RequestCreditLineByVendorRequest {
 export interface PaginatedResponse<T> {
   data: T[];
   total: number;
-  page: number;
-  pageSize: number;
-  totalPages: number;
+  offset: number;
+  limit: number;
 }

@@ -60,6 +60,14 @@ type RequestLoanRequest struct {
 	AmortizationType string `json:"amortizationType" binding:"required,oneof=french german"`
 }
 
+type AdminCreateLoanRequest struct {
+	ClientID         string `json:"clientId" binding:"required,uuid"`
+	CreditLineID     string `json:"creditLineId" binding:"required,uuid"`
+	Amount           string `json:"amount" binding:"required"`
+	NumInstallments  int    `json:"numInstallments" binding:"required,min=1"`
+	AmortizationType string `json:"amortizationType" binding:"required,oneof=french german"`
+}
+
 type RecordPaymentRequest struct {
 	Amount    string `json:"amount" binding:"required"`
 	Method    string `json:"method" binding:"required,oneof=cash transfer mercado_pago"`
@@ -130,6 +138,10 @@ type RegisterClientByVendorRequest struct {
 	City        string `json:"city" binding:"required"`
 	Province    string `json:"province" binding:"required"`
 	IsPEP       bool   `json:"isPEP"`
+}
+
+type UpdateCreditLineRequest struct {
+	MaxAmount string `json:"maxAmount" binding:"required"`
 }
 
 type RequestCreditLineByVendorRequest struct {

@@ -112,6 +112,43 @@ func (h *CreditHandler) RejectCreditLine(c *gin.Context) {
 	c.JSON(http.StatusOK, dto.ToCreditLineResponse(cl))
 }
 
+// UpdateCreditLine godoc
+// @Summary Update a credit line's max amount
+// @Description Updates the maximum amount of an existing credit line
+// @Tags Credit Lines
+// @Accept json
+// @Produce json
+// @Param id path string true "Credit Line UUID"
+// @Param request body dto.UpdateCreditLineRequest true "New max amount"
+// @Success 200 {object} dto.CreditLineResponse
+// @Failure 400 {object} dto.ErrorResponse
+// @Security BearerAuth
+// @Router /admin/credit-lines/{id} [put]
+func (h *CreditHandler) UpdateCreditLine(c *gin.Context) {
+	adminID := c.MustGet("userID").(uuid.UUID)
+	clID, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "invalid credit line ID"})
+		return
+	}
+	var req dto.UpdateCreditLineRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
+		return
+	}
+	newMaxAmount, err := decimal.NewFromString(req.MaxAmount)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "invalid max amount"})
+		return
+	}
+	cl, err := h.creditService.UpdateCreditLineMaxAmount(c.Request.Context(), adminID, clID, newMaxAmount)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, dto.ToCreditLineResponse(cl))
+}
+
 // GetPendingCreditLines godoc
 // @Summary List pending credit lines
 // @Description Returns a paginated list of credit lines awaiting approval

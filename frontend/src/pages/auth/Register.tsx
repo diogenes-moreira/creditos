@@ -31,10 +31,13 @@ const schema = z.object({
   firstName: z.string().min(1, "Nombre requerido"),
   lastName: z.string().min(1, "Apellido requerido"),
   dni: z.string().min(7, "DNI invalido").max(8, "DNI invalido"),
+  cuit: z.string().min(11, "CUIT invalido").max(11, "CUIT invalido"),
+  dateOfBirth: z.string().min(1, "Fecha de nacimiento requerida"),
   phone: z.string().min(8, "Telefono invalido"),
   address: z.string().min(1, "Direccion requerida"),
   city: z.string().min(1, "Ciudad requerida"),
   province: z.string().min(1, "Provincia requerida"),
+  isPEP: z.boolean(),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Las contrasenas no coinciden",
   path: ["confirmPassword"],
@@ -54,8 +57,9 @@ const Register: React.FC = () => {
     resolver: zodResolver(schema),
     defaultValues: {
       email: "", password: "", confirmPassword: "",
-      firstName: "", lastName: "", dni: "",
-      phone: "", address: "", city: "", province: "",
+      firstName: "", lastName: "", dni: "", cuit: "",
+      dateOfBirth: "", phone: "", address: "", city: "", province: "",
+      isPEP: false,
     },
   });
 
@@ -123,6 +127,18 @@ const Register: React.FC = () => {
                 <Controller name="phone" control={control}
                   render={({ field }) => (
                     <TextField {...field} fullWidth label={t("registration.phone")} error={!!errors.phone} helperText={errors.phone?.message} />
+                  )} />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <Controller name="cuit" control={control}
+                  render={({ field }) => (
+                    <TextField {...field} fullWidth label="CUIT" error={!!errors.cuit} helperText={errors.cuit?.message} />
+                  )} />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <Controller name="dateOfBirth" control={control}
+                  render={({ field }) => (
+                    <TextField {...field} fullWidth type="date" label={t("registration.dateOfBirth")} InputLabelProps={{ shrink: true }} error={!!errors.dateOfBirth} helperText={errors.dateOfBirth?.message} />
                   )} />
               </Grid>
               <Grid item xs={12}>

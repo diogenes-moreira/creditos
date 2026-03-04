@@ -241,7 +241,8 @@
     "approveLine": "Approve line",
     "rejectLine": "Reject line",
     "approveConfirm": "Are you sure you want to approve this credit line?",
-    "rejectConfirm": "Are you sure you want to reject this credit line?"
+    "rejectConfirm": "Are you sure you want to reject this credit line?",
+    "assignLine": "Assign line"
   },
   "admin": {
     "loanManagement": "Loan management",
@@ -271,7 +272,28 @@
     "disburse": "Disburse",
     "prepay": "Prepay",
     "client": "Client",
-    "rate": "Rate"
+    "rate": "Rate",
+    "clientDetailBalance": "Account Balance",
+    "clientDetailActiveLoans": "Active Loans",
+    "clientDetailTotalPaid": "Total Paid",
+    "clientDetailTotalPurchases": "Purchases",
+    "clientDetailCreditLine": "Credit Line",
+    "clientDetailEditLimit": "Edit Limit",
+    "clientDetailNewLimit": "New Limit ($)",
+    "clientDetailPaymentEvolution": "Payment Evolution",
+    "clientDetailLoansTab": "Loans",
+    "clientDetailPaymentsTab": "Payments",
+    "clientDetailPurchasesTab": "Purchases",
+    "clientDetailMovementsTab": "Movements",
+    "creditLineUpdated": "Credit line updated",
+    "creditLineUpdateError": "Error updating credit line",
+    "noCreditLines": "No credit lines",
+    "createLoan": "Create loan",
+    "loanCreated": "Loan created successfully",
+    "loanCreateError": "Error creating loan",
+    "selectClient": "Select client",
+    "selectCreditLine": "Select credit line",
+    "noCreditLineForClient": "This client has no approved credit line"
   },
   "profile": {
     "title": "My profile",

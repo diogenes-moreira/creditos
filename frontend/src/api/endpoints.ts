@@ -36,6 +36,7 @@ import type {
   RecordVendorPaymentRequest,
   RegisterClientByVendorRequest,
   RequestCreditLineByVendorRequest,
+  UpdateCreditLineRequest,
 } from "./types";
 
 // ==================== Auth ====================
@@ -75,7 +76,7 @@ export const getAccount = async (): Promise<Account> => {
 };
 
 export const getMovements = async (page = 1, pageSize = 20): Promise<PaginatedResponse<Movement>> => {
-  const res = await apiClient.get("/me/account/movements", { params: { page, pageSize } });
+  const res = await apiClient.get("/me/account/movements", { params: { offset: (page - 1) * pageSize, limit: pageSize } });
   return res.data;
 };
 
@@ -83,7 +84,7 @@ export const getMovements = async (page = 1, pageSize = 20): Promise<PaginatedRe
 
 export const getLoans = async (): Promise<Loan[]> => {
   const res = await apiClient.get("/me/loans");
-  return res.data;
+  return res.data.data || res.data;
 };
 
 export const getLoan = async (id: string): Promise<LoanDetail> => {
@@ -110,13 +111,13 @@ export const recordPayment = async (loanId: string, data: RecordPaymentRequest):
 
 export const getPayments = async (): Promise<Payment[]> => {
   const res = await apiClient.get("/me/payments");
-  return res.data;
+  return res.data.data || res.data;
 };
 
 // ==================== Admin: Clients ====================
 
 export const adminGetClients = async (page = 1, pageSize = 20): Promise<PaginatedResponse<Client>> => {
-  const res = await apiClient.get("/admin/clients", { params: { page, pageSize } });
+  const res = await apiClient.get("/admin/clients", { params: { offset: (page - 1) * pageSize, limit: pageSize } });
   return res.data;
 };
 
@@ -127,6 +128,41 @@ export const adminGetClient = async (id: string): Promise<Client> => {
 
 export const adminSearchClients = async (query: string): Promise<Client[]> => {
   const res = await apiClient.get("/admin/clients/search", { params: { q: query } });
+  return res.data.data || res.data;
+};
+
+export const adminGetClientLoans = async (clientId: string, page = 1, pageSize = 20): Promise<PaginatedResponse<Loan>> => {
+  const res = await apiClient.get(`/admin/clients/${clientId}/loans`, { params: { offset: (page - 1) * pageSize, limit: pageSize } });
+  return res.data;
+};
+
+export const adminGetClientCreditLines = async (clientId: string): Promise<CreditLine[]> => {
+  const res = await apiClient.get(`/admin/clients/${clientId}/credit-lines`);
+  return res.data;
+};
+
+export const adminGetClientPayments = async (clientId: string, page = 1, pageSize = 20): Promise<PaginatedResponse<Payment>> => {
+  const res = await apiClient.get(`/admin/clients/${clientId}/payments`, { params: { offset: (page - 1) * pageSize, limit: pageSize } });
+  return res.data;
+};
+
+export const adminGetClientPurchases = async (clientId: string, page = 1, pageSize = 20): Promise<PaginatedResponse<Purchase>> => {
+  const res = await apiClient.get(`/admin/clients/${clientId}/purchases`, { params: { offset: (page - 1) * pageSize, limit: pageSize } });
+  return res.data;
+};
+
+export const adminGetClientAccount = async (clientId: string): Promise<Account> => {
+  const res = await apiClient.get(`/admin/clients/${clientId}/account`);
+  return res.data;
+};
+
+export const adminGetClientMovements = async (clientId: string, page = 1, pageSize = 20): Promise<PaginatedResponse<Movement>> => {
+  const res = await apiClient.get(`/admin/clients/${clientId}/account/movements`, { params: { offset: (page - 1) * pageSize, limit: pageSize } });
+  return res.data;
+};
+
+export const adminUpdateCreditLine = async (creditLineId: string, data: UpdateCreditLineRequest): Promise<CreditLine> => {
+  const res = await apiClient.put(`/admin/credit-lines/${creditLineId}`, data);
   return res.data;
 };
 
@@ -142,16 +178,21 @@ export const adminApproveCreditLine = async (id: string): Promise<CreditLine> =>
   return res.data;
 };
 
-export const adminRejectCreditLine = async (id: string): Promise<CreditLine> => {
-  const res = await apiClient.post(`/admin/credit-lines/${id}/reject`);
+export const adminRejectCreditLine = async (id: string, reason: string): Promise<CreditLine> => {
+  const res = await apiClient.post(`/admin/credit-lines/${id}/reject`, { reason });
   return res.data;
 };
 
 // ==================== Admin: Loans ====================
 
+export const adminCreateLoan = async (data: { clientId: string; creditLineId: string; amount: string; numInstallments: number; amortizationType: string }): Promise<Loan> => {
+  const res = await apiClient.post("/admin/loans", data);
+  return res.data;
+};
+
 export const adminGetPendingLoans = async (): Promise<Loan[]> => {
   const res = await apiClient.get("/admin/loans/pending");
-  return res.data;
+  return res.data.data || res.data;
 };
 
 export const adminApproveLoan = async (id: string): Promise<Loan> => {
@@ -195,17 +236,36 @@ export const getDelinquency = async (): Promise<DelinquencySummary> => {
 
 export const getKPIs = async (): Promise<KPIs> => {
   const res = await apiClient.get("/admin/dashboard/kpis");
-  return res.data;
+  const { portfolio, delinquency } = res.data;
+  const totalDisbursed = parseFloat(portfolio.totalDisbursed) || 0;
+  const totalCollected = parseFloat(portfolio.totalCollected) || 0;
+  const activeLoans = portfolio.activeLoans || 0;
+  return {
+    totalClients: portfolio.totalClients || 0,
+    activeLoans,
+    totalDisbursed,
+    delinquencyRate: parseFloat(delinquency.delinquencyRate) || 0,
+    collectionRate: totalDisbursed > 0 ? (totalCollected / totalDisbursed) * 100 : 0,
+    averageLoanAmount: activeLoans > 0 ? totalDisbursed / activeLoans : 0,
+  };
 };
 
 export const getDisbursementTrends = async (): Promise<TrendData[]> => {
   const res = await apiClient.get("/admin/dashboard/trends/disbursements");
-  return res.data;
+  return (res.data || []).map((d: { date: string; amount: string; count: number }) => ({
+    month: new Date(d.date).toLocaleDateString("es-AR", { month: "short", year: "2-digit" }),
+    amount: parseFloat(d.amount) || 0,
+    count: d.count,
+  }));
 };
 
 export const getCollectionTrends = async (): Promise<TrendData[]> => {
   const res = await apiClient.get("/admin/dashboard/trends/collections");
-  return res.data;
+  return (res.data || []).map((d: { date: string; amount: string; count: number }) => ({
+    month: new Date(d.date).toLocaleDateString("es-AR", { month: "short", year: "2-digit" }),
+    amount: parseFloat(d.amount) || 0,
+    count: d.count,
+  }));
 };
 
 // ==================== Vendor: Self-Service ====================
@@ -303,6 +363,6 @@ export const adminRecordVendorPayment = async (id: string, data: RecordVendorPay
 // ==================== Admin: Audit ====================
 
 export const getAuditLogs = async (page = 1, pageSize = 20): Promise<PaginatedResponse<AuditEntry>> => {
-  const res = await apiClient.get("/admin/audit", { params: { page, pageSize } });
+  const res = await apiClient.get("/admin/audit", { params: { offset: (page - 1) * pageSize, limit: pageSize } });
   return res.data;
 };

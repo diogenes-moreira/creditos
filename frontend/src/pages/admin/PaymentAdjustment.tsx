@@ -18,7 +18,6 @@ import { format } from "date-fns";
 import { getPayments, adminAdjustPayment } from "../../api/endpoints";
 import DataTable, { Column } from "../../components/DataTable";
 import MoneyDisplay from "../../components/MoneyDisplay";
-import StatusBadge from "../../components/StatusBadge";
 import type { Payment } from "../../api/types";
 
 const PaymentAdjustment: React.FC = () => {
@@ -58,10 +57,10 @@ const PaymentAdjustment: React.FC = () => {
 
   const columns: Column<Payment>[] = [
     {
-      id: "paidAt",
+      id: "createdAt",
       label: t("common.date"),
       minWidth: 130,
-      render: (row) => format(new Date(row.paidAt), "dd/MM/yyyy HH:mm"),
+      render: (row) => format(new Date(row.createdAt), "dd/MM/yyyy HH:mm"),
     },
     {
       id: "loanId",
@@ -69,35 +68,27 @@ const PaymentAdjustment: React.FC = () => {
       render: (row) => `#${row.loanId.slice(0, 8)}`,
     },
     {
-      id: "installmentNumber",
-      label: t("payments.installmentNumber"),
-      align: "center",
-    },
-    {
       id: "amount",
-      label: t("payments.originalAmount"),
+      label: t("common.amount"),
       align: "right",
       render: (row) => <MoneyDisplay amount={row.amount} fontWeight={500} />,
-    },
-    {
-      id: "adjustedAmount",
-      label: t("payments.adjustedAmount"),
-      align: "right",
-      render: (row) =>
-        row.adjustedAmount ? (
-          <MoneyDisplay amount={row.adjustedAmount} color="warning.main" fontWeight={500} />
-        ) : (
-          <Typography variant="body2" color="text.secondary">-</Typography>
-        ),
     },
     {
       id: "method",
       label: t("payments.method"),
     },
     {
-      id: "status",
-      label: t("common.status"),
-      render: (row) => <StatusBadge status={row.status} />,
+      id: "isAdjustment",
+      label: t("payments.adjustedAmount"),
+      align: "center",
+      render: (row) =>
+        row.isAdjustment ? (
+          <Typography variant="body2" color="warning.main" fontWeight={500}>
+            {row.adjustmentNote || t("common.yes")}
+          </Typography>
+        ) : (
+          <Typography variant="body2" color="text.secondary">-</Typography>
+        ),
     },
     {
       id: "actions",
@@ -111,7 +102,7 @@ const PaymentAdjustment: React.FC = () => {
           onClick={() => {
             setAdjustDialog(row);
             setAdjustAmount(String(row.amount));
-            setAdjustReason(row.adjustmentReason || "");
+            setAdjustReason(row.adjustmentNote || "");
           }}
         >
           {t("payments.adjust")}
@@ -137,12 +128,12 @@ const PaymentAdjustment: React.FC = () => {
 
       <Dialog open={!!adjustDialog} onClose={() => setAdjustDialog(null)} maxWidth="sm" fullWidth>
         <DialogTitle>
-          {t("payments.adjustPayment")} - {t("payments.installmentNumber")}{adjustDialog?.installmentNumber}
+          {t("payments.adjustPayment")} - #{adjustDialog?.loanId.slice(0, 8)}
         </DialogTitle>
         <DialogContent>
           <Box mt={1} display="flex" flexDirection="column" gap={2}>
             <Typography variant="body2" color="text.secondary">
-              {t("payments.originalAmount")}: <MoneyDisplay amount={adjustDialog?.amount || 0} fontWeight={600} />
+              {t("payments.originalAmount")}: <MoneyDisplay amount={adjustDialog?.amount || "0"} fontWeight={600} />
             </Typography>
             <TextField
               fullWidth

@@ -118,7 +118,7 @@ const NewPurchase: React.FC = () => {
       return false;
     }
     const available = selectedCreditLine
-      ? selectedCreditLine.maxAmount - selectedCreditLine.currentAmount
+      ? parseFloat(selectedCreditLine.availableAmount) || 0
       : 0;
     if (numValue > available) {
       setAmountError(t("vendor.amountExceedsAvailable"));
@@ -160,7 +160,7 @@ const NewPurchase: React.FC = () => {
   };
 
   const availableBalance = selectedCreditLine
-    ? selectedCreditLine.maxAmount - selectedCreditLine.currentAmount
+    ? parseFloat(selectedCreditLine.availableAmount) || 0
     : 0;
 
   return (
@@ -274,7 +274,7 @@ const NewPurchase: React.FC = () => {
             ) : (
               <List>
                 {creditLines.map((line) => {
-                  const available = line.maxAmount - line.currentAmount;
+                  const available = parseFloat(line.availableAmount) || 0;
                   return (
                     <React.Fragment key={line.id}>
                       <ListItem disablePadding>
@@ -297,7 +297,7 @@ const NewPurchase: React.FC = () => {
                                 />
                               </Box>
                             }
-                            secondary={`${t("vendor.maxAmount")}: ${formatMoney(line.maxAmount)} | ${t("vendor.used")}: ${formatMoney(line.currentAmount)} | ${t("vendor.available")}: ${formatMoney(available)}`}
+                            secondary={`${t("vendor.maxAmount")}: ${formatMoney(parseFloat(line.maxAmount) || 0)} | ${t("vendor.used")}: ${formatMoney(parseFloat(line.usedAmount) || 0)} | ${t("vendor.available")}: ${formatMoney(available)}`}
                           />
                         </ListItemButton>
                       </ListItem>

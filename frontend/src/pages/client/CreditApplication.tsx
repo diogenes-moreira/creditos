@@ -105,28 +105,28 @@ const CreditApplication: React.FC = () => {
       render: (row) => row.dueDate,
     },
     {
-      id: "principal",
+      id: "capitalAmount",
       label: t("loans.capital"),
       align: "right",
-      render: (row) => <MoneyDisplay amount={row.principal} />,
+      render: (row) => <MoneyDisplay amount={row.capitalAmount} />,
     },
     {
-      id: "interest",
+      id: "interestAmount",
       label: t("loans.interest"),
       align: "right",
-      render: (row) => <MoneyDisplay amount={row.interest} />,
+      render: (row) => <MoneyDisplay amount={row.interestAmount} />,
     },
     {
-      id: "total",
+      id: "totalAmount",
       label: t("loans.installmentTotal"),
       align: "right",
-      render: (row) => <MoneyDisplay amount={row.total} fontWeight={600} />,
+      render: (row) => <MoneyDisplay amount={row.totalAmount} fontWeight={600} />,
     },
     {
-      id: "balance",
+      id: "remainingAmount",
       label: t("account.balance"),
       align: "right",
-      render: (row) => <MoneyDisplay amount={row.balance} />,
+      render: (row) => <MoneyDisplay amount={row.remainingAmount} />,
     },
   ];
 
@@ -256,18 +256,16 @@ const CreditApplication: React.FC = () => {
               <Grid container spacing={3}>
                 <Grid item xs={12} sm={4}>
                   <Typography variant="body2" color="text.secondary">{t("loans.totalPayment")}</Typography>
-                  <MoneyDisplay amount={simulation.totalAmount} variant="h5" fontWeight={700} color="primary.main" />
+                  <MoneyDisplay amount={simulation.totalPayment} variant="h5" fontWeight={700} color="primary.main" />
                 </Grid>
                 <Grid item xs={12} sm={4}>
                   <Typography variant="body2" color="text.secondary">{t("loans.totalInterest")}</Typography>
                   <MoneyDisplay amount={simulation.totalInterest} variant="h5" fontWeight={700} color="warning.main" />
                 </Grid>
-                {simulation.monthlyPayment && (
-                  <Grid item xs={12} sm={4}>
-                    <Typography variant="body2" color="text.secondary">{t("loans.monthlyPayment")}</Typography>
-                    <MoneyDisplay amount={simulation.monthlyPayment} variant="h5" fontWeight={700} color="secondary.main" />
-                  </Grid>
-                )}
+                <Grid item xs={12} sm={4}>
+                  <Typography variant="body2" color="text.secondary">{t("loans.principal")}</Typography>
+                  <MoneyDisplay amount={simulation.principal} variant="h5" fontWeight={700} color="secondary.main" />
+                </Grid>
               </Grid>
             </CardContent>
           </Card>
@@ -275,7 +273,7 @@ const CreditApplication: React.FC = () => {
           <Typography variant="h6" gutterBottom>{t("loans.installmentSchedule")}</Typography>
           <DataTable
             columns={installmentColumns}
-            rows={simulation.schedule || []}
+            rows={simulation.installments || []}
             keyExtractor={(row) => String(row.number)}
           />
 
@@ -310,7 +308,7 @@ const CreditApplication: React.FC = () => {
               </Grid>
               <Grid item xs={6}>
                 <Typography variant="body2" color="text.secondary">{t("loans.totalPayment")}</Typography>
-                <MoneyDisplay amount={simulation?.totalAmount || 0} variant="h6" fontWeight={600} color="primary.main" />
+                <MoneyDisplay amount={simulation?.totalPayment || "0"} variant="h6" fontWeight={600} color="primary.main" />
               </Grid>
             </Grid>
 

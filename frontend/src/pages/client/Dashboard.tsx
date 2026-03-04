@@ -39,7 +39,7 @@ const ClientDashboard: React.FC = () => {
   });
 
   const activeLoans = loans?.filter((l) => l.status === "active" || l.status === "disbursed") || [];
-  const totalDebt = activeLoans.reduce((sum, l) => sum + l.totalAmount, 0);
+  const totalDebt = activeLoans.reduce((sum, l) => sum + (parseFloat(l.totalRemaining) || 0), 0);
 
   const formatMoney = (amount: number) =>
     new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS" }).format(amount);
@@ -61,7 +61,7 @@ const ClientDashboard: React.FC = () => {
             <KPICard
               icon={<AccountIcon sx={{ fontSize: 28 }} />}
               label={t("dashboard.accountBalance")}
-              value={formatMoney(account?.balance || 0)}
+              value={formatMoney(parseFloat(account?.balance || "0"))}
               color="primary.main"
             />
           )}
@@ -116,9 +116,9 @@ const ClientDashboard: React.FC = () => {
                     </Typography>
                     <StatusBadge status={loan.status} />
                   </Box>
-                  <MoneyDisplay amount={loan.amount} variant="h6" fontWeight={600} />
+                  <MoneyDisplay amount={loan.principal} variant="h6" fontWeight={600} />
                   <Typography variant="body2" color="text.secondary" mt={1}>
-                    {loan.installments} {t("loans.installments")} - {loan.amortizationType === "french" ? t("loans.french") : t("loans.german")}
+                    {loan.numInstallments} {t("loans.installments")} - {loan.amortizationType === "french" ? t("loans.french") : t("loans.german")}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
                     {t("loans.interestRate")}: {loan.interestRate}%

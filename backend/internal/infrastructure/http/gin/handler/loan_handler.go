@@ -305,3 +305,36 @@ func (h *LoanHandler) GetPendingLoans(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, dto.PaginatedResponse{Data: dto.ToLoanResponses(loans), Total: total, Offset: req.Offset, Limit: req.Limit})
 }
+
+// AdminCreateLoan godoc
+// @Summary Create a loan on behalf of a client
+// @Description Admin creates a loan for a given client and credit line
+// @Tags Loans
+// @Accept json
+// @Produce json
+// @Param request body dto.AdminCreateLoanRequest true "Loan data"
+// @Success 201 {object} dto.LoanResponse
+// @Failure 400 {object} dto.ErrorResponse
+// @Security BearerAuth
+// @Router /admin/loans [post]
+func (h *LoanHandler) AdminCreateLoan(c *gin.Context) {
+	var req dto.AdminCreateLoanRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
+		return
+	}
+	clientID, _ := uuid.Parse(req.ClientID)
+	clID, _ := uuid.Parse(req.CreditLineID)
+	amount, err := decimal.NewFromString(req.Amount)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "invalid amount"})
+		return
+	}
+
+	loan, err := h.creditService.RequestLoan(c.Request.Context(), clientID, clID, amount, req.NumInstallments, model.AmortizationType(req.AmortizationType))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
+		return
+	}
+	c.JSON(http.StatusCreated, dto.ToLoanResponse(loan))
+}

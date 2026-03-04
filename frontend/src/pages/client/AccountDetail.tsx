@@ -38,7 +38,7 @@ const AccountDetail: React.FC = () => {
         <Chip
           label={row.type}
           size="small"
-          color={row.amount > 0 ? "success" : "error"}
+          color={row.type === "credit" ? "success" : "error"}
           variant="outlined"
         />
       ),
@@ -55,16 +55,16 @@ const AccountDetail: React.FC = () => {
       render: (row) => (
         <MoneyDisplay
           amount={row.amount}
-          color={row.amount > 0 ? "success.main" : "error.main"}
+          color={row.type === "credit" ? "success.main" : "error.main"}
           fontWeight={500}
         />
       ),
     },
     {
-      id: "balance",
+      id: "balanceAfter",
       label: t("account.balance"),
       align: "right",
-      render: (row) => <MoneyDisplay amount={row.balance} fontWeight={500} />,
+      render: (row) => <MoneyDisplay amount={row.balanceAfter} fontWeight={500} />,
     },
   ];
 
@@ -101,7 +101,7 @@ const AccountDetail: React.FC = () => {
                 <MoneyDisplay amount={account?.balance || 0} variant="h4" fontWeight={700} color="primary.main" />
               )}
               <Typography variant="caption" color="text.secondary">
-                {t("common.status")}: {account?.status || "N/A"} | {t("account.currency")}: {account?.currency || "ARS"}
+                {t("account.currency")}: ARS
               </Typography>
             </Box>
           </Box>

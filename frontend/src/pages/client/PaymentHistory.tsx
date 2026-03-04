@@ -6,7 +6,6 @@ import { format } from "date-fns";
 import { getPayments } from "../../api/endpoints";
 import DataTable, { Column } from "../../components/DataTable";
 import MoneyDisplay from "../../components/MoneyDisplay";
-import StatusBadge from "../../components/StatusBadge";
 import type { Payment } from "../../api/types";
 
 const PaymentHistory: React.FC = () => {
@@ -18,20 +17,15 @@ const PaymentHistory: React.FC = () => {
 
   const columns: Column<Payment>[] = [
     {
-      id: "paidAt",
+      id: "createdAt",
       label: t("payments.paymentDate"),
       minWidth: 130,
-      render: (row) => format(new Date(row.paidAt), "dd/MM/yyyy HH:mm"),
+      render: (row) => format(new Date(row.createdAt), "dd/MM/yyyy HH:mm"),
     },
     {
       id: "loanId",
       label: t("payments.loan"),
       render: (row) => `#${row.loanId.slice(0, 8)}`,
-    },
-    {
-      id: "installmentNumber",
-      label: t("payments.installmentNumber"),
-      align: "center",
     },
     {
       id: "amount",
@@ -52,17 +46,14 @@ const PaymentHistory: React.FC = () => {
       },
     },
     {
-      id: "status",
-      label: t("common.status"),
-      render: (row) => <StatusBadge status={row.status} />,
-    },
-    {
-      id: "adjustedAmount",
+      id: "isAdjustment",
       label: t("payments.adjustment"),
-      align: "right",
+      align: "center",
       render: (row) =>
-        row.adjustedAmount ? (
-          <MoneyDisplay amount={row.adjustedAmount} color="warning.main" fontWeight={500} />
+        row.isAdjustment ? (
+          <Typography variant="body2" color="warning.main" fontWeight={500}>
+            {row.adjustmentNote || t("common.yes")}
+          </Typography>
         ) : (
           <Typography variant="body2" color="text.secondary">-</Typography>
         ),

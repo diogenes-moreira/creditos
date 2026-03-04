@@ -44,7 +44,7 @@ func (r *LoanRepository) FindByClientID(ctx context.Context, clientID uuid.UUID,
 	var total int64
 	base := r.db.WithContext(ctx).Model(&model.Loan{}).Where("client_id = ?", clientID)
 	base.Count(&total)
-	if err := base.Preload("Installments", func(db *gorm.DB) *gorm.DB {
+	if err := base.Preload("Client").Preload("Installments", func(db *gorm.DB) *gorm.DB {
 		return db.Order("number ASC")
 	}).Offset(offset).Limit(limit).Order("created_at DESC").Find(&loans).Error; err != nil {
 		return nil, 0, err
@@ -57,7 +57,7 @@ func (r *LoanRepository) FindByStatus(ctx context.Context, status model.LoanStat
 	var total int64
 	base := r.db.WithContext(ctx).Model(&model.Loan{}).Where("status = ?", status)
 	base.Count(&total)
-	if err := base.Preload("Installments").Offset(offset).Limit(limit).Order("created_at DESC").Find(&loans).Error; err != nil {
+	if err := base.Preload("Client").Preload("Installments").Offset(offset).Limit(limit).Order("created_at DESC").Find(&loans).Error; err != nil {
 		return nil, 0, err
 	}
 	return loans, total, nil

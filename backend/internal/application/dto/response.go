@@ -65,6 +65,7 @@ type CreditLineResponse struct {
 type LoanResponse struct {
 	ID               string                `json:"id"`
 	ClientID         string                `json:"clientId"`
+	ClientName       string                `json:"clientName,omitempty"`
 	CreditLineID     string                `json:"creditLineId"`
 	Principal        string                `json:"principal"`
 	InterestRate     string                `json:"interestRate"`

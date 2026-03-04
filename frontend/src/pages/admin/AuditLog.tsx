@@ -25,9 +25,10 @@ const AuditLog: React.FC = () => {
       render: (row) => format(new Date(row.createdAt), "dd/MM/yyyy HH:mm:ss"),
     },
     {
-      id: "userEmail",
+      id: "userId",
       label: t("audit.user"),
       minWidth: 180,
+      render: (row) => row.userId ? row.userId.slice(0, 8) : "-",
     },
     {
       id: "action",
@@ -48,7 +49,7 @@ const AuditLog: React.FC = () => {
       minWidth: 250,
     },
     {
-      id: "ipAddress",
+      id: "ip",
       label: t("audit.ip"),
       minWidth: 120,
     },

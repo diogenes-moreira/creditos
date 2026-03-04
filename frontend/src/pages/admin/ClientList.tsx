@@ -62,9 +62,9 @@ const ClientList: React.FC = () => {
       render: (row) => `${row.city}, ${row.province}`,
     },
     {
-      id: "status",
+      id: "isBlocked",
       label: t("common.status"),
-      render: (row) => <StatusBadge status={row.status} />,
+      render: (row) => <StatusBadge status={row.isBlocked ? "blocked" : "active"} />,
     },
     {
       id: "createdAt",

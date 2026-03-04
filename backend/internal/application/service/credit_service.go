@@ -39,6 +39,14 @@ func NewCreditService(
 }
 
 func (s *CreditService) CreateCreditLine(ctx context.Context, adminID, clientID uuid.UUID, maxAmount, interestRate decimal.Decimal, maxInstallments int) (*model.CreditLine, error) {
+	existing, err := s.creditLineRepo.FindByClientID(ctx, clientID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to check existing credit lines: %w", err)
+	}
+	if len(existing) > 0 {
+		return nil, fmt.Errorf("client already has a credit line")
+	}
+
 	cl, err := model.NewCreditLine(clientID, maxAmount, interestRate, maxInstallments)
 	if err != nil {
 		return nil, err
@@ -258,6 +266,21 @@ func (s *CreditService) PrepayLoan(ctx context.Context, adminID, loanID uuid.UUI
 	}
 	s.audit.Record(ctx, &adminID, "prepay_loan", "loan", loan.ID.String(), fmt.Sprintf("Capital prepayment: %s", amount.StringFixed(2)))
 	return loan, nil
+}
+
+func (s *CreditService) UpdateCreditLineMaxAmount(ctx context.Context, adminID, creditLineID uuid.UUID, newMaxAmount decimal.Decimal) (*model.CreditLine, error) {
+	cl, err := s.creditLineRepo.FindByID(ctx, creditLineID)
+	if err != nil {
+		return nil, err
+	}
+	if err := cl.UpdateMaxAmount(newMaxAmount); err != nil {
+		return nil, err
+	}
+	if err := s.creditLineRepo.Update(ctx, cl); err != nil {
+		return nil, err
+	}
+	s.audit.Record(ctx, &adminID, "update_credit_line", "credit_line", cl.ID.String(), fmt.Sprintf("Credit line max amount updated to %s", newMaxAmount.StringFixed(2)))
+	return cl, nil
 }
 
 func (s *CreditService) GetLoansByClient(ctx context.Context, clientID uuid.UUID, offset, limit int) ([]model.Loan, int64, error) {

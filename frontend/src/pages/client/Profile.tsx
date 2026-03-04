@@ -29,8 +29,8 @@ const profileSchema = z.object({
 });
 
 const mpSchema = z.object({
-  alias: z.string().min(1, "Alias requerido"),
-  cvu: z.string().min(22, "CVU invalido").max(22, "CVU invalido"),
+  alias: z.string().default(""),
+  cvu: z.string().default(""),
 });
 
 type ProfileForm = z.infer<typeof profileSchema>;
@@ -69,8 +69,8 @@ const Profile: React.FC = () => {
   } = useForm<MPForm>({
     resolver: zodResolver(mpSchema),
     values: profile ? {
-      alias: profile.mercadoPagoAlias || "",
-      cvu: profile.mercadoPagoCvu || "",
+      alias: profile.mercadoPagoLink?.split("|")[0] || "",
+      cvu: profile.mercadoPagoLink?.split("|")[1] || "",
     } : undefined,
   });
 

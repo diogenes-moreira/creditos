@@ -241,7 +241,8 @@
     "approveLine": "Aprobar línea",
     "rejectLine": "Rechazar línea",
     "approveConfirm": "¿Está seguro de aprobar esta línea de crédito?",
-    "rejectConfirm": "¿Está seguro de rechazar esta línea de crédito?"
+    "rejectConfirm": "¿Está seguro de rechazar esta línea de crédito?",
+    "assignLine": "Asignar línea"
   },
   "admin": {
     "loanManagement": "Gestión de préstamos",
@@ -271,7 +272,28 @@
     "disburse": "Desembolsar",
     "prepay": "Prepago",
     "client": "Cliente",
-    "rate": "Tasa"
+    "rate": "Tasa",
+    "clientDetailBalance": "Saldo en cuenta",
+    "clientDetailActiveLoans": "Préstamos activos",
+    "clientDetailTotalPaid": "Total pagado",
+    "clientDetailTotalPurchases": "Compras",
+    "clientDetailCreditLine": "Línea de crédito",
+    "clientDetailEditLimit": "Editar límite",
+    "clientDetailNewLimit": "Nuevo límite ($)",
+    "clientDetailPaymentEvolution": "Evolución de pagos",
+    "clientDetailLoansTab": "Préstamos",
+    "clientDetailPaymentsTab": "Pagos",
+    "clientDetailPurchasesTab": "Compras",
+    "clientDetailMovementsTab": "Movimientos",
+    "creditLineUpdated": "Línea de crédito actualizada",
+    "creditLineUpdateError": "Error al actualizar línea de crédito",
+    "noCreditLines": "Sin líneas de crédito",
+    "createLoan": "Crear préstamo",
+    "loanCreated": "Préstamo creado exitosamente",
+    "loanCreateError": "Error al crear el préstamo",
+    "selectClient": "Seleccionar cliente",
+    "selectCreditLine": "Seleccionar línea de crédito",
+    "noCreditLineForClient": "Este cliente no tiene línea de crédito aprobada"
   },
   "profile": {
     "title": "Mi perfil",

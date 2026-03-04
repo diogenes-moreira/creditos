@@ -89,9 +89,14 @@ func ToCreditLineResponses(cls []model.CreditLine) []CreditLineResponse {
 }
 
 func ToLoanResponse(l *model.Loan) LoanResponse {
+	clientName := ""
+	if l.Client.FirstName != "" || l.Client.LastName != "" {
+		clientName = l.Client.FirstName + " " + l.Client.LastName
+	}
 	resp := LoanResponse{
 		ID:               l.ID.String(),
 		ClientID:         l.ClientID.String(),
+		ClientName:       clientName,
 		CreditLineID:     l.CreditLineID.String(),
 		Principal:        l.Principal.StringFixed(2),
 		InterestRate:     l.InterestRate.StringFixed(4),

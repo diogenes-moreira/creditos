@@ -44,7 +44,7 @@ const LoanDetail: React.FC = () => {
   });
 
   const payMutation = useMutation({
-    mutationFn: (data: { installmentNumber: number; amount: number; method: string }) =>
+    mutationFn: (data: { amount: number; method: string }) =>
       recordPayment(id!, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["loan", id] });
@@ -64,8 +64,7 @@ const LoanDetail: React.FC = () => {
   const confirmPayment = () => {
     if (!selectedInstallment) return;
     payMutation.mutate({
-      installmentNumber: selectedInstallment.number,
-      amount: selectedInstallment.total,
+      amount: parseFloat(selectedInstallment.totalAmount) || 0,
       method: paymentMethod,
     });
   };
@@ -78,28 +77,28 @@ const LoanDetail: React.FC = () => {
       render: (row) => format(new Date(row.dueDate), "dd/MM/yyyy"),
     },
     {
-      id: "principal",
+      id: "capitalAmount",
       label: t("loans.capital"),
       align: "right",
-      render: (row) => <MoneyDisplay amount={row.principal} />,
+      render: (row) => <MoneyDisplay amount={row.capitalAmount} />,
     },
     {
-      id: "interest",
+      id: "interestAmount",
       label: t("loans.interest"),
       align: "right",
-      render: (row) => <MoneyDisplay amount={row.interest} />,
+      render: (row) => <MoneyDisplay amount={row.interestAmount} />,
     },
     {
-      id: "total",
+      id: "totalAmount",
       label: t("loans.installmentTotal"),
       align: "right",
-      render: (row) => <MoneyDisplay amount={row.total} fontWeight={600} />,
+      render: (row) => <MoneyDisplay amount={row.totalAmount} fontWeight={600} />,
     },
     {
-      id: "balance",
+      id: "remainingAmount",
       label: t("account.balance"),
       align: "right",
-      render: (row) => <MoneyDisplay amount={row.balance} />,
+      render: (row) => <MoneyDisplay amount={row.remainingAmount} />,
     },
     {
       id: "status",
@@ -157,15 +156,15 @@ const LoanDetail: React.FC = () => {
           <Grid container spacing={3}>
             <Grid item xs={12} sm={6} md={3}>
               <Typography variant="body2" color="text.secondary">{t("loans.requestedAmount")}</Typography>
-              <MoneyDisplay amount={loan.amount} variant="h6" fontWeight={600} />
+              <MoneyDisplay amount={loan.principal} variant="h6" fontWeight={600} />
             </Grid>
             <Grid item xs={12} sm={6} md={3}>
               <Typography variant="body2" color="text.secondary">{t("loans.totalPayment")}</Typography>
-              <MoneyDisplay amount={loan.totalAmount} variant="h6" fontWeight={600} />
+              <MoneyDisplay amount={loan.totalRemaining} variant="h6" fontWeight={600} />
             </Grid>
             <Grid item xs={12} sm={6} md={3}>
               <Typography variant="body2" color="text.secondary">{t("loans.installments")}</Typography>
-              <Typography variant="h6" fontWeight={600}>{loan.installments}</Typography>
+              <Typography variant="h6" fontWeight={600}>{loan.numInstallments}</Typography>
             </Grid>
             <Grid item xs={12} sm={6} md={3}>
               <Typography variant="body2" color="text.secondary">{t("common.status")}</Typography>
@@ -193,17 +192,17 @@ const LoanDetail: React.FC = () => {
       <Typography variant="h6" gutterBottom>{t("loans.installmentSchedule")}</Typography>
       <DataTable
         columns={columns}
-        rows={loan.schedule || []}
-        keyExtractor={(row) => String(row.number)}
+        rows={loan.installments || []}
+        keyExtractor={(row) => row.id || String(row.number)}
         emptyMessage={t("loans.noInstallments")}
       />
 
       <Dialog open={payDialog} onClose={() => setPayDialog(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>{t("loans.registerPayment")} - {t("payments.installmentNumber")}{selectedInstallment?.number}</DialogTitle>
+        <DialogTitle>{t("loans.registerPayment")} - #{selectedInstallment?.number}</DialogTitle>
         <DialogContent>
           <Box mt={1}>
             <Typography variant="body1" gutterBottom>
-              {t("loans.amountToPay")}: <MoneyDisplay amount={selectedInstallment?.total || 0} fontWeight={600} />
+              {t("loans.amountToPay")}: <MoneyDisplay amount={selectedInstallment?.totalAmount || "0"} fontWeight={600} />
             </Typography>
             <TextField
               select

@@ -18,15 +18,23 @@ type DBConfig struct {
 	User     string
 	Password string
 	Name     string
+	SSLMode  string
+	Instance string
 }
 
 func (c DBConfig) DSN() string {
-	return "host=" + c.Host +
+	sslMode := c.SSLMode
+	if sslMode == "" {
+		sslMode = "disable"
+	}
+	dsn := "host=" + c.Host +
 		" user=" + c.User +
 		" password=" + c.Password +
 		" dbname=" + c.Name +
 		" port=" + c.Port +
-		" sslmode=disable TimeZone=America/Argentina/Buenos_Aires"
+		" sslmode=" + sslMode +
+		" TimeZone=America/Argentina/Buenos_Aires"
+	return dsn
 }
 
 type ServerConfig struct {
@@ -53,6 +61,8 @@ func Load() *Config {
 			User:     getEnv("DB_USER", "creditos"),
 			Password: getEnv("DB_PASSWORD", "creditos_secret"),
 			Name:     getEnv("DB_NAME", "creditos"),
+			SSLMode:  getEnv("DB_SSLMODE", "disable"),
+			Instance: getEnv("DB_INSTANCE", ""),
 		},
 		Server: ServerConfig{
 			Port: getEnv("SERVER_PORT", "8080"),

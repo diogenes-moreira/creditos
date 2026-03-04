@@ -5,16 +5,36 @@ import (
 
 	"github.com/diogenes-moreira/creditos/backend/internal/application/dto"
 	"github.com/diogenes-moreira/creditos/backend/internal/application/service"
+	"github.com/diogenes-moreira/creditos/backend/internal/domain/port"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
 
 type ClientHandler struct {
-	clientService *service.ClientService
+	clientService   *service.ClientService
+	creditService   *service.CreditService
+	paymentService  *service.PaymentService
+	purchaseRepo    port.PurchaseRepository
+	accountRepo     port.AccountRepository
+	movementRepo    port.MovementRepository
 }
 
-func NewClientHandler(clientService *service.ClientService) *ClientHandler {
-	return &ClientHandler{clientService: clientService}
+func NewClientHandler(
+	clientService *service.ClientService,
+	creditService *service.CreditService,
+	paymentService *service.PaymentService,
+	purchaseRepo port.PurchaseRepository,
+	accountRepo port.AccountRepository,
+	movementRepo port.MovementRepository,
+) *ClientHandler {
+	return &ClientHandler{
+		clientService:  clientService,
+		creditService:  creditService,
+		paymentService: paymentService,
+		purchaseRepo:   purchaseRepo,
+		accountRepo:    accountRepo,
+		movementRepo:   movementRepo,
+	}
 }
 
 // GetProfile godoc
@@ -192,4 +212,161 @@ func (h *ClientHandler) UnblockClient(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "client unblocked"})
+}
+
+// GetClientLoans godoc
+// @Summary Get loans for a client
+// @Tags Admin Clients
+// @Produce json
+// @Param id path string true "Client UUID"
+// @Success 200 {object} dto.PaginatedResponse
+// @Security BearerAuth
+// @Router /admin/clients/{id}/loans [get]
+func (h *ClientHandler) GetClientLoans(c *gin.Context) {
+	clientID, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "invalid client ID"})
+		return
+	}
+	var req dto.PaginationRequest
+	_ = c.ShouldBindQuery(&req)
+	if req.Limit <= 0 {
+		req.Limit = 20
+	}
+	loans, total, err := h.creditService.GetLoansByClient(c.Request.Context(), clientID, req.Offset, req.Limit)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, dto.PaginatedResponse{Data: dto.ToLoanResponses(loans), Total: total, Offset: req.Offset, Limit: req.Limit})
+}
+
+// GetClientCreditLines godoc
+// @Summary Get credit lines for a client
+// @Tags Admin Clients
+// @Produce json
+// @Param id path string true "Client UUID"
+// @Success 200 {array} dto.CreditLineResponse
+// @Security BearerAuth
+// @Router /admin/clients/{id}/credit-lines [get]
+func (h *ClientHandler) GetClientCreditLines(c *gin.Context) {
+	clientID, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "invalid client ID"})
+		return
+	}
+	cls, err := h.creditService.GetCreditLinesByClient(c.Request.Context(), clientID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, dto.ToCreditLineResponses(cls))
+}
+
+// GetClientPayments godoc
+// @Summary Get payments for a client
+// @Tags Admin Clients
+// @Produce json
+// @Param id path string true "Client UUID"
+// @Success 200 {object} dto.PaginatedResponse
+// @Security BearerAuth
+// @Router /admin/clients/{id}/payments [get]
+func (h *ClientHandler) GetClientPayments(c *gin.Context) {
+	clientID, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "invalid client ID"})
+		return
+	}
+	var req dto.PaginationRequest
+	_ = c.ShouldBindQuery(&req)
+	if req.Limit <= 0 {
+		req.Limit = 20
+	}
+	payments, total, err := h.paymentService.GetPaymentsByClient(c.Request.Context(), clientID, req.Offset, req.Limit)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, dto.PaginatedResponse{Data: dto.ToPaymentResponses(payments), Total: total, Offset: req.Offset, Limit: req.Limit})
+}
+
+// GetClientPurchases godoc
+// @Summary Get purchases for a client
+// @Tags Admin Clients
+// @Produce json
+// @Param id path string true "Client UUID"
+// @Success 200 {object} dto.PaginatedResponse
+// @Security BearerAuth
+// @Router /admin/clients/{id}/purchases [get]
+func (h *ClientHandler) GetClientPurchases(c *gin.Context) {
+	clientID, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "invalid client ID"})
+		return
+	}
+	var req dto.PaginationRequest
+	_ = c.ShouldBindQuery(&req)
+	if req.Limit <= 0 {
+		req.Limit = 20
+	}
+	purchases, total, err := h.purchaseRepo.FindByClientID(c.Request.Context(), clientID, req.Offset, req.Limit)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, dto.PaginatedResponse{Data: dto.ToPurchaseResponses(purchases), Total: total, Offset: req.Offset, Limit: req.Limit})
+}
+
+// GetClientAccount godoc
+// @Summary Get account for a client
+// @Tags Admin Clients
+// @Produce json
+// @Param id path string true "Client UUID"
+// @Success 200 {object} dto.AccountResponse
+// @Security BearerAuth
+// @Router /admin/clients/{id}/account [get]
+func (h *ClientHandler) GetClientAccount(c *gin.Context) {
+	clientID, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "invalid client ID"})
+		return
+	}
+	account, err := h.accountRepo.FindByClientID(c.Request.Context(), clientID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, dto.ErrorResponse{Error: "account not found"})
+		return
+	}
+	c.JSON(http.StatusOK, dto.ToAccountResponse(account))
+}
+
+// GetClientMovements godoc
+// @Summary Get account movements for a client
+// @Tags Admin Clients
+// @Produce json
+// @Param id path string true "Client UUID"
+// @Success 200 {object} dto.PaginatedResponse
+// @Security BearerAuth
+// @Router /admin/clients/{id}/account/movements [get]
+func (h *ClientHandler) GetClientMovements(c *gin.Context) {
+	clientID, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "invalid client ID"})
+		return
+	}
+	account, err := h.accountRepo.FindByClientID(c.Request.Context(), clientID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, dto.ErrorResponse{Error: "account not found"})
+		return
+	}
+	var req dto.PaginationRequest
+	_ = c.ShouldBindQuery(&req)
+	if req.Limit <= 0 {
+		req.Limit = 20
+	}
+	movements, total, err := h.movementRepo.FindByAccountID(c.Request.Context(), account.ID, req.Offset, req.Limit)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, dto.PaginatedResponse{Data: dto.ToMovementResponses(movements), Total: total, Offset: req.Offset, Limit: req.Limit})
 }

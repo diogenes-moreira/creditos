@@ -1,6 +1,11 @@
 package gin
 
 import (
+	"net/http"
+	"os"
+	"path/filepath"
+	"strings"
+
 	"github.com/diogenes-moreira/creditos/backend/internal/application/service"
 	"github.com/diogenes-moreira/creditos/backend/internal/domain/model"
 	"github.com/diogenes-moreira/creditos/backend/internal/infrastructure/auth"
@@ -73,7 +78,7 @@ func (r *Router) setupRoutes(jwtSecret string) {
 	// Handlers
 	healthHandler := handler.NewHealthHandler(r.db)
 	authHandler := handler.NewAuthHandler(clientService, userRepo, authService)
-	clientHandler := handler.NewClientHandler(clientService)
+	clientHandler := handler.NewClientHandler(clientService, creditService, paymentService, purchaseRepo, accountRepo, movementRepo)
 	accountHandler := handler.NewAccountHandler(accountService, clientRepo)
 	creditHandler := handler.NewCreditHandler(creditService)
 	loanHandler := handler.NewLoanHandler(creditService, clientRepo)
@@ -143,12 +148,20 @@ func (r *Router) setupRoutes(jwtSecret string) {
 		adminRoutes.GET("/clients/search", clientHandler.ListClients)
 		adminRoutes.POST("/clients/:id/block", clientHandler.BlockClient)
 		adminRoutes.POST("/clients/:id/unblock", clientHandler.UnblockClient)
+		adminRoutes.GET("/clients/:id/loans", clientHandler.GetClientLoans)
+		adminRoutes.GET("/clients/:id/credit-lines", clientHandler.GetClientCreditLines)
+		adminRoutes.GET("/clients/:id/payments", clientHandler.GetClientPayments)
+		adminRoutes.GET("/clients/:id/purchases", clientHandler.GetClientPurchases)
+		adminRoutes.GET("/clients/:id/account", clientHandler.GetClientAccount)
+		adminRoutes.GET("/clients/:id/account/movements", clientHandler.GetClientMovements)
 
 		adminRoutes.POST("/credit-lines", creditHandler.CreateCreditLine)
 		adminRoutes.GET("/credit-lines/pending", creditHandler.GetPendingCreditLines)
+		adminRoutes.PUT("/credit-lines/:id", creditHandler.UpdateCreditLine)
 		adminRoutes.POST("/credit-lines/:id/approve", creditHandler.ApproveCreditLine)
 		adminRoutes.POST("/credit-lines/:id/reject", creditHandler.RejectCreditLine)
 
+		adminRoutes.POST("/loans", loanHandler.AdminCreateLoan)
 		adminRoutes.GET("/loans/pending", loanHandler.GetPendingLoans)
 		adminRoutes.POST("/loans/:id/approve", loanHandler.ApproveLoan)
 		adminRoutes.POST("/loans/:id/disburse", loanHandler.DisburseLoan)
@@ -174,5 +187,25 @@ func (r *Router) setupRoutes(jwtSecret string) {
 		adminRoutes.GET("/vendors/:id/purchases", vendorHandler.AdminGetVendorPurchases)
 		adminRoutes.GET("/vendors/:id/payments", vendorHandler.AdminGetVendorPayments)
 		adminRoutes.POST("/vendors/:id/payments", vendorHandler.AdminRecordVendorPayment)
+	}
+
+	// Serve frontend SPA if FRONTEND_DIR is set
+	if frontendDir := os.Getenv("FRONTEND_DIR"); frontendDir != "" {
+		r.engine.Static("/assets", filepath.Join(frontendDir, "assets"))
+		r.engine.NoRoute(func(c *gin.Context) {
+			path := c.Request.URL.Path
+			// Serve static files if they exist
+			if !strings.HasPrefix(path, "/api/") && !strings.HasPrefix(path, "/swagger/") && !strings.HasPrefix(path, "/health") {
+				filePath := filepath.Join(frontendDir, path)
+				if info, err := os.Stat(filePath); err == nil && !info.IsDir() {
+					c.File(filePath)
+					return
+				}
+				// SPA fallback: serve index.html
+				c.File(filepath.Join(frontendDir, "index.html"))
+				return
+			}
+			c.JSON(http.StatusNotFound, gin.H{"error": "not found"})
+		})
 	}
 }

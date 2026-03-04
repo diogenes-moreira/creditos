@@ -108,3 +108,14 @@ func (cl *CreditLine) ReleaseDisbursement(amount decimal.Decimal) {
 		cl.UsedAmount = decimal.NewFromInt(0)
 	}
 }
+
+func (cl *CreditLine) UpdateMaxAmount(newMax decimal.Decimal) error {
+	if !newMax.IsPositive() {
+		return fmt.Errorf("max amount must be positive")
+	}
+	if newMax.LessThan(cl.UsedAmount) {
+		return fmt.Errorf("max amount cannot be less than used amount %s", cl.UsedAmount.StringFixed(2))
+	}
+	cl.MaxAmount = newMax
+	return nil
+}

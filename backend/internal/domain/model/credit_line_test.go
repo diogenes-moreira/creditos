@@ -254,3 +254,53 @@ func TestCreditLine_ReleaseDisbursement(t *testing.T) {
 	cl.ReleaseDisbursement(decimal.NewFromInt(50000))
 	assert.True(t, cl.UsedAmount.Equal(decimal.NewFromInt(0)))
 }
+
+func TestCreditLine_UpdateMaxAmount(t *testing.T) {
+	t.Run("increase max amount", func(t *testing.T) {
+		cl, _ := model.NewCreditLine(uuid.New(), decimal.NewFromInt(100000), decimal.NewFromFloat(0.25), 12)
+		err := cl.UpdateMaxAmount(decimal.NewFromInt(200000))
+		require.NoError(t, err)
+		assert.True(t, cl.MaxAmount.Equal(decimal.NewFromInt(200000)))
+	})
+
+	t.Run("decrease max amount above used", func(t *testing.T) {
+		cl, _ := model.NewCreditLine(uuid.New(), decimal.NewFromInt(100000), decimal.NewFromFloat(0.25), 12)
+		cl.RecordDisbursement(decimal.NewFromInt(30000))
+
+		err := cl.UpdateMaxAmount(decimal.NewFromInt(50000))
+		require.NoError(t, err)
+		assert.True(t, cl.MaxAmount.Equal(decimal.NewFromInt(50000)))
+	})
+
+	t.Run("decrease to exactly used amount", func(t *testing.T) {
+		cl, _ := model.NewCreditLine(uuid.New(), decimal.NewFromInt(100000), decimal.NewFromFloat(0.25), 12)
+		cl.RecordDisbursement(decimal.NewFromInt(30000))
+
+		err := cl.UpdateMaxAmount(decimal.NewFromInt(30000))
+		require.NoError(t, err)
+		assert.True(t, cl.MaxAmount.Equal(decimal.NewFromInt(30000)))
+	})
+
+	t.Run("decrease below used amount fails", func(t *testing.T) {
+		cl, _ := model.NewCreditLine(uuid.New(), decimal.NewFromInt(100000), decimal.NewFromFloat(0.25), 12)
+		cl.RecordDisbursement(decimal.NewFromInt(30000))
+
+		err := cl.UpdateMaxAmount(decimal.NewFromInt(20000))
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "cannot be less than used amount")
+	})
+
+	t.Run("zero max amount fails", func(t *testing.T) {
+		cl, _ := model.NewCreditLine(uuid.New(), decimal.NewFromInt(100000), decimal.NewFromFloat(0.25), 12)
+		err := cl.UpdateMaxAmount(decimal.NewFromInt(0))
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "max amount must be positive")
+	})
+
+	t.Run("negative max amount fails", func(t *testing.T) {
+		cl, _ := model.NewCreditLine(uuid.New(), decimal.NewFromInt(100000), decimal.NewFromFloat(0.25), 12)
+		err := cl.UpdateMaxAmount(decimal.NewFromInt(-5000))
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "max amount must be positive")
+	})
+}
