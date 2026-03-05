@@ -1,0 +1,39 @@
+# Stage 1: Build React frontend
+FROM node:20-alpine AS frontend-builder
+WORKDIR /app/frontend
+COPY frontend/package.json frontend/package-lock.json* ./
+RUN npm ci
+COPY frontend/ .
+RUN npm run build
+
+# Stage 2: Build Go backend
+FROM golang:1.22-alpine AS backend-builder
+RUN apk add --no-cache git
+WORKDIR /app/backend
+COPY backend/go.mod backend/go.sum ./
+RUN go mod download
+COPY backend/ .
+RUN CGO_ENABLED=0 GOOS=linux go build -o /bin/server ./cmd/server
+RUN CGO_ENABLED=0 GOOS=linux go build -o /bin/seed ./cmd/seed
+
+# Stage 3: Production image
+FROM alpine:3.19
+RUN apk add --no-cache ca-certificates tzdata && \
+    adduser -D -u 1000 appuser
+
+WORKDIR /app
+
+COPY --from=backend-builder /bin/server /bin/seed ./
+COPY --from=frontend-builder /app/frontend/dist ./public/
+
+RUN mkdir -p /app/storage && chown -R appuser:appuser /app
+
+USER appuser
+
+ENV FRONTEND_DIR=/app/public
+ENV GIN_MODE=release
+ENV SERVER_PORT=8080
+
+EXPOSE 8080
+
+CMD ["./server"]

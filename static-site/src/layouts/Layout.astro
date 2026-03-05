@@ -16,6 +16,21 @@ const { title } = Astro.props;
   </head>
   <body>
     <slot />
+    <script is:inline type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
+      import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-analytics.js";
+      const firebaseConfig = {
+        apiKey: "AIzaSyBH5YhNRLTsa4E6_hw1IfpQtw-fufQxtbg",
+        authDomain: "prestia.firebaseapp.com",
+        projectId: "prestia",
+        storageBucket: "prestia.firebasestorage.app",
+        messagingSenderId: "517155616262",
+        appId: "1:517155616262:web:490b01e9b39401fcf5b587",
+        measurementId: "G-7VVM41FXSQ"
+      };
+      const app = initializeApp(firebaseConfig);
+      const analytics = getAnalytics(app);
+    </script>
     <style is:global>
       * { margin: 0; padding: 0; box-sizing: border-box; }
       body { font-family: 'Inter', sans-serif; color: #1a1a2e; background: #fff; }

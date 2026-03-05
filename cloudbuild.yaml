@@ -1,0 +1,6 @@
+steps:
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '-t', 'us-central1-docker.pkg.dev/prestia/docker-repo/prestia-app:latest', '-f', 'Dockerfile.cloud', '.']
+images:
+  - 'us-central1-docker.pkg.dev/prestia/docker-repo/prestia-app:latest'
+timeout: '600s'
