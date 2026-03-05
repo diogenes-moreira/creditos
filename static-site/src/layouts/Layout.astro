@@ -3,6 +3,14 @@ interface Props {
   title: string;
 }
 const { title } = Astro.props;
+
+const firebaseApiKey = import.meta.env.PUBLIC_FIREBASE_API_KEY;
+const firebaseAuthDomain = import.meta.env.PUBLIC_FIREBASE_AUTH_DOMAIN;
+const firebaseProjectId = import.meta.env.PUBLIC_FIREBASE_PROJECT_ID;
+const firebaseStorageBucket = import.meta.env.PUBLIC_FIREBASE_STORAGE_BUCKET;
+const firebaseMessagingSenderId = import.meta.env.PUBLIC_FIREBASE_MESSAGING_SENDER_ID;
+const firebaseAppId = import.meta.env.PUBLIC_FIREBASE_APP_ID;
+const firebaseMeasurementId = import.meta.env.PUBLIC_FIREBASE_MEASUREMENT_ID;
 ---
 <!doctype html>
 <html lang="es">
@@ -16,20 +24,21 @@ const { title } = Astro.props;
   </head>
   <body>
     <slot />
-    <script is:inline type="module">
-      import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
-      import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-analytics.js";
-      const firebaseConfig = {
-        apiKey: "AIzaSyBH5YhNRLTsa4E6_hw1IfpQtw-fufQxtbg",
-        authDomain: "prestia.firebaseapp.com",
-        projectId: "prestia",
-        storageBucket: "prestia.firebasestorage.app",
-        messagingSenderId: "517155616262",
-        appId: "1:517155616262:web:490b01e9b39401fcf5b587",
-        measurementId: "G-7VVM41FXSQ"
-      };
-      const app = initializeApp(firebaseConfig);
-      const analytics = getAnalytics(app);
+    <script is:inline define:vars={{ firebaseApiKey, firebaseAuthDomain, firebaseProjectId, firebaseStorageBucket, firebaseMessagingSenderId, firebaseAppId, firebaseMeasurementId }}>
+      (async () => {
+        const { initializeApp } = await import("https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js");
+        const { getAnalytics } = await import("https://www.gstatic.com/firebasejs/12.10.0/firebase-analytics.js");
+        const app = initializeApp({
+          apiKey: firebaseApiKey,
+          authDomain: firebaseAuthDomain,
+          projectId: firebaseProjectId,
+          storageBucket: firebaseStorageBucket,
+          messagingSenderId: firebaseMessagingSenderId,
+          appId: firebaseAppId,
+          measurementId: firebaseMeasurementId,
+        });
+        getAnalytics(app);
+      })();
     </script>
     <style is:global>
       * { margin: 0; padding: 0; box-sizing: border-box; }
