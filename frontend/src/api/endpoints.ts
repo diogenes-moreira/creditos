@@ -3,6 +3,8 @@ import type {
   LoginRequest,
   RegisterRequest,
   AuthResponse,
+  RequestOTPRequest,
+  VerifyOTPRequest,
   Profile,
   UpdateProfileRequest,
   UpdateMercadoPagoRequest,
@@ -54,6 +56,16 @@ export const login = async (data: LoginRequest): Promise<AuthResponse> => {
 
 export const register = async (data: RegisterRequest): Promise<AuthResponse> => {
   const res = await apiClient.post("/auth/register", data);
+  return res.data;
+};
+
+export const requestOTP = async (data: RequestOTPRequest): Promise<{ message: string }> => {
+  const res = await apiClient.post("/auth/request-otp", data);
+  return res.data;
+};
+
+export const verifyOTP = async (data: VerifyOTPRequest): Promise<AuthResponse> => {
+  const res = await apiClient.post("/auth/verify-otp", data);
   return res.data;
 };
 
@@ -231,7 +243,7 @@ export const adminDisburseLoan = async (id: string): Promise<Loan> => {
   return res.data;
 };
 
-export const adminCancelLoan = async (id: string): Promise<Loan> => {
+export const adminCancelLoan = async (id: string): Promise<{ loan: Loan; paymentId: string }> => {
   const res = await apiClient.post(`/admin/loans/${id}/cancel`);
   return res.data;
 };

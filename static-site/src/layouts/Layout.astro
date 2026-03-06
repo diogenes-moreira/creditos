@@ -1,8 +1,14 @@
 ---
+import type { Lang } from '../i18n/translations';
+import { languages, defaultLang } from '../i18n/translations';
+import { getLocalePath } from '../i18n/utils';
+
 interface Props {
   title: string;
+  description?: string;
+  lang?: Lang;
 }
-const { title } = Astro.props;
+const { title, description, lang = defaultLang } = Astro.props;
 
 const firebaseApiKey = import.meta.env.PUBLIC_FIREBASE_API_KEY;
 const firebaseAuthDomain = import.meta.env.PUBLIC_FIREBASE_AUTH_DOMAIN;
@@ -11,15 +17,24 @@ const firebaseStorageBucket = import.meta.env.PUBLIC_FIREBASE_STORAGE_BUCKET;
 const firebaseMessagingSenderId = import.meta.env.PUBLIC_FIREBASE_MESSAGING_SENDER_ID;
 const firebaseAppId = import.meta.env.PUBLIC_FIREBASE_APP_ID;
 const firebaseMeasurementId = import.meta.env.PUBLIC_FIREBASE_MEASUREMENT_ID;
+
+const metaDesc = description || 'Prestia - Microcredit management platform';
+
+const alternateLocales = (Object.keys(languages) as Lang[]).filter(l => l !== lang);
 ---
 <!doctype html>
-<html lang="es">
+<html lang={lang}>
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Prestia - Plataforma de gestión integral de microcréditos para financieras, cooperativas y empresas de crédito en Latinoamérica" />
+    <meta name="description" content={metaDesc} />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="alternate" hreflang={lang} href={`https://prestia.web.app${getLocalePath(lang)}`} />
+    {alternateLocales.map(l => (
+      <link rel="alternate" hreflang={l} href={`https://prestia.web.app${getLocalePath(l)}`} />
+    ))}
+    <link rel="alternate" hreflang="x-default" href="https://prestia.web.app/" />
     <title>{title}</title>
   </head>
   <body>

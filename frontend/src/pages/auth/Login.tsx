@@ -1,8 +1,5 @@
 import React, { useState } from "react";
 import { useNavigate, Link as RouterLink } from "react-router-dom";
-import { useForm, Controller } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
 import {
   Box,
   Card,
@@ -12,13 +9,12 @@ import {
   Button,
   Link,
   InputAdornment,
-  IconButton,
+  Tabs,
+  Tab,
+  Alert,
 } from "@mui/material";
 import {
   Email as EmailIcon,
-  Lock as LockIcon,
-  Visibility,
-  VisibilityOff,
   AdminPanelSettings as LogoIcon,
 } from "@mui/icons-material";
 import { useAuth } from "../../auth/AuthContext";
@@ -27,36 +23,63 @@ import LanguageSwitcher from "../../components/LanguageSwitcher";
 import { useNotification } from "../../contexts/NotificationContext";
 import { getErrorMessage } from "../../api/errorUtils";
 
-const schema = z.object({
-  email: z.string().email("Email invalido"),
-  password: z.string().min(6, "La contrasena debe tener al menos 6 caracteres"),
-});
-
-type FormData = z.infer<typeof schema>;
-
 const Login: React.FC = () => {
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { login, requestOTP, verifyOTP } = useAuth();
   const { t } = useTranslation();
-  const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
   const { showError } = useNotification();
 
-  const { control, handleSubmit, formState: { errors } } = useForm<FormData>({
-    resolver: zodResolver(schema),
-    defaultValues: { email: "", password: "" },
-  });
+  const [tab, setTab] = useState(0); // 0 = client (OTP), 1 = admin/vendor
+  const [email, setEmail] = useState("");
+  const [otpCode, setOtpCode] = useState("");
+  const [otpSent, setOtpSent] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const onSubmit = async (data: FormData) => {
+  const handleAdminLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email) return;
     setLoading(true);
     try {
-      await login(data);
+      await login({ email });
       navigate("/dashboard");
     } catch (err: unknown) {
       showError(getErrorMessage(err, t("auth.invalidCredentials")));
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleRequestOTP = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email) return;
+    setLoading(true);
+    try {
+      await requestOTP(email);
+      setOtpSent(true);
+    } catch (err: unknown) {
+      showError(getErrorMessage(err, t("auth.invalidCredentials")));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifyOTP = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email || !otpCode) return;
+    setLoading(true);
+    try {
+      await verifyOTP(email, otpCode);
+      navigate("/dashboard");
+    } catch (err: unknown) {
+      showError(getErrorMessage(err, t("auth.otpError")));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const resetOtpFlow = () => {
+    setOtpSent(false);
+    setOtpCode("");
   };
 
   return (
@@ -72,7 +95,7 @@ const Login: React.FC = () => {
     >
       <Card sx={{ maxWidth: 440, width: "100%", p: 1 }}>
         <CardContent>
-          <Box textAlign="center" mb={3}>
+          <Box textAlign="center" mb={2}>
             <Box sx={{ display: "flex", justifyContent: "flex-end" }}><LanguageSwitcher /></Box>
             <LogoIcon sx={{ fontSize: 48, color: "primary.main", mb: 1 }} />
             <Typography variant="h5" fontWeight={700} color="primary.main">
@@ -83,71 +106,115 @@ const Login: React.FC = () => {
             </Typography>
           </Box>
 
-          <form onSubmit={handleSubmit(onSubmit)}>
-            <Controller
-              name="email"
-              control={control}
-              render={({ field }) => (
-                <TextField
-                  {...field}
-                  fullWidth
-                  label={t("auth.email")}
-                  type="email"
-                  margin="normal"
-                  error={!!errors.email}
-                  helperText={errors.email?.message}
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <EmailIcon color="action" />
-                      </InputAdornment>
-                    ),
-                  }}
-                />
-              )}
-            />
+          <Tabs
+            value={tab}
+            onChange={(_, v) => { setTab(v); resetOtpFlow(); }}
+            variant="fullWidth"
+            sx={{ mb: 2 }}
+          >
+            <Tab label={t("auth.clientLogin")} />
+            <Tab label={t("auth.adminLogin")} />
+          </Tabs>
 
-            <Controller
-              name="password"
-              control={control}
-              render={({ field }) => (
-                <TextField
-                  {...field}
-                  fullWidth
-                  label={t("auth.password")}
-                  type={showPassword ? "text" : "password"}
-                  margin="normal"
-                  error={!!errors.password}
-                  helperText={errors.password?.message}
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <LockIcon color="action" />
-                      </InputAdornment>
-                    ),
-                    endAdornment: (
-                      <InputAdornment position="end">
-                        <IconButton onClick={() => setShowPassword(!showPassword)} edge="end">
-                          {showPassword ? <VisibilityOff /> : <Visibility />}
-                        </IconButton>
-                      </InputAdornment>
-                    ),
-                  }}
-                />
-              )}
-            />
+          {/* Client OTP Login */}
+          {tab === 0 && !otpSent && (
+            <form onSubmit={handleRequestOTP}>
+              <TextField
+                fullWidth
+                label={t("auth.email")}
+                type="email"
+                margin="normal"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <EmailIcon color="action" />
+                    </InputAdornment>
+                  ),
+                }}
+              />
+              <Button
+                type="submit"
+                fullWidth
+                variant="contained"
+                size="large"
+                disabled={loading || !email}
+                sx={{ mt: 2, mb: 2, py: 1.5 }}
+              >
+                {loading ? t("auth.sendingOtp") : t("auth.requestOtp")}
+              </Button>
+            </form>
+          )}
 
-            <Button
-              type="submit"
-              fullWidth
-              variant="contained"
-              size="large"
-              disabled={loading}
-              sx={{ mt: 3, mb: 2, py: 1.5 }}
-            >
-              {loading ? t("common.loading") : t("auth.login")}
-            </Button>
-          </form>
+          {/* OTP Verification Step */}
+          {tab === 0 && otpSent && (
+            <form onSubmit={handleVerifyOTP}>
+              <Alert severity="info" sx={{ mb: 2 }}>
+                {t("auth.otpSent")}
+              </Alert>
+              <TextField
+                fullWidth
+                label={t("auth.enterOtp")}
+                margin="normal"
+                value={otpCode}
+                onChange={(e) => {
+                  const val = e.target.value.replace(/\D/g, "").slice(0, 6);
+                  setOtpCode(val);
+                }}
+                inputProps={{ maxLength: 6, inputMode: "numeric" }}
+              />
+              <Button
+                type="submit"
+                fullWidth
+                variant="contained"
+                size="large"
+                disabled={loading || otpCode.length !== 6}
+                sx={{ mt: 2, mb: 1, py: 1.5 }}
+              >
+                {loading ? t("auth.verifyingOtp") : t("auth.verifyOtp")}
+              </Button>
+              <Button
+                fullWidth
+                variant="text"
+                size="small"
+                onClick={resetOtpFlow}
+              >
+                {t("common.back")}
+              </Button>
+            </form>
+          )}
+
+          {/* Admin/Vendor Login */}
+          {tab === 1 && (
+            <form onSubmit={handleAdminLogin}>
+              <TextField
+                fullWidth
+                label={t("auth.email")}
+                type="email"
+                margin="normal"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <EmailIcon color="action" />
+                    </InputAdornment>
+                  ),
+                }}
+              />
+              <Button
+                type="submit"
+                fullWidth
+                variant="contained"
+                size="large"
+                disabled={loading || !email}
+                sx={{ mt: 2, mb: 2, py: 1.5 }}
+              >
+                {loading ? t("common.loading") : t("auth.login")}
+              </Button>
+            </form>
+          )}
 
           <Box textAlign="center">
             <Typography variant="body2" color="text.secondary">

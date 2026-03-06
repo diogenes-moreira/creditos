@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from "react";
 import type { User, LoginRequest, RegisterRequest } from "../api/types";
-import { login as apiLogin, register as apiRegister } from "../api/endpoints";
+import { login as apiLogin, register as apiRegister, requestOTP as apiRequestOTP, verifyOTP as apiVerifyOTP } from "../api/endpoints";
 
 interface AuthState {
   token: string | null;
@@ -9,6 +9,8 @@ interface AuthState {
   isLoading: boolean;
   login: (data: LoginRequest) => Promise<void>;
   register: (data: RegisterRequest) => Promise<void>;
+  requestOTP: (email: string) => Promise<void>;
+  verifyOTP: (email: string, code: string) => Promise<void>;
   logout: () => void;
 }
 
@@ -50,6 +52,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(response.user);
   }, []);
 
+  const requestOTP = useCallback(async (email: string) => {
+    await apiRequestOTP({ email });
+  }, []);
+
+  const verifyOTP = useCallback(async (email: string, code: string) => {
+    const response = await apiVerifyOTP({ email, code });
+    localStorage.setItem("token", response.token);
+    localStorage.setItem("user", JSON.stringify(response.user));
+    setToken(response.token);
+    setUser(response.user);
+  }, []);
+
   const logout = useCallback(() => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
@@ -66,6 +80,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isLoading,
         login,
         register,
+        requestOTP,
+        verifyOTP,
         logout,
       }}
     >

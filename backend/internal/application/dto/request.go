@@ -2,7 +2,6 @@ package dto
 
 type RegisterRequest struct {
 	Email       string `json:"email" binding:"required,email"`
-	Password    string `json:"password" binding:"required,min=8"`
 	FirstName   string `json:"firstName" binding:"required"`
 	LastName    string `json:"lastName" binding:"required"`
 	DNI         string `json:"dni" binding:"required"`
@@ -17,8 +16,7 @@ type RegisterRequest struct {
 }
 
 type LoginRequest struct {
-	Email    string `json:"email" binding:"required,email"`
-	Password string `json:"password" binding:"required"`
+	Email string `json:"email" binding:"required,email"`
 }
 
 type UpdateProfileRequest struct {
@@ -144,7 +142,6 @@ type RecordVendorPaymentRequest struct {
 
 type RegisterClientByVendorRequest struct {
 	Email       string `json:"email" binding:"required,email"`
-	Password    string `json:"password" binding:"required,min=8"`
 	FirstName   string `json:"firstName" binding:"required"`
 	LastName    string `json:"lastName" binding:"required"`
 	DNI         string `json:"dni" binding:"required"`
@@ -181,4 +178,13 @@ type ApproveWithdrawalRequest struct {
 
 type RejectWithdrawalRequest struct {
 	Reason string `json:"reason" binding:"required"`
+}
+
+type RequestOTPRequest struct {
+	Email string `json:"email" binding:"required,email"`
+}
+
+type VerifyOTPRequest struct {
+	Email string `json:"email" binding:"required,email"`
+	Code  string `json:"code" binding:"required,len=6"`
 }

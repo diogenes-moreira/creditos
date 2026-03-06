@@ -14,13 +14,15 @@ type AuthHandler struct {
 	clientService *service.ClientService
 	userRepo      port.UserRepository
 	authService   *auth.LocalAuthService
+	otpService    *service.OTPService
 }
 
-func NewAuthHandler(clientService *service.ClientService, userRepo port.UserRepository, authService *auth.LocalAuthService) *AuthHandler {
+func NewAuthHandler(clientService *service.ClientService, userRepo port.UserRepository, authService *auth.LocalAuthService, otpService *service.OTPService) *AuthHandler {
 	return &AuthHandler{
 		clientService: clientService,
 		userRepo:      userRepo,
 		authService:   authService,
+		otpService:    otpService,
 	}
 }
 
@@ -43,7 +45,7 @@ func (h *AuthHandler) Register(c *gin.Context) {
 	}
 
 	client, user, err := h.clientService.Register(
-		c.Request.Context(), req.Email, req.Password,
+		c.Request.Context(), req.Email,
 		req.FirstName, req.LastName, req.DNI, req.CUIT, req.DateOfBirth,
 		req.Phone, req.Address, req.City, req.Province, req.Country, req.IsPEP,
 	)
@@ -66,8 +68,8 @@ func (h *AuthHandler) Register(c *gin.Context) {
 }
 
 // Login godoc
-// @Summary Authenticate a user
-// @Description Validates credentials and returns a JWT token for API access
+// @Summary Authenticate a user (admin/vendor)
+// @Description Validates credentials and returns a JWT token for API access. For clients, use OTP flow instead.
 // @Tags Auth
 // @Accept json
 // @Produce json
@@ -104,6 +106,68 @@ func (h *AuthHandler) Login(c *gin.Context) {
 
 	user.RecordLogin()
 	_ = h.userRepo.Update(c.Request.Context(), user)
+
+	c.JSON(http.StatusOK, dto.AuthResponse{
+		Token: token,
+		User:  dto.ToUserResponse(user),
+	})
+}
+
+// RequestOTP godoc
+// @Summary Request an OTP code for client login
+// @Description Sends a 6-digit OTP code to the client's email
+// @Tags Auth
+// @Accept json
+// @Produce json
+// @Param request body dto.RequestOTPRequest true "Email address"
+// @Success 200 {object} map[string]string
+// @Failure 400 {object} dto.ErrorResponse
+// @Router /auth/request-otp [post]
+func (h *AuthHandler) RequestOTP(c *gin.Context) {
+	var req dto.RequestOTPRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	if err := h.otpService.RequestOTP(c.Request.Context(), req.Email); err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "OTP sent to your email"})
+}
+
+// VerifyOTP godoc
+// @Summary Verify an OTP code and login
+// @Description Validates the OTP code and returns a JWT token
+// @Tags Auth
+// @Accept json
+// @Produce json
+// @Param request body dto.VerifyOTPRequest true "Email and OTP code"
+// @Success 200 {object} dto.AuthResponse
+// @Failure 400 {object} dto.ErrorResponse
+// @Failure 401 {object} dto.ErrorResponse
+// @Failure 500 {object} dto.ErrorResponse
+// @Router /auth/verify-otp [post]
+func (h *AuthHandler) VerifyOTP(c *gin.Context) {
+	var req dto.VerifyOTPRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	user, err := h.otpService.VerifyOTP(c.Request.Context(), req.Email, req.Code)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	token, err := h.authService.GenerateToken(user.FirebaseUID, user.Email, string(user.Role))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "failed to generate token"})
+		return
+	}
 
 	c.JSON(http.StatusOK, dto.AuthResponse{
 		Token: token,

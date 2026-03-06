@@ -73,6 +73,7 @@ import {
   adminDownloadPaymentReceipt,
   adminDownloadLoanSchedule,
   adminSimulateCancellation,
+  adminCancelLoan,
 } from "../../api/endpoints";
 import { useNotification } from "../../contexts/NotificationContext";
 import { getErrorMessage } from "../../api/errorUtils";
@@ -334,6 +335,21 @@ const ClientDetail: React.FC = () => {
       showSuccess(t("creditLines.rejected"));
     },
     onError: (err: unknown) => showError(getErrorMessage(err, t("creditLines.rejectError"))),
+  });
+
+  const cancelLoanMutation = useMutation({
+    mutationFn: (loanId: string) => adminCancelLoan(loanId),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["admin-client-loans", id] });
+      queryClient.invalidateQueries({ queryKey: ["admin-client-account", id] });
+      queryClient.invalidateQueries({ queryKey: ["admin-client-movements", id] });
+      const loanId = simulateLoan?.id || "";
+      setSimulateLoan(null);
+      setSimulationData(null);
+      showSuccess(t("admin.loanCancelled"));
+      setLastPayment({ loanId, paymentId: data.paymentId });
+    },
+    onError: (err: unknown) => showError(getErrorMessage(err, t("admin.cancelError"))),
   });
 
   const handleDownloadReceipt = async (loanId: string, paymentId: string) => {
@@ -770,7 +786,7 @@ const ClientDetail: React.FC = () => {
               onPageChange={(p) => setPurchasesPage(p + 1)}
               loading={purchasesLoading}
               keyExtractor={(row) => row.id}
-              emptyMessage={t("vendor.noPurchases")}
+              emptyMessage={t("admin.noPurchases")}
             />
           )}
           {activeTab === 3 && (
@@ -1120,6 +1136,16 @@ const ClientDetail: React.FC = () => {
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
           <Button onClick={() => { setSimulateLoan(null); setSimulationData(null); }}>{t("common.back")}</Button>
+          {simulationData && simulateLoan && (
+            <Button
+              variant="contained"
+              color="error"
+              onClick={() => cancelLoanMutation.mutate(simulateLoan.id)}
+              disabled={cancelLoanMutation.isPending}
+            >
+              {cancelLoanMutation.isPending ? t("common.loading") : t("admin.executeCancellation")}
+            </Button>
+          )}
         </DialogActions>
       </Dialog>
 

@@ -12,12 +12,8 @@ import {
   Button,
   Link,
   Grid,
-  InputAdornment,
-  IconButton,
 } from "@mui/material";
 import {
-  Visibility,
-  VisibilityOff,
   AdminPanelSettings as LogoIcon,
 } from "@mui/icons-material";
 import { useTranslation } from "react-i18next";
@@ -28,8 +24,6 @@ import LocationSelector from "../../components/LocationSelector";
 
 const schema = z.object({
   email: z.string().email("Email invalido"),
-  password: z.string().min(6, "Minimo 6 caracteres"),
-  confirmPassword: z.string(),
   firstName: z.string().min(1, "Nombre requerido"),
   lastName: z.string().min(1, "Apellido requerido"),
   dni: z.string().min(7, "DNI invalido").max(8, "DNI invalido"),
@@ -41,9 +35,6 @@ const schema = z.object({
   city: z.string().min(1, "Ciudad requerida"),
   province: z.string().min(1, "Provincia requerida"),
   isPEP: z.boolean(),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: "Las contrasenas no coinciden",
-  path: ["confirmPassword"],
 });
 
 type FormData = z.infer<typeof schema>;
@@ -52,14 +43,13 @@ const Register: React.FC = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const { register: authRegister } = useAuth();
-  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const { showError } = useNotification();
 
   const { control, handleSubmit, watch, setValue, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: {
-      email: "", password: "", confirmPassword: "",
+      email: "",
       firstName: "", lastName: "", dni: "", cuit: "",
       dateOfBirth: "", phone: "", address: "", country: "Argentina", city: "", province: "",
       isPEP: false,
@@ -69,8 +59,7 @@ const Register: React.FC = () => {
   const onSubmit = async (data: FormData) => {
     setLoading(true);
     try {
-      const { confirmPassword, ...registerData } = data;
-      await authRegister(registerData);
+      await authRegister(data);
       navigate("/dashboard");
     } catch (err: unknown) {
       showError(getErrorMessage(err, t("auth.registerError")));
@@ -144,32 +133,6 @@ const Register: React.FC = () => {
                 <Controller name="email" control={control}
                   render={({ field }) => (
                     <TextField {...field} fullWidth label={t("auth.email")} type="email" error={!!errors.email} helperText={errors.email?.message} />
-                  )} />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <Controller name="password" control={control}
-                  render={({ field }) => (
-                    <TextField {...field} fullWidth label={t("auth.password")}
-                      type={showPassword ? "text" : "password"}
-                      error={!!errors.password} helperText={errors.password?.message}
-                      InputProps={{
-                        endAdornment: (
-                          <InputAdornment position="end">
-                            <IconButton onClick={() => setShowPassword(!showPassword)} edge="end">
-                              {showPassword ? <VisibilityOff /> : <Visibility />}
-                            </IconButton>
-                          </InputAdornment>
-                        ),
-                      }}
-                    />
-                  )} />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <Controller name="confirmPassword" control={control}
-                  render={({ field }) => (
-                    <TextField {...field} fullWidth label={t("registration.confirmPassword")}
-                      type={showPassword ? "text" : "password"}
-                      error={!!errors.confirmPassword} helperText={errors.confirmPassword?.message} />
                   )} />
               </Grid>
               <Grid item xs={12}>

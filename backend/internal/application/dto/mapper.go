@@ -2,6 +2,7 @@ package dto
 
 import (
 	"github.com/diogenes-moreira/creditos/backend/internal/domain/model"
+	"github.com/shopspring/decimal"
 )
 
 func ToUserResponse(u *model.User) UserResponse {
@@ -116,7 +117,11 @@ func ToLoanResponse(l *model.Loan) LoanResponse {
 		resp.DisbursedAt = &s
 	}
 	if l.Status == model.LoanActive {
-		pc, ai, aiva, total := l.CancellationSettlement()
+		ivaRate := decimal.NewFromInt(21)
+		if l.Client.IVARate.IsPositive() {
+			ivaRate = l.Client.IVARate
+		}
+		pc, ai, aiva, total := l.CancellationSettlement(ivaRate)
 		resp.CancellationSettlement = &CancellationSettlementResponse{
 			PendingCapital:      pc.StringFixed(2),
 			AccumulatedInterest: ai.StringFixed(2),

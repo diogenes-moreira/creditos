@@ -27,7 +27,7 @@ import type { Client, RegisterRequest } from "../../api/types";
 import LocationSelector from "../../components/LocationSelector";
 
 const emptyForm: RegisterRequest = {
-  email: "", password: "", firstName: "", lastName: "",
+  email: "", firstName: "", lastName: "",
   dni: "", cuit: "", dateOfBirth: "", phone: "",
   address: "", country: "Argentina", city: "", province: "", isPEP: false,
 };
@@ -158,7 +158,6 @@ const ClientList: React.FC = () => {
         <DialogContent>
           <Box display="flex" flexDirection="column" gap={2} mt={1}>
             <TextField label={t("auth.email")} type="email" value={formData.email} onChange={updateField("email")} />
-            <TextField label={t("auth.password")} type="password" value={formData.password} onChange={updateField("password")} />
             <Box display="flex" gap={2}>
               <TextField label={t("registration.firstName")} value={formData.firstName} onChange={updateField("firstName")} fullWidth />
               <TextField label={t("registration.lastName")} value={formData.lastName} onChange={updateField("lastName")} fullWidth />
@@ -189,7 +188,7 @@ const ClientList: React.FC = () => {
           <Button
             variant="contained"
             onClick={() => registerMutation.mutate(formData)}
-            disabled={registerMutation.isPending || !formData.email || !formData.password || !formData.firstName || !formData.lastName || !formData.dni || !formData.cuit}
+            disabled={registerMutation.isPending || !formData.email || !formData.firstName || !formData.lastName || !formData.dni || !formData.cuit}
           >
             {registerMutation.isPending ? t("common.creating") : t("common.create")}
           </Button>

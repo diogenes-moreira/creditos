@@ -3,6 +3,7 @@ package handler
 import (
 	"io"
 	"net/http"
+	"strings"
 
 	"github.com/diogenes-moreira/creditos/backend/internal/application/dto"
 	"github.com/diogenes-moreira/creditos/backend/internal/application/service"
@@ -244,12 +245,16 @@ func (h *LoanHandler) CancelLoan(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "invalid loan ID"})
 		return
 	}
-	loan, err := h.creditService.CancelLoan(c.Request.Context(), adminID, loanID)
+	loan, payment, err := h.creditService.CancelLoan(c.Request.Context(), adminID, loanID)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, dto.ToLoanResponse(loan))
+	resp := dto.ToLoanResponse(loan)
+	c.JSON(http.StatusOK, gin.H{
+		"loan":      resp,
+		"paymentId": payment.ID.String(),
+	})
 }
 
 // PrepayLoan godoc
@@ -471,7 +476,21 @@ func (h *LoanHandler) GetPaymentReceipt(c *gin.Context) {
 		return
 	}
 
-	reader, err := h.pdfService.GeneratePaymentReceipt(payment, loan, client)
+	var reader io.Reader
+
+	if payment.Reference == "Cancelación anticipada" && payment.AdjustmentNote != "" {
+		// Parse stored settlement breakdown: "capital|interest|iva|total"
+		parts := strings.Split(payment.AdjustmentNote, "|")
+		if len(parts) == 4 {
+			reader, err = h.pdfService.GenerateCancellationReceipt(payment, loan, client,
+				parts[0], parts[1], parts[2], parts[3])
+		} else {
+			reader, err = h.pdfService.GenerateCancellationReceipt(payment, loan, client,
+				payment.Amount.StringFixed(2), "0.00", "0.00", payment.Amount.StringFixed(2))
+		}
+	} else {
+		reader, err = h.pdfService.GeneratePaymentReceipt(payment, loan, client)
+	}
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "failed to generate receipt"})
 		return
@@ -500,7 +519,11 @@ func (h *LoanHandler) SimulateCancellation(c *gin.Context) {
 		return
 	}
 
-	pc, ai, aiva, total := loan.CancellationSettlement()
+	ivaRate := decimal.NewFromInt(21)
+	if client, err := h.clientRepo.FindByID(c.Request.Context(), loan.ClientID); err == nil && client != nil && client.IVARate.IsPositive() {
+		ivaRate = client.IVARate
+	}
+	pc, ai, aiva, total := loan.CancellationSettlement(ivaRate)
 	c.JSON(http.StatusOK, dto.CancellationSettlementResponse{
 		PendingCapital:      pc.StringFixed(2),
 		AccumulatedInterest: ai.StringFixed(2),

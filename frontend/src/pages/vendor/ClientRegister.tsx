@@ -17,10 +17,7 @@ import {
   Alert,
   FormControlLabel,
   Checkbox,
-  InputAdornment,
-  IconButton,
 } from "@mui/material";
-import { Visibility, VisibilityOff } from "@mui/icons-material";
 import { vendorRegisterClient } from "../../api/endpoints";
 import { useNotification } from "../../contexts/NotificationContext";
 import { getErrorMessage } from "../../api/errorUtils";
@@ -29,7 +26,6 @@ import LocationSelector from "../../components/LocationSelector";
 
 const schema = z.object({
   email: z.string().email(),
-  password: z.string().min(6),
   firstName: z.string().min(1),
   lastName: z.string().min(1),
   dni: z.string().min(7).max(8),
@@ -49,7 +45,6 @@ const ClientRegister: React.FC = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const { showSuccess, showError } = useNotification();
-  const [showPassword, setShowPassword] = useState(false);
   const [registeredClient, setRegisteredClient] = useState<Client | null>(null);
 
   const {
@@ -62,7 +57,6 @@ const ClientRegister: React.FC = () => {
     resolver: zodResolver(schema),
     defaultValues: {
       email: "",
-      password: "",
       firstName: "",
       lastName: "",
       dni: "",
@@ -297,42 +291,6 @@ const ClientRegister: React.FC = () => {
                       helperText={
                         errors.email ? t("vendor.emailInvalid") : undefined
                       }
-                    />
-                  )}
-                />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <Controller
-                  name="password"
-                  control={control}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      fullWidth
-                      label={t("auth.password")}
-                      type={showPassword ? "text" : "password"}
-                      error={!!errors.password}
-                      helperText={
-                        errors.password
-                          ? t("vendor.passwordMinLength")
-                          : undefined
-                      }
-                      InputProps={{
-                        endAdornment: (
-                          <InputAdornment position="end">
-                            <IconButton
-                              onClick={() => setShowPassword(!showPassword)}
-                              edge="end"
-                            >
-                              {showPassword ? (
-                                <VisibilityOff />
-                              ) : (
-                                <Visibility />
-                              )}
-                            </IconButton>
-                          </InputAdornment>
-                        ),
-                      }}
                     />
                   )}
                 />

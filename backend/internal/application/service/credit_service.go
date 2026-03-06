@@ -18,6 +18,7 @@ type CreditService struct {
 	accountRepo     port.AccountRepository
 	movementRepo    port.MovementRepository
 	clientRepo      port.ClientRepository
+	paymentRepo     port.PaymentRepository
 	audit           *AuditService
 }
 
@@ -29,6 +30,7 @@ func NewCreditService(
 	movementRepo port.MovementRepository,
 	audit *AuditService,
 	clientRepo port.ClientRepository,
+	paymentRepo port.PaymentRepository,
 ) *CreditService {
 	return &CreditService{
 		creditLineRepo:  creditLineRepo,
@@ -37,6 +39,7 @@ func NewCreditService(
 		accountRepo:     accountRepo,
 		movementRepo:    movementRepo,
 		clientRepo:      clientRepo,
+		paymentRepo:     paymentRepo,
 		audit:           audit,
 	}
 }
@@ -215,29 +218,92 @@ func (s *CreditService) DisburseLoan(ctx context.Context, adminID, loanID uuid.U
 	return loan, nil
 }
 
-func (s *CreditService) CancelLoan(ctx context.Context, adminID, loanID uuid.UUID) (*model.Loan, error) {
+func (s *CreditService) CancelLoan(ctx context.Context, adminID, loanID uuid.UUID) (*model.Loan, *model.Payment, error) {
 	loan, err := s.loanRepo.FindByIDWithInstallments(ctx, loanID)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	if err := loan.Cancel(); err != nil {
-		return nil, err
+	if loan.Status != model.LoanActive {
+		return nil, nil, fmt.Errorf("can only cancel active loans, current status: %s", loan.Status)
 	}
 
+	// Get client IVA rate
+	client, err := s.clientRepo.FindByID(ctx, loan.ClientID)
+	if err != nil {
+		return nil, nil, fmt.Errorf("client not found: %w", err)
+	}
+	ivaRate := decimal.NewFromInt(21)
+	if client.IVARate.IsPositive() {
+		ivaRate = client.IVARate
+	}
+
+	// Calculate settlement
+	pc, ai, aiva, total := loan.CancellationSettlement(ivaRate)
+
+	// Record the cancellation payment
+	payment, err := model.NewPayment(loanID, total, model.PaymentCash, "")
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to create cancellation payment: %w", err)
+	}
+	payment.Reference = "Cancelación anticipada"
+	payment.AdjustmentNote = fmt.Sprintf("%s|%s|%s|%s", pc.StringFixed(2), ai.StringFixed(2), aiva.StringFixed(2), total.StringFixed(2))
+	if err := s.paymentRepo.Create(ctx, payment); err != nil {
+		return nil, nil, fmt.Errorf("failed to save cancellation payment: %w", err)
+	}
+
+	// Mark all unpaid installments as paid
+	for i := range loan.Installments {
+		inst := &loan.Installments[i]
+		if inst.Status != model.InstallmentPaid {
+			inst.PaidAmount = inst.TotalAmount
+			inst.RemainingAmount = decimal.Zero
+			inst.Status = model.InstallmentPaid
+			now := time.Now()
+			inst.PaidAt = &now
+			if err := s.installmentRepo.Update(ctx, inst); err != nil {
+				return nil, nil, err
+			}
+		}
+	}
+
+	// Debit client account
+	account, err := s.accountRepo.FindByClientID(ctx, loan.ClientID)
+	if err != nil {
+		return nil, nil, err
+	}
+	movement, err := account.Debit(total, "Early cancellation payment", payment.ID.String())
+	if err != nil {
+		return nil, nil, err
+	}
+	if err := s.accountRepo.Update(ctx, account); err != nil {
+		return nil, nil, err
+	}
+	if err := s.movementRepo.Create(ctx, movement); err != nil {
+		return nil, nil, err
+	}
+
+	// Cancel the loan
+	if err := loan.Cancel(); err != nil {
+		return nil, nil, err
+	}
+
+	// Release credit line
 	cl, err := s.creditLineRepo.FindByID(ctx, loan.CreditLineID)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	cl.ReleaseDisbursement(loan.Principal)
 	if err := s.creditLineRepo.Update(ctx, cl); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	if err := s.loanRepo.Update(ctx, loan); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	s.audit.Record(ctx, &adminID, "cancel_loan", "loan", loan.ID.String(), "Loan cancelled (early cancellation)")
-	return loan, nil
+
+	s.audit.Record(ctx, &adminID, "cancel_loan", "payment", payment.ID.String(),
+		fmt.Sprintf("Loan cancelled (early cancellation). Settlement: %s", total.StringFixed(2)))
+	return loan, payment, nil
 }
 
 func (s *CreditService) PrepayLoan(ctx context.Context, adminID, loanID uuid.UUID, amount decimal.Decimal, strategy model.PrepaymentStrategy) (*model.Loan, error) {

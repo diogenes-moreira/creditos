@@ -11,6 +11,7 @@ import (
 	"github.com/diogenes-moreira/creditos/backend/internal/infrastructure/auth"
 	"github.com/diogenes-moreira/creditos/backend/internal/infrastructure/http/gin/handler"
 	"github.com/diogenes-moreira/creditos/backend/internal/infrastructure/http/gin/middleware"
+	"github.com/diogenes-moreira/creditos/backend/internal/infrastructure/messaging"
 	"github.com/diogenes-moreira/creditos/backend/internal/infrastructure/persistence/postgres"
 	"github.com/diogenes-moreira/creditos/backend/internal/infrastructure/pdf"
 	"github.com/diogenes-moreira/creditos/backend/internal/infrastructure/storage"
@@ -62,16 +63,18 @@ func (r *Router) setupRoutes(jwtSecret string) {
 	vendorMovementRepo := postgres.NewVendorMovementRepository(r.db)
 	purchaseRepo := postgres.NewPurchaseRepository(r.db)
 	vendorPaymentRepo := postgres.NewVendorPaymentRepository(r.db)
+	otpRepo := postgres.NewOTPRepository(r.db)
 
 	// Adapters
 	authService := auth.NewLocalAuthService(jwtSecret, 24)
+	otpSender := messaging.NewOTPSender()
 	localStorage := storage.NewLocalStorage("./storage")
 	pdfGenerator := pdf.NewGenerator()
 
 	// Application services
 	auditService := service.NewAuditService(auditLogRepo)
 	clientService := service.NewClientService(userRepo, clientRepo, accountRepo, authService, auditService)
-	creditService := service.NewCreditService(creditLineRepo, loanRepo, installmentRepo, accountRepo, movementRepo, auditService, clientRepo)
+	creditService := service.NewCreditService(creditLineRepo, loanRepo, installmentRepo, accountRepo, movementRepo, auditService, clientRepo, paymentRepo)
 	paymentService := service.NewPaymentService(paymentRepo, loanRepo, installmentRepo, accountRepo, movementRepo, auditService, r.latePenaltyRate)
 	accountService := service.NewAccountService(accountRepo, movementRepo)
 	dashboardService := service.NewDashboardService(dashboardRepo)
@@ -79,6 +82,7 @@ func (r *Router) setupRoutes(jwtSecret string) {
 	vendorService := service.NewVendorService(userRepo, vendorRepo, vendorAccountRepo, authService, auditService)
 	purchaseService := service.NewPurchaseService(purchaseRepo, vendorRepo, vendorAccountRepo, vendorMovementRepo, clientRepo, creditService, auditService)
 	vendorPaymentService := service.NewVendorPaymentService(vendorPaymentRepo, vendorAccountRepo, vendorMovementRepo, vendorRepo, auditService)
+	otpService := service.NewOTPService(otpRepo, userRepo, otpSender, auditService)
 	withdrawalRepo := postgres.NewWithdrawalRequestRepository(r.db)
 	withdrawalService := service.NewWithdrawalService(withdrawalRepo, vendorRepo, vendorAccountRepo, vendorPaymentRepo, vendorMovementRepo, auditService)
 	reportRepo := postgres.NewReportRepository(r.db)
@@ -86,7 +90,7 @@ func (r *Router) setupRoutes(jwtSecret string) {
 
 	// Handlers
 	healthHandler := handler.NewHealthHandler(r.db)
-	authHandler := handler.NewAuthHandler(clientService, userRepo, authService)
+	authHandler := handler.NewAuthHandler(clientService, userRepo, authService, otpService)
 	clientHandler := handler.NewClientHandler(clientService, creditService, paymentService, purchaseRepo, accountRepo, movementRepo)
 	accountHandler := handler.NewAccountHandler(accountService, clientRepo)
 	creditHandler := handler.NewCreditHandler(creditService)
@@ -109,6 +113,8 @@ func (r *Router) setupRoutes(jwtSecret string) {
 	// Auth (public)
 	api.POST("/auth/register", authHandler.Register)
 	api.POST("/auth/login", authHandler.Login)
+	api.POST("/auth/request-otp", authHandler.RequestOTP)
+	api.POST("/auth/verify-otp", authHandler.VerifyOTP)
 
 	// Authenticated routes
 	authenticated := api.Group("")

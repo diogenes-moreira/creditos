@@ -46,7 +46,17 @@
     "invalidCredentials": "Credenciais inválidas",
     "registerSuccess": "Cadastro realizado com sucesso",
     "registerError": "Erro ao cadastrar. Tente novamente.",
-    "registering": "Cadastrando..."
+    "registering": "Cadastrando...",
+    "clientLogin": "Acesso cliente",
+    "adminLogin": "Administrador / Vendedor",
+    "enterEmail": "Digite seu e-mail",
+    "otpSent": "Enviamos um código para seu e-mail",
+    "enterOtp": "Digite o código de 6 dígitos",
+    "verifyOtp": "Verificar",
+    "otpError": "Código inválido ou expirado",
+    "requestOtp": "Enviar código",
+    "sendingOtp": "Enviando código...",
+    "verifyingOtp": "Verificando..."
   },
   "registration": {
     "title": "Criar conta",

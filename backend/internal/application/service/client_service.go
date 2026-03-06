@@ -35,7 +35,7 @@ func NewClientService(
 	}
 }
 
-func (s *ClientService) Register(ctx context.Context, email, password, firstName, lastName, dni, cuit, dobStr, phone, address, city, province, country string, isPEP bool) (*model.Client, *model.User, error) {
+func (s *ClientService) Register(ctx context.Context, email, firstName, lastName, dni, cuit, dobStr, phone, address, city, province, country string, isPEP bool) (*model.Client, *model.User, error) {
 	dob, err := time.Parse("2006-01-02", dobStr)
 	if err != nil {
 		return nil, nil, fmt.Errorf("invalid date of birth format, use YYYY-MM-DD")
@@ -51,7 +51,7 @@ func (s *ClientService) Register(ctx context.Context, email, password, firstName
 		return nil, nil, fmt.Errorf("a client with CUIT %s already exists", cuit)
 	}
 
-	fbUser, err := s.authService.CreateUser(ctx, email, password)
+	fbUser, err := s.authService.CreateUser(ctx, email, "")
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to create auth user: %w", err)
 	}

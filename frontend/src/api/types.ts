@@ -1,12 +1,10 @@
 // ---- Auth ----
 export interface LoginRequest {
   email: string;
-  password: string;
 }
 
 export interface RegisterRequest {
   email: string;
-  password: string;
   firstName: string;
   lastName: string;
   dni: string;
@@ -359,7 +357,6 @@ export interface RecordVendorPaymentRequest {
 
 export interface RegisterClientByVendorRequest {
   email: string;
-  password: string;
   firstName: string;
   lastName: string;
   dni: string;
@@ -427,6 +424,16 @@ export interface PortfolioPositionItem {
 
 export interface PortfolioPositionReport {
   items: PortfolioPositionItem[];
+}
+
+// ---- OTP ----
+export interface RequestOTPRequest {
+  email: string;
+}
+
+export interface VerifyOTPRequest {
+  email: string;
+  code: string;
 }
 
 // ---- Pagination ----

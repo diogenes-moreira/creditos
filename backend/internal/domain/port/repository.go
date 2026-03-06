@@ -176,3 +176,10 @@ type ReportRepository interface {
 	FinancialReport(ctx context.Context, from, to time.Time) (*FinancialReport, error)
 	PortfolioPosition(ctx context.Context, from, to time.Time) ([]PortfolioPosition, error)
 }
+
+type OTPRepository interface {
+	Create(ctx context.Context, otp *model.OTPCode) error
+	FindLatestByEmail(ctx context.Context, email string) (*model.OTPCode, error)
+	MarkUsed(ctx context.Context, id uuid.UUID) error
+	DeleteExpiredByEmail(ctx context.Context, email string) error
+}

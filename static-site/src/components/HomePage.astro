@@ -1,0 +1,922 @@
+---
+import Layout from '../layouts/Layout.astro';
+import LanguageSwitcher from './LanguageSwitcher.astro';
+import type { Lang } from '../i18n/translations';
+import { t } from '../i18n/utils';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+
+const contactId = lang === 'es' ? 'contacto' : lang === 'pt' ? 'contato' : 'contact';
+const whatIsId = lang === 'es' ? 'que-es' : lang === 'pt' ? 'o-que-e' : 'what-is';
+const featuresId = lang === 'es' ? 'funcionalidades' : lang === 'pt' ? 'funcionalidades' : 'features';
+const modulesId = lang === 'es' ? 'modulos' : lang === 'pt' ? 'modulos' : 'modules';
+const techId = lang === 'es' ? 'tecnologia' : lang === 'pt' ? 'tecnologia' : 'technology';
+---
+
+<Layout title={t(lang, 'meta.title')} description={t(lang, 'meta.description')} lang={lang}>
+  <!-- Navigation -->
+  <nav class="nav">
+    <div class="nav-container">
+      <div class="logo">Prestia</div>
+      <div class="nav-links">
+        <a href={`#${whatIsId}`}>{t(lang, 'nav.whatIs')}</a>
+        <a href={`#${featuresId}`}>{t(lang, 'nav.features')}</a>
+        <a href={`#${modulesId}`}>{t(lang, 'nav.modules')}</a>
+        <a href={`#${techId}`}>{t(lang, 'nav.tech')}</a>
+        <LanguageSwitcher lang={lang} />
+        <a href={`#${contactId}`} class="btn-nav">{t(lang, 'nav.requestDemo')}</a>
+      </div>
+      <button class="mobile-menu-btn" aria-label={t(lang, 'nav.menuLabel')}>
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero-bg"></div>
+    <div class="hero-grid">
+      <div class="hero-content">
+        <div class="hero-badge">{t(lang, 'hero.badge')}</div>
+        <h1>{t(lang, 'hero.title')}</h1>
+        <p>{t(lang, 'hero.description')}</p>
+        <div class="hero-buttons">
+          <a href={`#${contactId}`} class="btn-primary">{t(lang, 'hero.cta')}</a>
+          <a href={`#${featuresId}`} class="btn-secondary">{t(lang, 'hero.secondaryCta')}</a>
+        </div>
+        <div class="hero-stats">
+          <div class="stat">
+            <span class="stat-value">{t(lang, 'hero.stat1Value')}</span>
+            <span class="stat-label">{t(lang, 'hero.stat1Label')}</span>
+          </div>
+          <div class="stat">
+            <span class="stat-value">{t(lang, 'hero.stat2Value')}</span>
+            <span class="stat-label">{t(lang, 'hero.stat2Label')}</span>
+          </div>
+          <div class="stat">
+            <span class="stat-value">{t(lang, 'hero.stat3Value')}</span>
+            <span class="stat-label">{t(lang, 'hero.stat3Label')}</span>
+          </div>
+        </div>
+      </div>
+      <div class="hero-image">
+        <img src="/images/hero-person.jpg" alt={t(lang, 'hero.imageAlt')} loading="eager" />
+      </div>
+    </div>
+  </section>
+
+  <div class="wave-divider hero-wave">
+    <svg viewBox="0 0 1440 100" preserveAspectRatio="none"><path d="M0,60 C360,100 720,0 1080,60 C1260,90 1380,70 1440,60 L1440,100 L0,100Z" fill="#ffffff"/></svg>
+  </div>
+
+  <!-- What is -->
+  <section id={whatIsId} class="what-is">
+    <div class="section-container">
+      <h2>{t(lang, 'whatIs.title')}</h2>
+      <div class="what-is-grid">
+        <div class="what-is-text">
+          <p class="lead" set:html={t(lang, 'whatIs.lead')} />
+          <p>{t(lang, 'whatIs.p2')}</p>
+          <p>{t(lang, 'whatIs.p3')}</p>
+          <ul class="check-list">
+            <li set:html={t(lang, 'whatIs.portal1')} />
+            <li set:html={t(lang, 'whatIs.portal2')} />
+            <li set:html={t(lang, 'whatIs.portal3')} />
+          </ul>
+        </div>
+        <div class="what-is-visual">
+          <div class="dashboard-preview">
+            <div class="preview-header">
+              <div class="preview-dots"><span></span><span></span><span></span></div>
+              {t(lang, 'whatIs.dashboardTitle')}
+            </div>
+            <div class="preview-body">
+              <div class="preview-kpi">
+                <div class="kpi-card">
+                  <span class="kpi-label">{t(lang, 'whatIs.kpi1Label')}</span>
+                  <span class="kpi-value">$12.5M</span>
+                </div>
+                <div class="kpi-card">
+                  <span class="kpi-label">{t(lang, 'whatIs.kpi2Label')}</span>
+                  <span class="kpi-value">94.2%</span>
+                </div>
+                <div class="kpi-card">
+                  <span class="kpi-label">{t(lang, 'whatIs.kpi3Label')}</span>
+                  <span class="kpi-value">847</span>
+                </div>
+                <div class="kpi-card">
+                  <span class="kpi-label">{t(lang, 'whatIs.kpi4Label')}</span>
+                  <span class="kpi-value">3.1%</span>
+                </div>
+              </div>
+              <div class="preview-table">
+                <div class="table-row header">
+                  <span>{t(lang, 'whatIs.tableClient')}</span>
+                  <span>{t(lang, 'whatIs.tableAmount')}</span>
+                  <span>{t(lang, 'whatIs.tableStatus')}</span>
+                </div>
+                <div class="table-row">
+                  <span>{t(lang, 'whatIs.row1Name')}</span><span>$85.000</span><span class="badge green">{t(lang, 'whatIs.row1Status')}</span>
+                </div>
+                <div class="table-row">
+                  <span>{t(lang, 'whatIs.row2Name')}</span><span>$120.000</span><span class="badge yellow">{t(lang, 'whatIs.row2Status')}</span>
+                </div>
+                <div class="table-row">
+                  <span>{t(lang, 'whatIs.row3Name')}</span><span>$45.000</span><span class="badge blue">{t(lang, 'whatIs.row3Status')}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Framework -->
+  <section class="framework">
+    <div class="section-container">
+      <h2>{t(lang, 'framework.title')}</h2>
+      <div class="framework-content">
+        <div class="framework-text">
+          <p>{t(lang, 'framework.p1')}</p>
+          <p>{t(lang, 'framework.p2')}</p>
+        </div>
+        <div class="framework-text">
+          <p>{t(lang, 'framework.p3')}</p>
+          <p class="framework-highlight">{t(lang, 'framework.p4')}</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="wave-divider white-to-gray">
+    <svg viewBox="0 0 1440 80" preserveAspectRatio="none"><path d="M0,0 C480,80 960,0 1440,60 L1440,80 L0,80Z" fill="#f8f9fa"/></svg>
+  </div>
+
+  <!-- Features -->
+  <section id={featuresId} class="features">
+    <div class="section-container">
+      <h2>{t(lang, 'features.title')}</h2>
+      <p class="section-subtitle">{t(lang, 'features.subtitle')}</p>
+      <div class="feature-grid">
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#1565C0" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          </div>
+          <h3>{t(lang, 'features.clientMgmt.title')}</h3>
+          <p>{t(lang, 'features.clientMgmt.desc')}</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#1565C0" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+          </div>
+          <h3>{t(lang, 'features.creditLines.title')}</h3>
+          <p>{t(lang, 'features.creditLines.desc')}</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#1565C0" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          </div>
+          <h3>{t(lang, 'features.loans.title')}</h3>
+          <p>{t(lang, 'features.loans.desc')}</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#1565C0" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          </div>
+          <h3>{t(lang, 'features.dashboard.title')}</h3>
+          <p>{t(lang, 'features.dashboard.desc')}</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#1565C0" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          </div>
+          <h3>{t(lang, 'features.payments.title')}</h3>
+          <p>{t(lang, 'features.payments.desc')}</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#1565C0" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          </div>
+          <h3>{t(lang, 'features.audit.title')}</h3>
+          <p>{t(lang, 'features.audit.desc')}</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#1565C0" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+          </div>
+          <h3>{t(lang, 'features.vendors.title')}</h3>
+          <p>{t(lang, 'features.vendors.desc')}</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#1565C0" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+          </div>
+          <h3>{t(lang, 'features.accounts.title')}</h3>
+          <p>{t(lang, 'features.accounts.desc')}</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#1565C0" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          </div>
+          <h3>{t(lang, 'features.roles.title')}</h3>
+          <p>{t(lang, 'features.roles.desc')}</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="wave-divider gray-to-white">
+    <svg viewBox="0 0 1440 80" preserveAspectRatio="none"><path d="M0,60 C480,0 960,80 1440,20 L1440,80 L0,80Z" fill="#ffffff"/></svg>
+  </div>
+
+  <!-- Modules -->
+  <section id={modulesId} class="modules">
+    <div class="section-container">
+      <h2>{t(lang, 'modules.title')}</h2>
+      <p class="section-subtitle">{t(lang, 'modules.subtitle')}</p>
+
+      <div class="module-list">
+        <div class="module-card">
+          <div class="module-img">
+            <img src="/images/module-admin.jpg" alt={t(lang, 'modules.admin.imageAlt')} loading="lazy" />
+            <div class="module-img-overlay admin"></div>
+          </div>
+          <div class="module-body">
+            <div class="module-header">
+              <div class="module-icon admin">A</div>
+              <div>
+                <h3>{t(lang, 'modules.admin.title')}</h3>
+                <span class="module-role">{t(lang, 'modules.admin.role')}</span>
+              </div>
+            </div>
+            <ul>
+              <li>{t(lang, 'modules.admin.item1')}</li>
+              <li>{t(lang, 'modules.admin.item2')}</li>
+              <li>{t(lang, 'modules.admin.item3')}</li>
+              <li>{t(lang, 'modules.admin.item4')}</li>
+              <li>{t(lang, 'modules.admin.item5')}</li>
+              <li>{t(lang, 'modules.admin.item6')}</li>
+              <li>{t(lang, 'modules.admin.item7')}</li>
+              <li>{t(lang, 'modules.admin.item8')}</li>
+              <li>{t(lang, 'modules.admin.item9')}</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="module-card">
+          <div class="module-img">
+            <img src="/images/module-vendor.jpg" alt={t(lang, 'modules.client.imageAlt')} loading="lazy" />
+            <div class="module-img-overlay client"></div>
+          </div>
+          <div class="module-body">
+            <div class="module-header">
+              <div class="module-icon client">C</div>
+              <div>
+                <h3>{t(lang, 'modules.client.title')}</h3>
+                <span class="module-role">{t(lang, 'modules.client.role')}</span>
+              </div>
+            </div>
+            <ul>
+              <li>{t(lang, 'modules.client.item1')}</li>
+              <li>{t(lang, 'modules.client.item2')}</li>
+              <li>{t(lang, 'modules.client.item3')}</li>
+              <li>{t(lang, 'modules.client.item4')}</li>
+              <li>{t(lang, 'modules.client.item5')}</li>
+              <li>{t(lang, 'modules.client.item6')}</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="module-card">
+          <div class="module-img">
+            <img src="/images/module-client.jpg" alt={t(lang, 'modules.vendor.imageAlt')} loading="lazy" />
+            <div class="module-img-overlay vendor"></div>
+          </div>
+          <div class="module-body">
+            <div class="module-header">
+              <div class="module-icon vendor">V</div>
+              <div>
+                <h3>{t(lang, 'modules.vendor.title')}</h3>
+                <span class="module-role">{t(lang, 'modules.vendor.role')}</span>
+              </div>
+            </div>
+            <ul>
+              <li>{t(lang, 'modules.vendor.item1')}</li>
+              <li>{t(lang, 'modules.vendor.item2')}</li>
+              <li>{t(lang, 'modules.vendor.item3')}</li>
+              <li>{t(lang, 'modules.vendor.item4')}</li>
+              <li>{t(lang, 'modules.vendor.item5')}</li>
+              <li>{t(lang, 'modules.vendor.item6')}</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="wave-divider white-to-gray">
+    <svg viewBox="0 0 1440 80" preserveAspectRatio="none"><path d="M0,20 C360,80 1080,0 1440,40 L1440,80 L0,80Z" fill="#f8f9fa"/></svg>
+  </div>
+
+  <!-- Workflow -->
+  <section class="workflow">
+    <div class="section-container">
+      <h2>{t(lang, 'workflow.title')}</h2>
+      <p class="section-subtitle">{t(lang, 'workflow.subtitle')}</p>
+      <div class="workflow-steps">
+        <div class="workflow-step">
+          <div class="step-number">1</div>
+          <h3>{t(lang, 'workflow.step1.title')}</h3>
+          <p>{t(lang, 'workflow.step1.desc')}</p>
+        </div>
+        <div class="workflow-arrow"></div>
+        <div class="workflow-step">
+          <div class="step-number">2</div>
+          <h3>{t(lang, 'workflow.step2.title')}</h3>
+          <p>{t(lang, 'workflow.step2.desc')}</p>
+        </div>
+        <div class="workflow-arrow"></div>
+        <div class="workflow-step">
+          <div class="step-number">3</div>
+          <h3>{t(lang, 'workflow.step3.title')}</h3>
+          <p>{t(lang, 'workflow.step3.desc')}</p>
+        </div>
+        <div class="workflow-arrow"></div>
+        <div class="workflow-step">
+          <div class="step-number">4</div>
+          <h3>{t(lang, 'workflow.step4.title')}</h3>
+          <p>{t(lang, 'workflow.step4.desc')}</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="wave-divider gray-to-white">
+    <svg viewBox="0 0 1440 80" preserveAspectRatio="none"><path d="M0,40 C480,80 960,0 1440,60 L1440,80 L0,80Z" fill="#ffffff"/></svg>
+  </div>
+
+  <!-- Tech -->
+  <section id={techId} class="tech">
+    <div class="section-container">
+      <h2>{t(lang, 'tech.title')}</h2>
+      <p class="section-subtitle">{t(lang, 'tech.subtitle')}</p>
+      <div class="tech-grid">
+        <div class="tech-item">
+          <h4>{t(lang, 'tech.backend.title')}</h4>
+          <p>{t(lang, 'tech.backend.desc')}</p>
+        </div>
+        <div class="tech-item">
+          <h4>{t(lang, 'tech.frontend.title')}</h4>
+          <p>{t(lang, 'tech.frontend.desc')}</p>
+        </div>
+        <div class="tech-item">
+          <h4>{t(lang, 'tech.db.title')}</h4>
+          <p>{t(lang, 'tech.db.desc')}</p>
+        </div>
+        <div class="tech-item">
+          <h4>{t(lang, 'tech.auth.title')}</h4>
+          <p>{t(lang, 'tech.auth.desc')}</p>
+        </div>
+        <div class="tech-item">
+          <h4>{t(lang, 'tech.deploy.title')}</h4>
+          <p>{t(lang, 'tech.deploy.desc')}</p>
+        </div>
+        <div class="tech-item">
+          <h4>{t(lang, 'tech.audit.title')}</h4>
+          <p>{t(lang, 'tech.audit.desc')}</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- People Banner -->
+  <section class="people-banner">
+    <img src="/images/people-team.jpg" alt={t(lang, 'people.imageAlt')} loading="lazy" />
+    <div class="people-banner-overlay">
+      <div class="people-banner-text">
+        <h3>{t(lang, 'people.title')}</h3>
+        <p>{t(lang, 'people.desc')}</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Versions -->
+  <section class="versions">
+    <div class="section-container">
+      <h2>{t(lang, 'versions.title')}</h2>
+      <p class="section-subtitle">{t(lang, 'versions.subtitle')}</p>
+      <div class="versions-grid">
+        <div class="version-card">
+          <div class="version-badge opensource-badge">{t(lang, 'versions.opensource.badge')}</div>
+          <h3>{t(lang, 'versions.opensource.name')}</h3>
+          <p class="version-desc">{t(lang, 'versions.opensource.desc')}</p>
+          <ul class="version-features">
+            <li>{t(lang, 'versions.opensource.item1')}</li>
+            <li>{t(lang, 'versions.opensource.item2')}</li>
+            <li>{t(lang, 'versions.opensource.item3')}</li>
+            <li>{t(lang, 'versions.opensource.item4')}</li>
+            <li>{t(lang, 'versions.opensource.item5')}</li>
+            <li>{t(lang, 'versions.opensource.item6')}</li>
+            <li>{t(lang, 'versions.opensource.item7')}</li>
+            <li>{t(lang, 'versions.opensource.item8')}</li>
+          </ul>
+          <a href="https://github.com/diogenes-moreira/creditos" class="btn-github" target="_blank" rel="noopener">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+            {t(lang, 'versions.opensource.cta')}
+          </a>
+        </div>
+        <div class="version-card pledg-card">
+          <div class="version-badge pledg-badge">{t(lang, 'versions.premium.badge')}</div>
+          <h3>{t(lang, 'versions.premium.name')}</h3>
+          <p class="version-desc">{t(lang, 'versions.premium.desc')}</p>
+          <ul class="version-features">
+            <li>{t(lang, 'versions.premium.item1')}</li>
+            <li class="highlight">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#E65100" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              {t(lang, 'versions.premium.item2')}
+            </li>
+            <li class="highlight">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#E65100" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 11l-4.5 4.5-2-2"/></svg>
+              {t(lang, 'versions.premium.item3')}
+            </li>
+            <li class="highlight">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#E65100" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+              {t(lang, 'versions.premium.item4')}
+            </li>
+            <li class="highlight">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#E65100" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><path d="M20 8v6"/><path d="M23 11h-6"/></svg>
+              {t(lang, 'versions.premium.item5')}
+            </li>
+            <li>{t(lang, 'versions.premium.item6')}</li>
+            <li>{t(lang, 'versions.premium.item7')}</li>
+            <li>{t(lang, 'versions.premium.item8')}</li>
+            <li>{t(lang, 'versions.premium.item9')}</li>
+          </ul>
+          <a href="https://wa.me/5411405101004" class="btn-pledg" target="_blank" rel="noopener">{t(lang, 'versions.premium.cta')}</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section id={contactId} class="cta">
+    <div class="cta-bg"></div>
+    <div class="section-container cta-content">
+      <h2>{t(lang, 'cta.title')}</h2>
+      <p>{t(lang, 'cta.desc')}</p>
+      <a href="https://wa.me/5411405101004" class="btn-primary btn-large" target="_blank" rel="noopener">{t(lang, 'cta.button')}</a>
+    </div>
+    <div class="cta-photo">
+      <img src="/images/cta-people.jpg" alt={t(lang, 'cta.imageAlt')} loading="lazy" />
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="footer-content">
+      <div class="footer-brand">
+        <div class="logo">Prestia</div>
+        <p>{t(lang, 'footer.tagline')}</p>
+      </div>
+      <div class="footer-links">
+        <p>{t(lang, 'footer.copyright')}</p>
+      </div>
+    </div>
+  </footer>
+</Layout>
+
+<style>
+  /* Nav */
+  .nav {
+    position: fixed; top: 0; width: 100%; background: rgba(255,255,255,0.97);
+    backdrop-filter: blur(10px); z-index: 100; border-bottom: 1px solid #e0e0e0;
+  }
+  .nav-container {
+    max-width: 1200px; margin: 0 auto; padding: 1rem 2rem;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .logo { font-size: 1.4rem; font-weight: 700; color: #1565C0; }
+  .nav-links { display: flex; gap: 2rem; align-items: center; }
+  .nav-links a { font-weight: 500; color: #444; transition: color 0.2s; font-size: 0.95rem; }
+  .nav-links a:hover { color: #1565C0; }
+  .btn-nav {
+    background: #1565C0; color: white !important; padding: 0.5rem 1.5rem;
+    border-radius: 8px; font-weight: 600;
+  }
+  .btn-nav:hover { background: #0D47A1; }
+  .mobile-menu-btn { display: none; background: none; border: none; cursor: pointer; padding: 0.5rem; }
+  .mobile-menu-btn span {
+    display: block; width: 24px; height: 2px; background: #444;
+    margin: 5px 0; transition: 0.3s;
+  }
+
+  /* Sections common */
+  .section-container { max-width: 1200px; margin: 0 auto; padding: 0 2rem; }
+  .section-subtitle { color: #666; font-size: 1.15rem; margin-bottom: 3rem; text-align: center; }
+
+  /* Wave dividers */
+  .wave-divider { line-height: 0; margin-top: -1px; }
+  .wave-divider svg { width: 100%; height: 60px; display: block; }
+  .hero-wave { background: linear-gradient(135deg, #E3F2FD 0%, #BBDEFB 50%, #E8EAF6 100%); }
+  .white-to-gray { background: #fff; }
+  .gray-to-white { background: #f8f9fa; }
+
+  /* Hero */
+  .hero {
+    padding: 9rem 2rem 5rem;
+    background: linear-gradient(135deg, #E3F2FD 0%, #BBDEFB 50%, #E8EAF6 100%);
+    position: relative; overflow: hidden;
+  }
+  .hero-bg {
+    position: absolute; inset: 0;
+    background-image: url('/images/hero-bg.jpg');
+    background-size: cover; background-position: center;
+    opacity: 0.18;
+  }
+  .hero-bg::before {
+    content: ""; position: absolute; top: -50%; right: -20%; width: 600px; height: 600px;
+    border-radius: 50%; border: 40px solid rgba(21,101,192,0.06);
+  }
+  .hero-bg::after {
+    content: ""; position: absolute; bottom: -30%; left: -10%; width: 400px; height: 400px;
+    border-radius: 50%; border: 30px solid rgba(21,101,192,0.05);
+  }
+  .hero-grid {
+    max-width: 1200px; margin: 0 auto; position: relative; z-index: 1;
+    display: grid; grid-template-columns: 1fr 380px; gap: 4rem; align-items: center;
+  }
+  .hero-content { text-align: left; }
+  .hero-image { position: relative; }
+  .hero-image img {
+    width: 100%; height: 480px; object-fit: cover; border-radius: 16px;
+    box-shadow: 0 20px 60px rgba(13,71,161,0.2);
+  }
+  .hero-badge {
+    display: inline-block; background: rgba(21,101,192,0.1); color: #1565C0;
+    padding: 0.4rem 1.2rem; border-radius: 20px; font-size: 0.85rem; font-weight: 600;
+    margin-bottom: 1.5rem; letter-spacing: 0.5px; text-transform: uppercase;
+  }
+  .hero h1 { font-size: 2.8rem; font-weight: 700; color: #0D47A1; margin-bottom: 1.5rem; line-height: 1.2; }
+  .hero p { font-size: 1.15rem; color: #455A64; margin-bottom: 2.5rem; line-height: 1.7; }
+  .hero-buttons { display: flex; gap: 1rem; margin-bottom: 3.5rem; }
+  .btn-primary {
+    background: #1565C0; color: white; padding: 0.85rem 2rem;
+    border-radius: 8px; font-weight: 600; font-size: 1rem; transition: background 0.2s;
+    display: inline-block;
+  }
+  .btn-primary:hover { background: #0D47A1; }
+  .btn-secondary {
+    border: 2px solid #1565C0; color: #1565C0; padding: 0.85rem 2rem;
+    border-radius: 8px; font-weight: 600; font-size: 1rem; display: inline-block;
+  }
+  .btn-secondary:hover { background: rgba(21,101,192,0.05); }
+  .btn-large { padding: 1rem 2.5rem; font-size: 1.05rem; }
+  .hero-stats { display: flex; justify-content: center; gap: 4rem; }
+  .stat { display: flex; flex-direction: column; }
+  .stat-value { font-size: 1.6rem; font-weight: 700; color: #1565C0; }
+  .stat-label { font-size: 0.85rem; color: #666; margin-top: 0.2rem; }
+
+  /* What is */
+  .what-is {
+    padding: 6rem 0; position: relative; overflow: hidden;
+    background: #fff;
+  }
+  .what-is::before {
+    content: ""; position: absolute; top: 60px; left: -120px; width: 350px; height: 350px;
+    border-radius: 50%; background: radial-gradient(circle, rgba(21,101,192,0.04) 0%, transparent 70%);
+  }
+  .what-is h2 { font-size: 2.2rem; color: #0D47A1; margin-bottom: 3rem; text-align: center; }
+  .what-is-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: start; }
+  .what-is-text .lead { font-size: 1.1rem; color: #333; line-height: 1.7; margin-bottom: 1rem; }
+  .what-is-text p { color: #555; line-height: 1.7; margin-bottom: 1rem; }
+  .check-list { list-style: none; padding: 0; margin-top: 1.5rem; }
+  .check-list li {
+    padding: 0.7rem 0 0.7rem 1.8rem; position: relative; color: #444; line-height: 1.5;
+    border-bottom: 1px solid #f0f0f0;
+  }
+  .check-list li:last-child { border-bottom: none; }
+  .check-list li::before {
+    content: "\2713"; position: absolute; left: 0; color: #1565C0; font-weight: 700; font-size: 1.1rem;
+  }
+
+  /* Dashboard preview */
+  .dashboard-preview {
+    background: #fff; border-radius: 12px; border: 1px solid #e0e0e0;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.08); overflow: hidden;
+  }
+  .preview-header {
+    background: #1a1a2e; color: #fff; padding: 0.8rem 1.2rem; font-size: 0.85rem;
+    font-weight: 600; display: flex; align-items: center; gap: 0.8rem;
+  }
+  .preview-dots { display: flex; gap: 6px; }
+  .preview-dots span { width: 10px; height: 10px; border-radius: 50%; }
+  .preview-dots span:nth-child(1) { background: #ff5f56; }
+  .preview-dots span:nth-child(2) { background: #ffbd2e; }
+  .preview-dots span:nth-child(3) { background: #27c93f; }
+  .preview-body { padding: 1.2rem; }
+  .preview-kpi { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.8rem; margin-bottom: 1.2rem; }
+  .kpi-card {
+    background: #f8f9fa; border-radius: 8px; padding: 0.8rem;
+    display: flex; flex-direction: column; gap: 0.2rem;
+  }
+  .kpi-label { font-size: 0.7rem; color: #888; text-transform: uppercase; letter-spacing: 0.5px; }
+  .kpi-value { font-size: 1.2rem; font-weight: 700; color: #1565C0; }
+  .preview-table { font-size: 0.8rem; }
+  .table-row {
+    display: grid; grid-template-columns: 1fr 0.7fr 0.8fr; padding: 0.5rem 0.3rem;
+    border-bottom: 1px solid #f0f0f0; align-items: center;
+  }
+  .table-row.header { font-weight: 600; color: #888; font-size: 0.7rem; text-transform: uppercase; }
+  .badge {
+    font-size: 0.7rem; padding: 0.15rem 0.5rem; border-radius: 4px; font-weight: 600;
+    display: inline-block; width: fit-content;
+  }
+  .badge.green { background: #e8f5e9; color: #2e7d32; }
+  .badge.yellow { background: #fff8e1; color: #f57f17; }
+  .badge.blue { background: #e3f2fd; color: #1565c0; }
+
+  /* Framework */
+  .framework {
+    padding: 6rem 0; position: relative; overflow: hidden;
+    background: #fff;
+  }
+  .framework h2 {
+    font-size: 2.2rem; color: #0D47A1; margin-bottom: 3rem; text-align: center;
+  }
+  .framework-content {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 3rem;
+    max-width: 1000px; margin: 0 auto;
+  }
+  .framework-text p {
+    color: #444; line-height: 1.8; font-size: 1.05rem; margin-bottom: 1.5rem;
+  }
+  .framework-highlight {
+    background: linear-gradient(135deg, #E3F2FD 0%, #BBDEFB 100%);
+    padding: 1.5rem; border-radius: 12px; border-left: 4px solid #1565C0;
+    font-weight: 500; color: #0D47A1 !important;
+  }
+  @media (max-width: 768px) {
+    .framework-content { grid-template-columns: 1fr; gap: 0; }
+  }
+
+  /* Features */
+  .features {
+    padding: 6rem 0; position: relative; overflow: hidden;
+    background: #f8f9fa;
+  }
+  .features::before {
+    content: ""; position: absolute; inset: 0;
+    background-image: url('/images/features-bg.jpg');
+    background-size: cover; background-position: center;
+    opacity: 0.06;
+  }
+  .features h2 { font-size: 2.2rem; color: #0D47A1; margin-bottom: 0.8rem; text-align: center; }
+  .feature-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
+  .feature-card {
+    background: #fff; padding: 2rem; border-radius: 12px; border: 1px solid #e8e8e8;
+    transition: box-shadow 0.3s, transform 0.2s;
+  }
+  .feature-card:hover { box-shadow: 0 8px 30px rgba(0,0,0,0.08); transform: translateY(-2px); }
+  .feature-icon {
+    width: 48px; height: 48px; border-radius: 10px; background: #E3F2FD;
+    display: flex; align-items: center; justify-content: center; margin-bottom: 1rem;
+  }
+  .feature-card h3 { font-size: 1.1rem; margin-bottom: 0.5rem; color: #1a1a2e; }
+  .feature-card p { color: #666; line-height: 1.6; font-size: 0.95rem; }
+
+  /* Modules */
+  .modules {
+    padding: 6rem 0; position: relative; overflow: hidden;
+    background: #fff;
+  }
+  .modules::before {
+    content: ""; position: absolute; top: 40px; right: -80px; width: 300px; height: 300px;
+    border-radius: 50%; border: 2px dashed rgba(21,101,192,0.08);
+  }
+  .modules::after {
+    content: ""; position: absolute; bottom: 20px; left: -60px; width: 200px; height: 200px;
+    border-radius: 50%; border: 2px dashed rgba(21,101,192,0.06);
+  }
+  .modules h2 { font-size: 2.2rem; color: #0D47A1; margin-bottom: 0.8rem; text-align: center; }
+  .module-list { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem; }
+  .module-card {
+    background: #fff; border-radius: 12px; border: 1px solid #e0e0e0;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.04); overflow: hidden;
+  }
+  .module-img { position: relative; height: 220px; overflow: hidden; }
+  .module-img img { width: 100%; height: 100%; object-fit: cover; }
+  .module-img-overlay {
+    position: absolute; inset: 0;
+    background: linear-gradient(to bottom, transparent 40%, rgba(0,0,0,0.3) 100%);
+  }
+  .module-img-overlay.admin { background: linear-gradient(135deg, rgba(13,71,161,0.25) 0%, rgba(13,71,161,0.05) 100%); }
+  .module-img-overlay.client { background: linear-gradient(135deg, rgba(46,125,50,0.25) 0%, rgba(46,125,50,0.05) 100%); }
+  .module-img-overlay.vendor { background: linear-gradient(135deg, rgba(230,81,0,0.25) 0%, rgba(230,81,0,0.05) 100%); }
+  .module-body { padding: 1.5rem 2rem 2rem; }
+  .module-header { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; }
+  .module-icon {
+    width: 44px; height: 44px; border-radius: 10px; display: flex;
+    align-items: center; justify-content: center; font-weight: 700; font-size: 1.2rem; color: white;
+  }
+  .module-icon.admin { background: #0D47A1; }
+  .module-icon.client { background: #2E7D32; }
+  .module-icon.vendor { background: #E65100; }
+  .module-header h3 { font-size: 1.1rem; color: #1a1a2e; margin: 0; }
+  .module-role { font-size: 0.8rem; color: #888; }
+  .module-card ul { list-style: none; padding: 0; }
+  .module-card li {
+    padding: 0.45rem 0 0.45rem 1.4rem; position: relative; color: #555;
+    font-size: 0.92rem; line-height: 1.5;
+  }
+  .module-card li::before { content: "\2014"; position: absolute; left: 0; color: #bbb; }
+
+  /* Workflow */
+  .workflow {
+    padding: 6rem 0; position: relative; overflow: hidden;
+    background: #f8f9fa;
+  }
+  .workflow::before {
+    content: ""; position: absolute; inset: 0;
+    background-image: url('/images/workflow-bg.jpg');
+    background-size: cover; background-position: center;
+    opacity: 0.05;
+  }
+  .workflow h2 { font-size: 2.2rem; color: #0D47A1; margin-bottom: 0.8rem; text-align: center; }
+  .workflow-steps {
+    display: flex; justify-content: center; align-items: flex-start; gap: 0;
+    max-width: 1000px; margin: 0 auto;
+  }
+  .workflow-step { flex: 1; text-align: center; padding: 0 1rem; }
+  .workflow-step .step-number {
+    width: 48px; height: 48px; border-radius: 50%; background: #1565C0; color: white;
+    display: flex; align-items: center; justify-content: center; font-size: 1.2rem;
+    font-weight: 700; margin: 0 auto 1rem;
+  }
+  .workflow-step h3 { margin-bottom: 0.5rem; color: #1a1a2e; font-size: 1.05rem; }
+  .workflow-step p { color: #666; line-height: 1.5; font-size: 0.92rem; }
+  .workflow-arrow {
+    width: 40px; height: 2px; background: #ccc; margin-top: 23px; flex-shrink: 0;
+    position: relative;
+  }
+  .workflow-arrow::after {
+    content: ""; position: absolute; right: -1px; top: -4px;
+    border: solid #ccc; border-width: 0 2px 2px 0; padding: 3px; transform: rotate(-45deg);
+  }
+
+  /* Tech */
+  .tech {
+    padding: 6rem 0; position: relative; overflow: hidden;
+    background: #fff;
+  }
+  .tech::before {
+    content: ""; position: absolute; top: -100px; left: 50%; transform: translateX(-50%);
+    width: 800px; height: 800px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(21,101,192,0.03) 0%, transparent 70%);
+  }
+  .tech h2 { font-size: 2.2rem; color: #0D47A1; margin-bottom: 0.8rem; text-align: center; }
+  .tech-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem; }
+  .tech-item {
+    padding: 1.5rem; border-left: 3px solid #1565C0; background: #f8f9fa; border-radius: 0 8px 8px 0;
+  }
+  .tech-item h4 { color: #1a1a2e; margin-bottom: 0.5rem; font-size: 1rem; }
+  .tech-item p { color: #666; line-height: 1.5; font-size: 0.92rem; }
+
+  /* People Banner */
+  .people-banner { position: relative; height: 320px; overflow: hidden; }
+  .people-banner img { width: 100%; height: 100%; object-fit: cover; object-position: center 30%; }
+  .people-banner-overlay {
+    position: absolute; inset: 0;
+    background: linear-gradient(135deg, rgba(13,71,161,0.75) 0%, rgba(21,101,192,0.6) 100%);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .people-banner-text { text-align: center; color: white; max-width: 700px; padding: 0 2rem; }
+  .people-banner-text h3 { font-size: 1.8rem; font-weight: 700; margin-bottom: 0.8rem; }
+  .people-banner-text p { font-size: 1.1rem; opacity: 0.9; line-height: 1.6; }
+
+  /* Versions */
+  .versions {
+    padding: 6rem 0; background: #f0f4ff;
+    border-top: 1px solid #e0e8f5; border-bottom: 1px solid #e0e8f5;
+  }
+  .versions h2 { font-size: 2.2rem; color: #0D47A1; margin-bottom: 0.8rem; text-align: center; }
+  .versions-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;
+    max-width: 900px; margin: 0 auto;
+  }
+  .version-card {
+    background: #fff; border-radius: 16px; padding: 2.5rem;
+    border: 1px solid #e0e0e0; position: relative;
+  }
+  .pledg-card { border: 2px solid #E65100; box-shadow: 0 8px 32px rgba(230,81,0,0.1); }
+  .version-badge {
+    display: inline-block; padding: 0.3rem 1rem; border-radius: 20px;
+    font-size: 0.75rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.5px; margin-bottom: 1rem;
+  }
+  .opensource-badge { background: #E3F2FD; color: #1565C0; }
+  .pledg-badge { background: #FFF3E0; color: #E65100; }
+  .version-card h3 { font-size: 1.8rem; font-weight: 700; color: #1a1a2e; margin-bottom: 0.5rem; }
+  .version-desc { color: #666; line-height: 1.6; margin-bottom: 1.5rem; font-size: 0.95rem; }
+  .version-features { list-style: none; padding: 0; margin-bottom: 2rem; }
+  .version-features li {
+    padding: 0.5rem 0 0.5rem 1.6rem; position: relative; color: #555;
+    font-size: 0.92rem; line-height: 1.5; border-bottom: 1px solid #f5f5f5;
+  }
+  .version-features li:last-child { border-bottom: none; }
+  .version-features li::before {
+    content: ""; position: absolute; left: 0; top: 0.85rem;
+    width: 8px; height: 8px; border-radius: 50%; background: #ccc;
+  }
+  .version-features li.highlight {
+    padding-left: 0; display: flex; align-items: center; gap: 0.5rem;
+    font-weight: 600; color: #E65100;
+  }
+  .version-features li.highlight::before { display: none; }
+  .pledg-card .version-features li::before { background: #E65100; }
+  .btn-github {
+    display: inline-flex; align-items: center; gap: 0.5rem;
+    background: #1a1a2e; color: white; padding: 0.7rem 1.5rem;
+    border-radius: 8px; font-weight: 600; font-size: 0.95rem; transition: background 0.2s;
+  }
+  .btn-github:hover { background: #333; }
+  .btn-pledg {
+    display: inline-block; background: #E65100; color: white;
+    padding: 0.7rem 1.5rem; border-radius: 8px; font-weight: 600;
+    font-size: 0.95rem; transition: background 0.2s;
+  }
+  .btn-pledg:hover { background: #BF360C; }
+
+  /* CTA */
+  .cta {
+    padding: 6rem 2rem; text-align: center; position: relative; overflow: hidden;
+    background: linear-gradient(135deg, #1565C0 0%, #0D47A1 50%, #0a2f6e 100%);
+    color: white;
+  }
+  .cta-bg {
+    position: absolute; inset: 0;
+    background-image: url('/images/cta-bg.jpg');
+    background-size: cover; background-position: center;
+    opacity: 0.15;
+  }
+  .cta-bg::before {
+    content: ""; position: absolute; top: -40%; right: -10%; width: 500px; height: 500px;
+    border-radius: 50%; border: 50px solid rgba(255,255,255,0.04);
+  }
+  .cta-bg::after {
+    content: ""; position: absolute; bottom: -30%; left: -5%; width: 350px; height: 350px;
+    border-radius: 50%; border: 35px solid rgba(255,255,255,0.03);
+  }
+  .cta-content { position: relative; z-index: 1; }
+  .cta h2 { font-size: 2.2rem; margin-bottom: 1rem; }
+  .cta p { font-size: 1.15rem; margin-bottom: 2.5rem; opacity: 0.9; max-width: 600px; margin-left: auto; margin-right: auto; }
+  .cta .btn-primary { background: white; color: #1565C0; }
+  .cta .btn-primary:hover { background: #E3F2FD; }
+  .cta-photo { position: absolute; inset: 0; z-index: 0; }
+  .cta-photo img { width: 100%; height: 100%; object-fit: cover; opacity: 0.2; }
+
+  /* Footer */
+  .footer { padding: 2rem; background: #1a1a2e; color: #999; }
+  .footer-content {
+    max-width: 1200px; margin: 0 auto; display: flex;
+    justify-content: space-between; align-items: center;
+  }
+  .footer .logo { color: #64B5F6; margin-bottom: 0.5rem; }
+
+  /* Responsive */
+  @media (max-width: 1024px) {
+    .feature-grid { grid-template-columns: repeat(2, 1fr); }
+    .module-list { grid-template-columns: 1fr; }
+    .tech-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  @media (max-width: 768px) {
+    .nav-links { display: none; }
+    .mobile-menu-btn { display: block; }
+    .hero { padding: 7rem 1.5rem 3rem; }
+    .hero-grid { grid-template-columns: 1fr; gap: 2rem; }
+    .hero-content { text-align: center; }
+    .hero-image img { height: 300px; }
+    .hero h1 { font-size: 2rem; }
+    .hero p { font-size: 1rem; }
+    .hero-buttons { flex-direction: column; align-items: center; }
+    .hero-stats { flex-direction: column; gap: 1.2rem; justify-content: center; }
+    .what-is-grid { grid-template-columns: 1fr; }
+    .dashboard-preview { margin-top: 2rem; }
+    .feature-grid { grid-template-columns: 1fr; }
+    .workflow-steps { flex-direction: column; gap: 1.5rem; }
+    .workflow-arrow { width: 2px; height: 30px; margin: 0 auto; }
+    .workflow-arrow::after { right: -4px; top: auto; bottom: -1px; transform: rotate(45deg); }
+    .tech-grid { grid-template-columns: 1fr; }
+    .footer-content { flex-direction: column; text-align: center; gap: 1rem; }
+    .section-container { padding: 0 1.5rem; }
+    .versions-grid { grid-template-columns: 1fr; }
+    .cta-buttons { flex-direction: column; align-items: center; }
+    .people-banner { height: 250px; }
+    .people-banner-text h3 { font-size: 1.3rem; }
+    .module-img { height: 150px; }
+  }
+</style>

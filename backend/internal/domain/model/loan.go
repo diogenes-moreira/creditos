@@ -358,29 +358,28 @@ func (l *Loan) TotalRemaining() decimal.Decimal {
 }
 
 // CancellationSettlement computes the early cancellation settlement breakdown.
-// Returns remaining capital for all unpaid installments, plus interest and IVA
-// only from past-due installments (future interest is forgiven).
-func (l *Loan) CancellationSettlement() (pendingCapital, accumulatedInterest, accumulatedIVA, total decimal.Decimal) {
-	now := time.Now()
+// Formula: outstanding capital + accrued interest from disbursement to now + IVA on that interest.
+// Accrued interest = outstanding capital * monthly rate * months elapsed (pro-rata by days).
+func (l *Loan) CancellationSettlement(ivaRate decimal.Decimal) (pendingCapital, accruedInterest, accruedIVA, total decimal.Decimal) {
 	pendingCapital = decimal.Zero
-	accumulatedInterest = decimal.Zero
-	accumulatedIVA = decimal.Zero
+	accruedInterest = decimal.Zero
+	accruedIVA = decimal.Zero
 
 	for _, inst := range l.Installments {
-		if inst.Status == InstallmentPaid {
-			continue
-		}
-		pendingCapital = pendingCapital.Add(inst.CapitalAmount)
-		if inst.DueDate.Before(now) {
-			unpaidRatio := decimal.NewFromInt(1)
-			if inst.TotalAmount.IsPositive() {
-				unpaidRatio = inst.RemainingAmount.Div(inst.TotalAmount)
-			}
-			accumulatedInterest = accumulatedInterest.Add(inst.InterestAmount.Mul(unpaidRatio))
-			accumulatedIVA = accumulatedIVA.Add(inst.IVAAmount.Mul(unpaidRatio))
+		if inst.Status != InstallmentPaid {
+			pendingCapital = pendingCapital.Add(inst.CapitalAmount)
 		}
 	}
 
-	total = pendingCapital.Add(accumulatedInterest).Add(accumulatedIVA)
+	// Calculate months elapsed from disbursement (pro-rata by days)
+	if l.DisbursedAt != nil && pendingCapital.IsPositive() {
+		daysElapsed := decimal.NewFromFloat(time.Since(*l.DisbursedAt).Hours() / 24)
+		monthsElapsed := daysElapsed.Div(decimal.NewFromInt(30))
+		monthlyRate := l.InterestRate.Div(decimal.NewFromInt(100))
+		accruedInterest = pendingCapital.Mul(monthlyRate).Mul(monthsElapsed).Round(2)
+		accruedIVA = accruedInterest.Mul(ivaRate).Div(decimal.NewFromInt(100)).Round(2)
+	}
+
+	total = pendingCapital.Add(accruedInterest).Add(accruedIVA)
 	return
 }
