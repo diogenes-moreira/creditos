@@ -7,6 +7,7 @@ import CssBaseline from "@mui/material/CssBaseline";
 import theme from "./theme";
 import App from "./App";
 import { AuthProvider } from "./auth/AuthContext";
+import { NotificationProvider } from "./contexts/NotificationContext";
 import "./i18n";
 
 const queryClient = new QueryClient({
@@ -24,11 +25,13 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
     <QueryClientProvider client={queryClient}>
       <ThemeProvider theme={theme}>
         <CssBaseline />
-        <BrowserRouter>
-          <AuthProvider>
-            <App />
-          </AuthProvider>
-        </BrowserRouter>
+        <NotificationProvider>
+          <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+            <AuthProvider>
+              <App />
+            </AuthProvider>
+          </BrowserRouter>
+        </NotificationProvider>
       </ThemeProvider>
     </QueryClientProvider>
   </React.StrictMode>

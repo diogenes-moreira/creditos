@@ -25,6 +25,7 @@ func ToClientResponse(c *model.Client, email string) ClientResponse {
 		City:            c.City,
 		Province:        c.Province,
 		IsPEP:           c.IsPEP,
+		IVARate:         c.IVARate.StringFixed(2),
 		MercadoPagoLink: c.MercadoPagoLink,
 		IsBlocked:       c.IsBlocked,
 		Email:           email,
@@ -62,16 +63,17 @@ func ToMovementResponses(movements []model.Movement) []MovementResponse {
 
 func ToCreditLineResponse(cl *model.CreditLine) CreditLineResponse {
 	resp := CreditLineResponse{
-		ID:              cl.ID.String(),
-		ClientID:        cl.ClientID.String(),
-		MaxAmount:       cl.MaxAmount.StringFixed(2),
-		UsedAmount:      cl.UsedAmount.StringFixed(2),
-		AvailableAmount: cl.AvailableAmount().StringFixed(2),
-		InterestRate:    cl.InterestRate.StringFixed(4),
-		MaxInstallments: cl.MaxInstallments,
-		Status:          string(cl.Status),
-		RejectionReason: cl.RejectionReason,
-		CreatedAt:       cl.CreatedAt.Format("2006-01-02T15:04:05Z"),
+		ID:                  cl.ID.String(),
+		ClientID:            cl.ClientID.String(),
+		MaxAmount:           cl.MaxAmount.StringFixed(2),
+		UsedAmount:          cl.UsedAmount.StringFixed(2),
+		AvailableAmount:     cl.AvailableAmount().StringFixed(2),
+		InterestRate:        cl.InterestRate.StringFixed(4),
+		MaxInstallments:     cl.MaxInstallments,
+		RecalculateOnPrepay: cl.RecalculateOnPrepay,
+		Status:              string(cl.Status),
+		RejectionReason:     cl.RejectionReason,
+		CreatedAt:           cl.CreatedAt.Format("2006-01-02T15:04:05Z"),
 	}
 	if cl.ApprovedAt != nil {
 		s := cl.ApprovedAt.Format("2006-01-02T15:04:05Z")
@@ -111,6 +113,15 @@ func ToLoanResponse(l *model.Loan) LoanResponse {
 		s := l.DisbursedAt.Format("2006-01-02T15:04:05Z")
 		resp.DisbursedAt = &s
 	}
+	if l.Status == model.LoanActive {
+		pc, ai, aiva, total := l.CancellationSettlement()
+		resp.CancellationSettlement = &CancellationSettlementResponse{
+			PendingCapital:      pc.StringFixed(2),
+			AccumulatedInterest: ai.StringFixed(2),
+			AccumulatedIVA:      aiva.StringFixed(2),
+			Total:               total.StringFixed(2),
+		}
+	}
 	resp.Installments = ToInstallmentResponses(l.Installments)
 	return resp
 }
@@ -130,9 +141,11 @@ func ToInstallmentResponse(inst *model.Installment) InstallmentResponse {
 		DueDate:         inst.DueDate.Format("2006-01-02"),
 		CapitalAmount:   inst.CapitalAmount.StringFixed(2),
 		InterestAmount:  inst.InterestAmount.StringFixed(2),
+		IVAAmount:       inst.IVAAmount.StringFixed(2),
 		TotalAmount:     inst.TotalAmount.StringFixed(2),
 		PaidAmount:      inst.PaidAmount.StringFixed(2),
 		RemainingAmount: inst.RemainingAmount.StringFixed(2),
+		PenaltyApplied:  inst.PenaltyApplied,
 		Status:          string(inst.Status),
 	}
 	if inst.PaidAt != nil {
@@ -251,6 +264,7 @@ func ToPurchaseResponse(p *model.Purchase) PurchaseResponse {
 		VendorID:     p.VendorID.String(),
 		ClientID:     p.ClientID.String(),
 		CreditLineID: p.CreditLineID.String(),
+		LoanID:       p.LoanID.String(),
 		Amount:       p.Amount.StringFixed(2),
 		Description:  p.Description,
 		CreatedAt:    p.CreatedAt.Format("2006-01-02T15:04:05Z"),
@@ -268,6 +282,39 @@ func ToPurchaseResponses(purchases []model.Purchase) []PurchaseResponse {
 	result := make([]PurchaseResponse, len(purchases))
 	for i, p := range purchases {
 		result[i] = ToPurchaseResponse(&p)
+	}
+	return result
+}
+
+func ToWithdrawalRequestResponse(w *model.WithdrawalRequest) WithdrawalRequestResponse {
+	resp := WithdrawalRequestResponse{
+		ID:              w.ID.String(),
+		VendorID:        w.VendorID.String(),
+		Amount:          w.Amount.StringFixed(2),
+		Method:          string(w.Method),
+		Reference:       w.Reference,
+		Status:          string(w.Status),
+		RejectionReason: w.RejectionReason,
+		RequestedAt:     w.RequestedAt.Format("2006-01-02T15:04:05Z"),
+	}
+	if w.Vendor.BusinessName != "" {
+		resp.VendorName = w.Vendor.BusinessName
+	}
+	if w.ProcessedAt != nil {
+		s := w.ProcessedAt.Format("2006-01-02T15:04:05Z")
+		resp.ProcessedAt = &s
+	}
+	if w.PaymentID != nil {
+		s := w.PaymentID.String()
+		resp.PaymentID = &s
+	}
+	return resp
+}
+
+func ToWithdrawalRequestResponses(requests []model.WithdrawalRequest) []WithdrawalRequestResponse {
+	result := make([]WithdrawalRequestResponse, len(requests))
+	for i, w := range requests {
+		result[i] = ToWithdrawalRequestResponse(&w)
 	}
 	return result
 }

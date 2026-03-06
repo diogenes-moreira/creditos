@@ -166,6 +166,37 @@ func (h *ClientHandler) GetClient(c *gin.Context) {
 	c.JSON(http.StatusOK, dto.ToClientResponse(client, client.User.Email))
 }
 
+// UpdateIVARate godoc
+// @Summary Update IVA rate for a client
+// @Tags Admin Clients
+// @Accept json
+// @Produce json
+// @Param id path string true "Client UUID"
+// @Param request body dto.UpdateIVARateRequest true "IVA rate"
+// @Success 200 {object} dto.ClientResponse
+// @Failure 400 {object} dto.ErrorResponse
+// @Security BearerAuth
+// @Router /admin/clients/{id}/iva-rate [put]
+func (h *ClientHandler) UpdateIVARate(c *gin.Context) {
+	adminID := c.MustGet("userID").(uuid.UUID)
+	clientID, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "invalid client ID"})
+		return
+	}
+	var req dto.UpdateIVARateRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
+		return
+	}
+	client, err := h.clientService.UpdateIVARate(c.Request.Context(), adminID, clientID, req.IVARate)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, dto.ToClientResponse(client, client.User.Email))
+}
+
 // BlockClient godoc
 // @Summary Block a client
 // @Description Blocks a client account, preventing them from performing operations

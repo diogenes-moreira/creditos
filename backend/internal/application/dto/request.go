@@ -32,10 +32,11 @@ type MercadoPagoLinkRequest struct {
 }
 
 type CreateCreditLineRequest struct {
-	ClientID        string `json:"clientId" binding:"required,uuid"`
-	MaxAmount       string `json:"maxAmount" binding:"required"`
-	InterestRate    string `json:"interestRate" binding:"required"`
-	MaxInstallments int    `json:"maxInstallments" binding:"required,min=1,max=60"`
+	ClientID            string `json:"clientId" binding:"required,uuid"`
+	MaxAmount           string `json:"maxAmount" binding:"required"`
+	InterestRate        string `json:"interestRate" binding:"required"`
+	MaxInstallments     int    `json:"maxInstallments" binding:"required,min=1,max=60"`
+	RecalculateOnPrepay bool   `json:"recalculateOnPrepay"`
 }
 
 type ApproveCreditLineRequest struct {
@@ -69,9 +70,10 @@ type AdminCreateLoanRequest struct {
 }
 
 type RecordPaymentRequest struct {
-	Amount    string `json:"amount" binding:"required"`
-	Method    string `json:"method" binding:"required,oneof=cash transfer mercado_pago"`
-	Reference string `json:"reference"`
+	Amount        string `json:"amount" binding:"required"`
+	Method        string `json:"method" binding:"required,oneof=cash transfer mercado_pago"`
+	Reference     string `json:"reference"`
+	InstallmentID string `json:"installmentId"`
 }
 
 type AdjustPaymentRequest struct {
@@ -80,6 +82,10 @@ type AdjustPaymentRequest struct {
 
 type PrepayLoanRequest struct {
 	Amount string `json:"amount" binding:"required"`
+}
+
+type UpdateIVARateRequest struct {
+	IVARate float64 `json:"ivaRate" binding:"required,min=0,max=100"`
 }
 
 type SearchClientsRequest struct {
@@ -112,10 +118,12 @@ type UpdateVendorProfileRequest struct {
 }
 
 type RecordPurchaseRequest struct {
-	ClientID     string `json:"clientId" binding:"required,uuid"`
-	CreditLineID string `json:"creditLineId" binding:"required,uuid"`
-	Amount       string `json:"amount" binding:"required"`
-	Description  string `json:"description" binding:"required"`
+	ClientID         string `json:"clientId" binding:"required,uuid"`
+	CreditLineID     string `json:"creditLineId" binding:"required,uuid"`
+	Amount           string `json:"amount" binding:"required"`
+	Description      string `json:"description" binding:"required"`
+	NumInstallments  int    `json:"numInstallments" binding:"required,min=1"`
+	AmortizationType string `json:"amortizationType" binding:"required,oneof=french german"`
 }
 
 type RecordVendorPaymentRequest struct {
@@ -141,7 +149,8 @@ type RegisterClientByVendorRequest struct {
 }
 
 type UpdateCreditLineRequest struct {
-	MaxAmount string `json:"maxAmount" binding:"required"`
+	MaxAmount           string `json:"maxAmount" binding:"required"`
+	RecalculateOnPrepay *bool  `json:"recalculateOnPrepay,omitempty"`
 }
 
 type RequestCreditLineByVendorRequest struct {
@@ -149,4 +158,17 @@ type RequestCreditLineByVendorRequest struct {
 	MaxAmount       string `json:"maxAmount" binding:"required"`
 	InterestRate    string `json:"interestRate" binding:"required"`
 	MaxInstallments int    `json:"maxInstallments" binding:"required,min=1,max=60"`
+}
+
+type CreateWithdrawalRequest struct {
+	Amount string `json:"amount" binding:"required"`
+	Method string `json:"method" binding:"required,oneof=cash transfer"`
+}
+
+type ApproveWithdrawalRequest struct {
+	Reference string `json:"reference"`
+}
+
+type RejectWithdrawalRequest struct {
+	Reason string `json:"reason" binding:"required"`
 }

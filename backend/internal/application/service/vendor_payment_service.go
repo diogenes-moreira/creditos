@@ -72,6 +72,10 @@ func (s *VendorPaymentService) RecordPayment(ctx context.Context, adminUserID, v
 	return payment, nil
 }
 
+func (s *VendorPaymentService) GetByID(ctx context.Context, id uuid.UUID) (*model.VendorPayment, error) {
+	return s.vendorPaymentRepo.FindByID(ctx, id)
+}
+
 func (s *VendorPaymentService) GetByVendorID(ctx context.Context, vendorID uuid.UUID, offset, limit int) ([]model.VendorPayment, int64, error) {
 	if limit <= 0 {
 		limit = 20

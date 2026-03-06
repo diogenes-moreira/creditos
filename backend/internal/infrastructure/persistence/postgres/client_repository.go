@@ -58,7 +58,7 @@ func (r *ClientRepository) Search(ctx context.Context, query string, offset, lim
 	var total int64
 	q := "%" + query + "%"
 	base := r.db.WithContext(ctx).Model(&model.Client{}).
-		Where("first_name ILIKE ? OR last_name ILIKE ? OR dni ILIKE ? OR cuit ILIKE ?", q, q, q, q)
+		Where("first_name ILIKE ? OR last_name ILIKE ? OR dni ILIKE ? OR cuit ILIKE ? OR phone ILIKE ?", q, q, q, q, q)
 	base.Count(&total)
 	if err := base.Preload("User").Offset(offset).Limit(limit).Order("created_at DESC").Find(&clients).Error; err != nil {
 		return nil, 0, err

@@ -55,7 +55,17 @@ func (h *PaymentHandler) RecordPayment(c *gin.Context) {
 		return
 	}
 
-	payment, err := h.paymentService.RecordPayment(c.Request.Context(), userID, loanID, amount, model.PaymentMethod(req.Method), req.Reference)
+	var instID *uuid.UUID
+	if req.InstallmentID != "" {
+		parsed, parseErr := uuid.Parse(req.InstallmentID)
+		if parseErr != nil {
+			c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "invalid installment ID"})
+			return
+		}
+		instID = &parsed
+	}
+
+	payment, err := h.paymentService.RecordPayment(c.Request.Context(), userID, loanID, amount, model.PaymentMethod(req.Method), req.Reference, instID)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
 		return

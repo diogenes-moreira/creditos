@@ -11,7 +11,6 @@ import {
   TextField,
   Button,
   Link,
-  Alert,
   InputAdornment,
   IconButton,
 } from "@mui/material";
@@ -25,6 +24,8 @@ import {
 import { useAuth } from "../../auth/AuthContext";
 import { useTranslation } from "react-i18next";
 import LanguageSwitcher from "../../components/LanguageSwitcher";
+import { useNotification } from "../../contexts/NotificationContext";
+import { getErrorMessage } from "../../api/errorUtils";
 
 const schema = z.object({
   email: z.string().email("Email invalido"),
@@ -38,8 +39,8 @@ const Login: React.FC = () => {
   const { login } = useAuth();
   const { t } = useTranslation();
   const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const { showError } = useNotification();
 
   const { control, handleSubmit, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -47,14 +48,12 @@ const Login: React.FC = () => {
   });
 
   const onSubmit = async (data: FormData) => {
-    setError("");
     setLoading(true);
     try {
       await login(data);
       navigate("/dashboard");
     } catch (err: unknown) {
-      const axiosErr = err as { response?: { data?: { message?: string } } };
-      setError(axiosErr.response?.data?.message || t("auth.invalidCredentials"));
+      showError(getErrorMessage(err, t("auth.invalidCredentials")));
     } finally {
       setLoading(false);
     }
@@ -83,12 +82,6 @@ const Login: React.FC = () => {
               {t("auth.login")}
             </Typography>
           </Box>
-
-          {error && (
-            <Alert severity="error" sx={{ mb: 2 }}>
-              {error}
-            </Alert>
-          )}
 
           <form onSubmit={handleSubmit(onSubmit)}>
             <Controller

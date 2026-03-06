@@ -19,9 +19,12 @@ import {
   ListItemButton,
   Divider,
   Alert,
-  Snackbar,
   CircularProgress,
   Link,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
 } from "@mui/material";
 import { Search as SearchIcon } from "@mui/icons-material";
 import {
@@ -29,12 +32,15 @@ import {
   vendorGetClientCreditLines,
   vendorRecordPurchase,
 } from "../../api/endpoints";
+import { useNotification } from "../../contexts/NotificationContext";
+import { getErrorMessage } from "../../api/errorUtils";
 import MoneyDisplay from "../../components/MoneyDisplay";
 import type { Client, CreditLine } from "../../api/types";
 
 const NewPurchase: React.FC = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const { showSuccess, showError } = useNotification();
 
   const steps = [
     t("vendor.stepSearchClient"),
@@ -55,11 +61,8 @@ const NewPurchase: React.FC = () => {
   const [amount, setAmount] = useState("");
   const [description, setDescription] = useState("");
   const [amountError, setAmountError] = useState("");
-  const [snackbar, setSnackbar] = useState({
-    open: false,
-    message: "",
-    severity: "success" as "success" | "error",
-  });
+  const [numInstallments, setNumInstallments] = useState(1);
+  const [amortizationType, setAmortizationType] = useState<"french" | "german">("french");
 
   const formatMoney = (value: number) =>
     new Intl.NumberFormat("es-AR", {
@@ -92,12 +95,8 @@ const NewPurchase: React.FC = () => {
       const approvedLines = lines.filter((l) => l.status === "approved" || l.status === "active");
       setCreditLines(approvedLines);
       setActiveStep(1);
-    } catch {
-      setSnackbar({
-        open: true,
-        message: t("vendor.creditLinesError"),
-        severity: "error",
-      });
+    } catch (err) {
+      showError(getErrorMessage(err, t("vendor.creditLinesError")));
     } finally {
       setLoadingCreditLines(false);
     }
@@ -108,6 +107,8 @@ const NewPurchase: React.FC = () => {
     setAmount("");
     setDescription("");
     setAmountError("");
+    setNumInstallments(1);
+    setAmortizationType("french");
     setActiveStep(2);
   };
 
@@ -131,19 +132,11 @@ const NewPurchase: React.FC = () => {
   const purchaseMutation = useMutation({
     mutationFn: vendorRecordPurchase,
     onSuccess: () => {
-      setSnackbar({
-        open: true,
-        message: t("vendor.purchaseSuccess"),
-        severity: "success",
-      });
+      showSuccess(t("vendor.purchaseSuccess"));
       setTimeout(() => navigate("/vendor/purchases"), 1500);
     },
-    onError: () => {
-      setSnackbar({
-        open: true,
-        message: t("vendor.purchaseError"),
-        severity: "error",
-      });
+    onError: (err) => {
+      showError(getErrorMessage(err, t("vendor.purchaseError")));
     },
   });
 
@@ -156,6 +149,8 @@ const NewPurchase: React.FC = () => {
       creditLineId: selectedCreditLine.id,
       amount: amount,
       description: description,
+      numInstallments,
+      amortizationType,
     });
   };
 
@@ -368,6 +363,38 @@ const NewPurchase: React.FC = () => {
                   onChange={(e) => setDescription(e.target.value)}
                 />
               </Grid>
+              <Grid item xs={12} sm={6}>
+                <FormControl fullWidth>
+                  <InputLabel>{t("vendor.installments")}</InputLabel>
+                  <Select
+                    value={numInstallments}
+                    label={t("vendor.installments")}
+                    onChange={(e) => setNumInstallments(Number(e.target.value))}
+                  >
+                    {Array.from(
+                      { length: selectedCreditLine?.maxInstallments || 1 },
+                      (_, i) => i + 1
+                    ).map((n) => (
+                      <MenuItem key={n} value={n}>
+                        {n}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <FormControl fullWidth>
+                  <InputLabel>{t("vendor.amortizationSystem")}</InputLabel>
+                  <Select
+                    value={amortizationType}
+                    label={t("vendor.amortizationSystem")}
+                    onChange={(e) => setAmortizationType(e.target.value as "french" | "german")}
+                  >
+                    <MenuItem value="french">{t("loans.frenchFull")}</MenuItem>
+                    <MenuItem value="german">{t("loans.germanFull")}</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
             </Grid>
 
             <Box display="flex" gap={2} mt={3}>
@@ -392,19 +419,6 @@ const NewPurchase: React.FC = () => {
         </Card>
       )}
 
-      <Snackbar
-        open={snackbar.open}
-        autoHideDuration={4000}
-        onClose={() => setSnackbar({ ...snackbar, open: false })}
-        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
-      >
-        <Alert
-          severity={snackbar.severity}
-          onClose={() => setSnackbar({ ...snackbar, open: false })}
-        >
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
     </Box>
   );
 };

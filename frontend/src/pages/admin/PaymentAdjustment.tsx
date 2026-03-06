@@ -10,12 +10,12 @@ import {
   DialogContent,
   DialogActions,
   TextField,
-  Snackbar,
-  Alert,
 } from "@mui/material";
 import { Edit as EditIcon } from "@mui/icons-material";
 import { format } from "date-fns";
 import { getPayments, adminAdjustPayment } from "../../api/endpoints";
+import { useNotification } from "../../contexts/NotificationContext";
+import { getErrorMessage } from "../../api/errorUtils";
 import DataTable, { Column } from "../../components/DataTable";
 import MoneyDisplay from "../../components/MoneyDisplay";
 import type { Payment } from "../../api/types";
@@ -26,7 +26,7 @@ const PaymentAdjustment: React.FC = () => {
   const [adjustDialog, setAdjustDialog] = useState<Payment | null>(null);
   const [adjustAmount, setAdjustAmount] = useState("");
   const [adjustReason, setAdjustReason] = useState("");
-  const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" as "success" | "error" });
+  const { showSuccess, showError } = useNotification();
 
   const { data: payments, isLoading } = useQuery({
     queryKey: ["admin-payments"],
@@ -41,9 +41,9 @@ const PaymentAdjustment: React.FC = () => {
       setAdjustDialog(null);
       setAdjustAmount("");
       setAdjustReason("");
-      setSnackbar({ open: true, message: t("payments.paymentAdjusted"), severity: "success" });
+      showSuccess(t("payments.paymentAdjusted"));
     },
-    onError: () => setSnackbar({ open: true, message: t("payments.adjustError"), severity: "error" }),
+    onError: (err: unknown) => showError(getErrorMessage(err, t("payments.adjustError"))),
   });
 
   const handleAdjust = () => {
@@ -165,16 +165,6 @@ const PaymentAdjustment: React.FC = () => {
         </DialogActions>
       </Dialog>
 
-      <Snackbar
-        open={snackbar.open}
-        autoHideDuration={4000}
-        onClose={() => setSnackbar({ ...snackbar, open: false })}
-        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
-      >
-        <Alert severity={snackbar.severity} onClose={() => setSnackbar({ ...snackbar, open: false })}>
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
     </Box>
   );
 };

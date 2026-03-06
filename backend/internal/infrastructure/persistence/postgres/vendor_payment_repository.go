@@ -20,6 +20,14 @@ func (r *VendorPaymentRepository) Create(ctx context.Context, payment *model.Ven
 	return r.db.WithContext(ctx).Create(payment).Error
 }
 
+func (r *VendorPaymentRepository) FindByID(ctx context.Context, id uuid.UUID) (*model.VendorPayment, error) {
+	var payment model.VendorPayment
+	if err := r.db.WithContext(ctx).Preload("Vendor").First(&payment, "id = ?", id).Error; err != nil {
+		return nil, err
+	}
+	return &payment, nil
+}
+
 func (r *VendorPaymentRepository) FindByVendorID(ctx context.Context, vendorID uuid.UUID, offset, limit int) ([]model.VendorPayment, int64, error) {
 	var payments []model.VendorPayment
 	var total int64

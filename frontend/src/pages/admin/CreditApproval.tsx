@@ -8,8 +8,6 @@ import {
   CardContent,
   Grid,
   Button,
-  Snackbar,
-  Alert,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -38,6 +36,8 @@ import {
   adminRejectCreditLine,
   adminUpdateCreditLine,
 } from "../../api/endpoints";
+import { useNotification } from "../../contexts/NotificationContext";
+import { getErrorMessage } from "../../api/errorUtils";
 import MoneyDisplay from "../../components/MoneyDisplay";
 import StatusBadge from "../../components/StatusBadge";
 import ConfirmDialog from "../../components/ConfirmDialog";
@@ -155,7 +155,7 @@ const CreditApproval: React.FC = () => {
   const [rejectReason, setRejectReason] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [createForClient, setCreateForClient] = useState<Client | null>(null);
-  const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" as "success" | "error" });
+  const { showSuccess, showError } = useNotification();
 
   const { data: clientsData } = useQuery({
     queryKey: ["admin-clients-for-credit"],
@@ -188,9 +188,9 @@ const CreditApproval: React.FC = () => {
       invalidateCreditLines();
       setCreateOpen(false);
       reset();
-      setSnackbar({ open: true, message: t("creditLines.created"), severity: "success" });
+      showSuccess(t("creditLines.created"));
     },
-    onError: () => setSnackbar({ open: true, message: t("creditLines.createError"), severity: "error" }),
+    onError: (err: unknown) => showError(getErrorMessage(err, t("creditLines.createError"))),
   });
 
   const approveMutation = useMutation({
@@ -198,9 +198,9 @@ const CreditApproval: React.FC = () => {
     onSuccess: () => {
       invalidateCreditLines();
       setConfirmApproveId(null);
-      setSnackbar({ open: true, message: t("creditLines.approved"), severity: "success" });
+      showSuccess(t("creditLines.approved"));
     },
-    onError: () => setSnackbar({ open: true, message: t("creditLines.approveError"), severity: "error" }),
+    onError: (err: unknown) => showError(getErrorMessage(err, t("creditLines.approveError"))),
   });
 
   const rejectMutation = useMutation({
@@ -209,9 +209,9 @@ const CreditApproval: React.FC = () => {
       invalidateCreditLines();
       setRejectDialogId(null);
       setRejectReason("");
-      setSnackbar({ open: true, message: t("creditLines.rejected"), severity: "success" });
+      showSuccess(t("creditLines.rejected"));
     },
-    onError: () => setSnackbar({ open: true, message: t("creditLines.rejectError"), severity: "error" }),
+    onError: (err: unknown) => showError(getErrorMessage(err, t("creditLines.rejectError"))),
   });
 
   const updateCreditLineMutation = useMutation({
@@ -222,10 +222,10 @@ const CreditApproval: React.FC = () => {
       setEditDialogOpen(false);
       setEditingCreditLine(null);
       setNewMaxAmount("");
-      setSnackbar({ open: true, message: t("admin.creditLineUpdated"), severity: "success" });
+      showSuccess(t("admin.creditLineUpdated"));
     },
-    onError: () => {
-      setSnackbar({ open: true, message: t("admin.creditLineUpdateError"), severity: "error" });
+    onError: (err: unknown) => {
+      showError(getErrorMessage(err, t("admin.creditLineUpdateError")));
     },
   });
 
@@ -439,16 +439,6 @@ const CreditApproval: React.FC = () => {
         </DialogActions>
       </Dialog>
 
-      <Snackbar
-        open={snackbar.open}
-        autoHideDuration={4000}
-        onClose={() => setSnackbar({ ...snackbar, open: false })}
-        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
-      >
-        <Alert severity={snackbar.severity} onClose={() => setSnackbar({ ...snackbar, open: false })}>
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
     </Box>
   );
 };

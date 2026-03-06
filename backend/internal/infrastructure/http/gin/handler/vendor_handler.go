@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"io"
 	"net/http"
 
 	"github.com/diogenes-moreira/creditos/backend/internal/application/dto"
@@ -16,6 +17,8 @@ type VendorHandler struct {
 	vendorService        *service.VendorService
 	purchaseService      *service.PurchaseService
 	vendorPaymentService *service.VendorPaymentService
+	withdrawalService    *service.WithdrawalService
+	pdfService           port.PDFService
 	vendorRepo           port.VendorRepository
 	vendorAccountRepo    port.VendorAccountRepository
 	vendorMovementRepo   port.VendorMovementRepository
@@ -27,6 +30,8 @@ func NewVendorHandler(
 	vendorService *service.VendorService,
 	purchaseService *service.PurchaseService,
 	vendorPaymentService *service.VendorPaymentService,
+	withdrawalService *service.WithdrawalService,
+	pdfService port.PDFService,
 	vendorRepo port.VendorRepository,
 	vendorAccountRepo port.VendorAccountRepository,
 	vendorMovementRepo port.VendorMovementRepository,
@@ -37,6 +42,8 @@ func NewVendorHandler(
 		vendorService:        vendorService,
 		purchaseService:      purchaseService,
 		vendorPaymentService: vendorPaymentService,
+		withdrawalService:    withdrawalService,
+		pdfService:           pdfService,
 		vendorRepo:           vendorRepo,
 		vendorAccountRepo:    vendorAccountRepo,
 		vendorMovementRepo:   vendorMovementRepo,
@@ -287,7 +294,7 @@ func (h *VendorHandler) RequestCreditLine(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "invalid interest rate"})
 		return
 	}
-	cl, err := h.creditService.CreateCreditLine(c.Request.Context(), userID, clientID, maxAmount, interestRate, req.MaxInstallments)
+	cl, err := h.creditService.CreateCreditLine(c.Request.Context(), userID, clientID, maxAmount, interestRate, req.MaxInstallments, false)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
 		return
@@ -327,7 +334,7 @@ func (h *VendorHandler) RecordPurchase(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "invalid amount"})
 		return
 	}
-	purchase, err := h.purchaseService.RecordPurchase(c.Request.Context(), userID, clientID, creditLineID, amount, req.Description)
+	purchase, err := h.purchaseService.RecordPurchase(c.Request.Context(), userID, clientID, creditLineID, amount, req.Description, req.NumInstallments, model.AmortizationType(req.AmortizationType))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
 		return
@@ -492,6 +499,56 @@ func (h *VendorHandler) AdminGetVendorPurchases(c *gin.Context) {
 	c.JSON(http.StatusOK, dto.PaginatedResponse{Data: dto.ToPurchaseResponses(purchases), Total: total, Offset: req.Offset, Limit: req.Limit})
 }
 
+// AdminRecordPurchase godoc
+// @Summary Record a purchase on behalf of a vendor
+// @Tags Admin Vendors
+// @Accept json
+// @Produce json
+// @Param id path string true "Vendor ID"
+// @Param request body dto.RecordPurchaseRequest true "Purchase data"
+// @Success 201 {object} dto.PurchaseResponse
+// @Failure 400 {object} dto.ErrorResponse
+// @Security BearerAuth
+// @Router /admin/vendors/{id}/purchases [post]
+func (h *VendorHandler) AdminRecordPurchase(c *gin.Context) {
+	vendorID, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "invalid vendor ID"})
+		return
+	}
+	var req dto.RecordPurchaseRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
+		return
+	}
+	clientID, err := uuid.Parse(req.ClientID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "invalid client ID"})
+		return
+	}
+	creditLineID, err := uuid.Parse(req.CreditLineID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "invalid credit line ID"})
+		return
+	}
+	amount, err := decimal.NewFromString(req.Amount)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "invalid amount"})
+		return
+	}
+	vendor, err := h.vendorRepo.FindByID(c.Request.Context(), vendorID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, dto.ErrorResponse{Error: "vendor not found"})
+		return
+	}
+	purchase, err := h.purchaseService.RecordPurchase(c.Request.Context(), vendor.UserID, clientID, creditLineID, amount, req.Description, req.NumInstallments, model.AmortizationType(req.AmortizationType))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
+		return
+	}
+	c.JSON(http.StatusCreated, dto.ToPurchaseResponse(purchase))
+}
+
 // AdminGetVendorPayments godoc
 // @Summary Get vendor's payments (admin)
 // @Tags Admin Vendors
@@ -556,4 +613,184 @@ func (h *VendorHandler) AdminRecordVendorPayment(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusCreated, dto.ToVendorPaymentResponse(payment))
+}
+
+// --- Vendor Withdrawal endpoints ---
+
+func (h *VendorHandler) RequestWithdrawal(c *gin.Context) {
+	userID := c.MustGet("userID").(uuid.UUID)
+	var req dto.CreateWithdrawalRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
+		return
+	}
+	amount, err := decimal.NewFromString(req.Amount)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "invalid amount"})
+		return
+	}
+	wr, err := h.withdrawalService.RequestWithdrawal(c.Request.Context(), userID, amount, model.VendorPaymentMethod(req.Method))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
+		return
+	}
+	c.JSON(http.StatusCreated, dto.ToWithdrawalRequestResponse(wr))
+}
+
+func (h *VendorHandler) GetMyWithdrawals(c *gin.Context) {
+	userID := c.MustGet("userID").(uuid.UUID)
+	vendor, err := h.vendorRepo.FindByUserID(c.Request.Context(), userID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, dto.ErrorResponse{Error: "vendor not found"})
+		return
+	}
+	var req dto.PaginationRequest
+	_ = c.ShouldBindQuery(&req)
+	if req.Limit <= 0 {
+		req.Limit = 20
+	}
+	withdrawals, total, err := h.withdrawalService.GetByVendorID(c.Request.Context(), vendor.ID, req.Offset, req.Limit)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, dto.PaginatedResponse{Data: dto.ToWithdrawalRequestResponses(withdrawals), Total: total, Offset: req.Offset, Limit: req.Limit})
+}
+
+func (h *VendorHandler) GetMyPaymentReceipt(c *gin.Context) {
+	userID := c.MustGet("userID").(uuid.UUID)
+	paymentID, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "invalid payment ID"})
+		return
+	}
+	vendor, err := h.vendorRepo.FindByUserID(c.Request.Context(), userID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, dto.ErrorResponse{Error: "vendor not found"})
+		return
+	}
+	payment, err := h.vendorPaymentService.GetByID(c.Request.Context(), paymentID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, dto.ErrorResponse{Error: "payment not found"})
+		return
+	}
+	if payment.VendorID != vendor.ID {
+		c.JSON(http.StatusForbidden, dto.ErrorResponse{Error: "payment does not belong to this vendor"})
+		return
+	}
+	reader, err := h.pdfService.GenerateVendorPaymentReceipt(payment, vendor)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "failed to generate receipt"})
+		return
+	}
+	c.Header("Content-Type", "application/pdf")
+	c.Header("Content-Disposition", "attachment; filename=receipt-"+paymentID.String()[:8]+".pdf")
+	io.Copy(c.Writer, reader)
+}
+
+// --- Admin Withdrawal endpoints ---
+
+func (h *VendorHandler) AdminGetVendorWithdrawals(c *gin.Context) {
+	vendorID, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "invalid vendor ID"})
+		return
+	}
+	var req dto.PaginationRequest
+	_ = c.ShouldBindQuery(&req)
+	if req.Limit <= 0 {
+		req.Limit = 20
+	}
+	withdrawals, total, err := h.withdrawalService.GetByVendorID(c.Request.Context(), vendorID, req.Offset, req.Limit)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, dto.PaginatedResponse{Data: dto.ToWithdrawalRequestResponses(withdrawals), Total: total, Offset: req.Offset, Limit: req.Limit})
+}
+
+func (h *VendorHandler) AdminGetPendingWithdrawals(c *gin.Context) {
+	var req dto.PaginationRequest
+	_ = c.ShouldBindQuery(&req)
+	if req.Limit <= 0 {
+		req.Limit = 20
+	}
+	withdrawals, total, err := h.withdrawalService.GetPending(c.Request.Context(), req.Offset, req.Limit)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, dto.PaginatedResponse{Data: dto.ToWithdrawalRequestResponses(withdrawals), Total: total, Offset: req.Offset, Limit: req.Limit})
+}
+
+func (h *VendorHandler) AdminApproveWithdrawal(c *gin.Context) {
+	adminID := c.MustGet("userID").(uuid.UUID)
+	withdrawalID, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "invalid withdrawal ID"})
+		return
+	}
+	var req dto.ApproveWithdrawalRequest
+	_ = c.ShouldBindJSON(&req)
+	wr, err := h.withdrawalService.ApproveWithdrawal(c.Request.Context(), adminID, withdrawalID, req.Reference)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, dto.ToWithdrawalRequestResponse(wr))
+}
+
+func (h *VendorHandler) AdminRejectWithdrawal(c *gin.Context) {
+	adminID := c.MustGet("userID").(uuid.UUID)
+	withdrawalID, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "invalid withdrawal ID"})
+		return
+	}
+	var req dto.RejectWithdrawalRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
+		return
+	}
+	wr, err := h.withdrawalService.RejectWithdrawal(c.Request.Context(), adminID, withdrawalID, req.Reason)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, dto.ToWithdrawalRequestResponse(wr))
+}
+
+func (h *VendorHandler) AdminGetVendorPaymentReceipt(c *gin.Context) {
+	vendorID, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "invalid vendor ID"})
+		return
+	}
+	paymentID, err := uuid.Parse(c.Param("paymentId"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "invalid payment ID"})
+		return
+	}
+	payment, err := h.vendorPaymentService.GetByID(c.Request.Context(), paymentID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, dto.ErrorResponse{Error: "payment not found"})
+		return
+	}
+	if payment.VendorID != vendorID {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "payment does not belong to this vendor"})
+		return
+	}
+	vendor, err := h.vendorService.GetByID(c.Request.Context(), vendorID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, dto.ErrorResponse{Error: "vendor not found"})
+		return
+	}
+	reader, err := h.pdfService.GenerateVendorPaymentReceipt(payment, vendor)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "failed to generate receipt"})
+		return
+	}
+	c.Header("Content-Type", "application/pdf")
+	c.Header("Content-Disposition", "attachment; filename=receipt-"+paymentID.String()[:8]+".pdf")
+	io.Copy(c.Writer, reader)
 }

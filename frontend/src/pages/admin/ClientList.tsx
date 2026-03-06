@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
@@ -16,27 +16,24 @@ const ClientList: React.FC = () => {
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(20);
   const [search, setSearch] = useState("");
-  const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(search), 300);
+    return () => clearTimeout(timer);
+  }, [search]);
 
   const { data: clientsData, isLoading } = useQuery({
     queryKey: ["admin-clients", page, pageSize],
     queryFn: () => adminGetClients(page + 1, pageSize),
-    enabled: !searchQuery,
+    enabled: !debouncedSearch,
   });
 
   const { data: searchResults, isLoading: searchLoading } = useQuery({
-    queryKey: ["admin-clients-search", searchQuery],
-    queryFn: () => adminSearchClients(searchQuery),
-    enabled: !!searchQuery,
+    queryKey: ["admin-clients-search", debouncedSearch],
+    queryFn: () => adminSearchClients(debouncedSearch),
+    enabled: !!debouncedSearch,
   });
-
-  const handleSearch = () => {
-    setSearchQuery(search);
-  };
-
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter") handleSearch();
-  };
 
   const columns: Column<Client>[] = [
     {
@@ -73,8 +70,8 @@ const ClientList: React.FC = () => {
     },
   ];
 
-  const rows = searchQuery ? (searchResults || []) : (clientsData?.data || []);
-  const loading = searchQuery ? searchLoading : isLoading;
+  const rows = debouncedSearch ? (searchResults || []) : (clientsData?.data || []);
+  const loading = debouncedSearch ? searchLoading : isLoading;
 
   return (
     <Box>
@@ -85,11 +82,7 @@ const ClientList: React.FC = () => {
           fullWidth
           placeholder={t("admin.searchPlaceholder")}
           value={search}
-          onChange={(e) => {
-            setSearch(e.target.value);
-            if (!e.target.value) setSearchQuery("");
-          }}
-          onKeyUp={handleKeyPress}
+          onChange={(e) => setSearch(e.target.value)}
           InputProps={{
             startAdornment: (
               <InputAdornment position="start">
@@ -104,11 +97,11 @@ const ClientList: React.FC = () => {
       <DataTable
         columns={columns}
         rows={rows}
-        total={searchQuery ? rows.length : (clientsData?.total || 0)}
+        total={debouncedSearch ? rows.length : (clientsData?.total || 0)}
         page={page}
         pageSize={pageSize}
-        onPageChange={searchQuery ? undefined : setPage}
-        onPageSizeChange={searchQuery ? undefined : (size) => { setPageSize(size); setPage(0); }}
+        onPageChange={debouncedSearch ? undefined : setPage}
+        onPageSizeChange={debouncedSearch ? undefined : (size) => { setPageSize(size); setPage(0); }}
         loading={loading}
         keyExtractor={(row) => row.id}
         emptyMessage={t("admin.noClientsFound")}

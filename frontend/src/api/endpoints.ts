@@ -37,6 +37,10 @@ import type {
   RegisterClientByVendorRequest,
   RequestCreditLineByVendorRequest,
   UpdateCreditLineRequest,
+  WithdrawalRequest,
+  CreateWithdrawalRequest,
+  ApproveWithdrawalRequest,
+  RejectWithdrawalRequest,
 } from "./types";
 
 // ==================== Auth ====================
@@ -131,6 +135,11 @@ export const adminSearchClients = async (query: string): Promise<Client[]> => {
   return res.data.data || res.data;
 };
 
+export const adminUpdateIVARate = async (clientId: string, ivaRate: number): Promise<Client> => {
+  const res = await apiClient.put(`/admin/clients/${clientId}/iva-rate`, { ivaRate });
+  return res.data;
+};
+
 export const adminGetClientLoans = async (clientId: string, page = 1, pageSize = 20): Promise<PaginatedResponse<Loan>> => {
   const res = await apiClient.get(`/admin/clients/${clientId}/loans`, { params: { offset: (page - 1) * pageSize, limit: pageSize } });
   return res.data;
@@ -190,6 +199,11 @@ export const adminCreateLoan = async (data: { clientId: string; creditLineId: st
   return res.data;
 };
 
+export const adminCreateWithdrawal = async (data: { clientId: string; creditLineId: string; amount: string; numInstallments: number; amortizationType: string }): Promise<Loan> => {
+  const res = await apiClient.post("/admin/loans/withdrawal", data);
+  return res.data;
+};
+
 export const adminGetPendingLoans = async (): Promise<Loan[]> => {
   const res = await apiClient.get("/admin/loans/pending");
   return res.data.data || res.data;
@@ -210,8 +224,13 @@ export const adminCancelLoan = async (id: string): Promise<Loan> => {
   return res.data;
 };
 
-export const adminPrepayLoan = async (id: string): Promise<Loan> => {
-  const res = await apiClient.post(`/admin/loans/${id}/prepay`);
+export const adminPrepayLoan = async (id: string, amount: string): Promise<Loan> => {
+  const res = await apiClient.post(`/admin/loans/${id}/prepay`, { amount });
+  return res.data;
+};
+
+export const adminRecordLoanPayment = async (loanId: string, data: RecordPaymentRequest): Promise<Payment> => {
+  const res = await apiClient.post(`/admin/loans/${loanId}/payments`, data);
   return res.data;
 };
 
@@ -320,6 +339,21 @@ export const vendorRecordPurchase = async (data: RecordPurchaseRequest): Promise
   return res.data;
 };
 
+export const vendorRequestWithdrawal = async (data: CreateWithdrawalRequest): Promise<WithdrawalRequest> => {
+  const res = await apiClient.post("/me/vendor/withdrawals", data);
+  return res.data;
+};
+
+export const vendorGetWithdrawals = async (page = 1, pageSize = 20): Promise<PaginatedResponse<WithdrawalRequest>> => {
+  const res = await apiClient.get("/me/vendor/withdrawals", { params: { offset: (page - 1) * pageSize, limit: pageSize } });
+  return res.data;
+};
+
+export const downloadVendorPaymentReceipt = async (paymentId: string): Promise<Blob> => {
+  const res = await apiClient.get(`/me/vendor/payments/${paymentId}/receipt`, { responseType: "blob" });
+  return res.data;
+};
+
 // ==================== Admin: Vendors ====================
 
 export const adminGetVendors = async (page = 1, pageSize = 20, query = ""): Promise<PaginatedResponse<Vendor>> => {
@@ -357,6 +391,36 @@ export const adminGetVendorPayments = async (id: string, page = 1, pageSize = 20
 
 export const adminRecordVendorPayment = async (id: string, data: RecordVendorPaymentRequest): Promise<VendorPayment> => {
   const res = await apiClient.post(`/admin/vendors/${id}/payments`, data);
+  return res.data;
+};
+
+export const adminRecordVendorPurchase = async (vendorId: string, data: RecordPurchaseRequest): Promise<Purchase> => {
+  const res = await apiClient.post(`/admin/vendors/${vendorId}/purchases`, data);
+  return res.data;
+};
+
+export const adminGetVendorWithdrawals = async (vendorId: string, page = 1, pageSize = 20): Promise<PaginatedResponse<WithdrawalRequest>> => {
+  const res = await apiClient.get(`/admin/vendors/${vendorId}/withdrawals`, { params: { offset: (page - 1) * pageSize, limit: pageSize } });
+  return res.data;
+};
+
+export const adminGetPendingWithdrawals = async (page = 1, pageSize = 20): Promise<PaginatedResponse<WithdrawalRequest>> => {
+  const res = await apiClient.get("/admin/withdrawals/pending", { params: { offset: (page - 1) * pageSize, limit: pageSize } });
+  return res.data;
+};
+
+export const adminApproveWithdrawal = async (id: string, data: ApproveWithdrawalRequest): Promise<WithdrawalRequest> => {
+  const res = await apiClient.post(`/admin/withdrawals/${id}/approve`, data);
+  return res.data;
+};
+
+export const adminRejectWithdrawal = async (id: string, data: RejectWithdrawalRequest): Promise<WithdrawalRequest> => {
+  const res = await apiClient.post(`/admin/withdrawals/${id}/reject`, data);
+  return res.data;
+};
+
+export const downloadAdminVendorPaymentReceipt = async (vendorId: string, paymentId: string): Promise<Blob> => {
+  const res = await apiClient.get(`/admin/vendors/${vendorId}/payments/${paymentId}/receipt`, { responseType: "blob" });
   return res.data;
 };
 

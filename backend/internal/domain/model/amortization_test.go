@@ -18,19 +18,28 @@ func TestCalculateFrenchAmortization(t *testing.T) {
 		annualRate := decimal.NewFromFloat(0.24)
 		installments := 12
 
-		schedule := model.CalculateFrenchAmortization(principal, annualRate, installments, startDate)
+		schedule := model.CalculateFrenchAmortization(principal, annualRate, installments, startDate, decimal.NewFromInt(21))
 
 		assert.Equal(t, installments, len(schedule.Installments))
 		assert.True(t, schedule.TotalInterest.IsPositive(), "total interest should be positive")
 		assert.True(t, schedule.TotalPayment.GreaterThan(principal), "total payment should exceed principal")
 
-		// French: all installments should have approximately the same total
-		firstTotal := schedule.Installments[0].Total
+		// French: all installments should have approximately the same base payment (capital + interest)
+		// Note: Total includes IVA which varies proportionally to interest, so we check the base payment
+		firstBase := schedule.Installments[0].Capital.Add(schedule.Installments[0].Interest)
 		for i := 0; i < len(schedule.Installments)-1; i++ {
-			diff := schedule.Installments[i].Total.Sub(firstTotal).Abs()
+			base := schedule.Installments[i].Capital.Add(schedule.Installments[i].Interest)
+			diff := base.Sub(firstBase).Abs()
 			assert.True(t, diff.LessThanOrEqual(decimal.NewFromFloat(0.02)),
-				"installment %d total %s differs from first %s", i+1,
-				schedule.Installments[i].Total.StringFixed(2), firstTotal.StringFixed(2))
+				"installment %d base payment %s differs from first %s", i+1,
+				base.StringFixed(2), firstBase.StringFixed(2))
+		}
+
+		// Verify IVA is computed on each installment
+		for _, inst := range schedule.Installments {
+			expectedIVA := inst.Interest.Mul(decimal.NewFromInt(21)).Div(decimal.NewFromInt(100)).Round(2)
+			assert.True(t, inst.IVA.Equal(expectedIVA),
+				"installment %d IVA should be %s, got %s", inst.Number, expectedIVA.StringFixed(2), inst.IVA.StringFixed(2))
 		}
 
 		// Last installment remaining should be zero
@@ -55,7 +64,7 @@ func TestCalculateFrenchAmortization(t *testing.T) {
 		annualRate := decimal.NewFromInt(0)
 		installments := 12
 
-		schedule := model.CalculateFrenchAmortization(principal, annualRate, installments, startDate)
+		schedule := model.CalculateFrenchAmortization(principal, annualRate, installments, startDate, decimal.NewFromInt(21))
 
 		assert.Equal(t, installments, len(schedule.Installments))
 		assert.True(t, schedule.TotalInterest.Equal(decimal.NewFromInt(0)),
@@ -82,7 +91,7 @@ func TestCalculateFrenchAmortization(t *testing.T) {
 		annualRate := decimal.NewFromFloat(0.12)
 		installments := 1
 
-		schedule := model.CalculateFrenchAmortization(principal, annualRate, installments, startDate)
+		schedule := model.CalculateFrenchAmortization(principal, annualRate, installments, startDate, decimal.NewFromInt(21))
 
 		assert.Equal(t, 1, len(schedule.Installments))
 		inst := schedule.Installments[0]
@@ -97,7 +106,7 @@ func TestCalculateFrenchAmortization(t *testing.T) {
 		annualRate := decimal.NewFromFloat(0.36)
 		installments := 24
 
-		schedule := model.CalculateFrenchAmortization(principal, annualRate, installments, startDate)
+		schedule := model.CalculateFrenchAmortization(principal, annualRate, installments, startDate, decimal.NewFromInt(21))
 
 		// In French amortization, interest portion decreases and capital increases
 		for i := 1; i < len(schedule.Installments)-1; i++ {
@@ -117,7 +126,7 @@ func TestCalculateGermanAmortization(t *testing.T) {
 		annualRate := decimal.NewFromFloat(0.24)
 		installments := 12
 
-		schedule := model.CalculateGermanAmortization(principal, annualRate, installments, startDate)
+		schedule := model.CalculateGermanAmortization(principal, annualRate, installments, startDate, decimal.NewFromInt(21))
 
 		assert.Equal(t, installments, len(schedule.Installments))
 		assert.True(t, schedule.TotalInterest.IsPositive())
@@ -150,7 +159,7 @@ func TestCalculateGermanAmortization(t *testing.T) {
 		annualRate := decimal.NewFromInt(0)
 		installments := 12
 
-		schedule := model.CalculateGermanAmortization(principal, annualRate, installments, startDate)
+		schedule := model.CalculateGermanAmortization(principal, annualRate, installments, startDate, decimal.NewFromInt(21))
 
 		assert.True(t, schedule.TotalInterest.Equal(decimal.NewFromInt(0)))
 		assert.True(t, schedule.TotalPayment.Equal(principal))
@@ -164,7 +173,7 @@ func TestCalculateGermanAmortization(t *testing.T) {
 		principal := decimal.NewFromInt(10000)
 		annualRate := decimal.NewFromFloat(0.12)
 
-		schedule := model.CalculateGermanAmortization(principal, annualRate, 1, startDate)
+		schedule := model.CalculateGermanAmortization(principal, annualRate, 1, startDate, decimal.NewFromInt(21))
 
 		require.Equal(t, 1, len(schedule.Installments))
 		inst := schedule.Installments[0]
@@ -177,7 +186,7 @@ func TestCalculateGermanAmortization(t *testing.T) {
 		annualRate := decimal.NewFromFloat(0.36)
 		installments := 24
 
-		schedule := model.CalculateGermanAmortization(principal, annualRate, installments, startDate)
+		schedule := model.CalculateGermanAmortization(principal, annualRate, installments, startDate, decimal.NewFromInt(21))
 
 		for i := 1; i < len(schedule.Installments); i++ {
 			assert.True(t, schedule.Installments[i].Interest.LessThan(schedule.Installments[i-1].Interest),
@@ -190,7 +199,7 @@ func TestCalculateGermanAmortization(t *testing.T) {
 		annualRate := decimal.NewFromFloat(0.24)
 		installments := 6
 
-		schedule := model.CalculateGermanAmortization(principal, annualRate, installments, startDate)
+		schedule := model.CalculateGermanAmortization(principal, annualRate, installments, startDate, decimal.NewFromInt(21))
 
 		firstTotal := schedule.Installments[0].Total
 		lastTotal := schedule.Installments[len(schedule.Installments)-1].Total
@@ -242,8 +251,8 @@ func TestFrenchVsGerman_TotalInterestComparison(t *testing.T) {
 	annualRate := decimal.NewFromFloat(0.24)
 	installments := 12
 
-	french := model.CalculateFrenchAmortization(principal, annualRate, installments, startDate)
-	german := model.CalculateGermanAmortization(principal, annualRate, installments, startDate)
+	french := model.CalculateFrenchAmortization(principal, annualRate, installments, startDate, decimal.NewFromInt(21))
+	german := model.CalculateGermanAmortization(principal, annualRate, installments, startDate, decimal.NewFromInt(21))
 
 	assert.True(t, german.TotalInterest.LessThan(french.TotalInterest),
 		"German interest %s should be less than French interest %s",

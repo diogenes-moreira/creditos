@@ -158,7 +158,7 @@ func TestLoan_Disburse(t *testing.T) {
 		_ = loan.RequestApproval()
 		_ = loan.Approve(uuid.New())
 
-		installments, err := loan.Disburse(startDate)
+		installments, err := loan.Disburse(startDate, decimal.NewFromInt(21))
 		require.NoError(t, err)
 		assert.Equal(t, 12, len(installments))
 		assert.Equal(t, model.LoanActive, loan.Status)
@@ -175,7 +175,7 @@ func TestLoan_Disburse(t *testing.T) {
 
 	t.Run("cannot disburse non-approved loan", func(t *testing.T) {
 		loan := newTestLoan(t)
-		_, err := loan.Disburse(startDate)
+		_, err := loan.Disburse(startDate, decimal.NewFromInt(21))
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "can only disburse approved loans")
 	})
@@ -186,7 +186,7 @@ func TestLoan_Disburse(t *testing.T) {
 		_ = loan.RequestApproval()
 		_ = loan.Approve(uuid.New())
 
-		installments, err := loan.Disburse(startDate)
+		installments, err := loan.Disburse(startDate, decimal.NewFromInt(21))
 		require.NoError(t, err)
 		assert.Equal(t, 6, len(installments))
 	})
@@ -199,7 +199,7 @@ func TestLoan_Cancel(t *testing.T) {
 		loan := newTestLoan(t)
 		_ = loan.RequestApproval()
 		_ = loan.Approve(uuid.New())
-		_, _ = loan.Disburse(startDate)
+		_, _ = loan.Disburse(startDate, decimal.NewFromInt(21))
 
 		err := loan.Cancel()
 		require.NoError(t, err)
@@ -222,7 +222,7 @@ func TestLoan_Complete(t *testing.T) {
 		loan := newTestLoan(t)
 		_ = loan.RequestApproval()
 		_ = loan.Approve(uuid.New())
-		_, _ = loan.Disburse(startDate)
+		_, _ = loan.Disburse(startDate, decimal.NewFromInt(21))
 
 		err := loan.Complete()
 		require.NoError(t, err)
@@ -245,7 +245,7 @@ func TestLoan_MarkDefaulted(t *testing.T) {
 		loan := newTestLoan(t)
 		_ = loan.RequestApproval()
 		_ = loan.Approve(uuid.New())
-		_, _ = loan.Disburse(startDate)
+		_, _ = loan.Disburse(startDate, decimal.NewFromInt(21))
 
 		err := loan.MarkDefaulted()
 		require.NoError(t, err)
@@ -273,7 +273,7 @@ func TestLoan_StatusTransitionChain(t *testing.T) {
 	require.NoError(t, loan.Approve(uuid.New()))
 	assert.Equal(t, model.LoanApproved, loan.Status)
 
-	_, err := loan.Disburse(startDate)
+	_, err := loan.Disburse(startDate, decimal.NewFromInt(21))
 	require.NoError(t, err)
 	assert.Equal(t, model.LoanActive, loan.Status)
 
@@ -286,7 +286,7 @@ func TestLoan_CheckCompletion(t *testing.T) {
 	loan := newTestLoan(t)
 	_ = loan.RequestApproval()
 	_ = loan.Approve(uuid.New())
-	_, _ = loan.Disburse(startDate)
+	_, _ = loan.Disburse(startDate, decimal.NewFromInt(21))
 
 	// Not all paid yet
 	assert.False(t, loan.CheckCompletion())
@@ -303,7 +303,7 @@ func TestLoan_TotalPaidAndRemaining(t *testing.T) {
 	loan := newTestLoan(t)
 	_ = loan.RequestApproval()
 	_ = loan.Approve(uuid.New())
-	_, _ = loan.Disburse(startDate)
+	_, _ = loan.Disburse(startDate, decimal.NewFromInt(21))
 
 	assert.True(t, loan.TotalPaid().Equal(decimal.NewFromInt(0)))
 	assert.True(t, loan.TotalRemaining().IsPositive())

@@ -30,7 +30,8 @@
     "viewAll": "Ver todos",
     "create": "Crear",
     "name": "Nombre",
-    "type": "Tipo"
+    "type": "Tipo",
+    "unknownError": "Ocurrió un error inesperado"
   },
   "auth": {
     "login": "Iniciar sesión",
@@ -189,7 +190,9 @@
     "sendRequest": "Enviar solicitud",
     "requestSuccess": "Solicitud enviada exitosamente",
     "requestError": "Error al solicitar el crédito",
-    "noInstallments": "Sin cuotas"
+    "noInstallments": "Sin cuotas",
+    "iva": "IVA",
+    "ivaRate": "Tasa de IVA"
   },
   "payments": {
     "title": "Historial de pagos",
@@ -287,13 +290,31 @@
     "clientDetailMovementsTab": "Movimientos",
     "creditLineUpdated": "Línea de crédito actualizada",
     "creditLineUpdateError": "Error al actualizar línea de crédito",
+    "ivaRateUpdated": "Tasa de IVA actualizada",
+    "ivaRateUpdateError": "Error al actualizar tasa de IVA",
     "noCreditLines": "Sin líneas de crédito",
     "createLoan": "Crear préstamo",
     "loanCreated": "Préstamo creado exitosamente",
     "loanCreateError": "Error al crear el préstamo",
     "selectClient": "Seleccionar cliente",
     "selectCreditLine": "Seleccionar línea de crédito",
-    "noCreditLineForClient": "Este cliente no tiene línea de crédito aprobada"
+    "noCreditLineForClient": "Este cliente no tiene línea de crédito aprobada",
+    "cashWithdrawal": "Retiro en efectivo",
+    "withdrawalCreated": "Retiro creado y desembolsado exitosamente",
+    "withdrawalCreateError": "Error al crear el retiro",
+    "recordPayment": "Registrar pago",
+    "paymentRecorded": "Pago registrado exitosamente",
+    "paymentRecordError": "Error al registrar el pago",
+    "capitalPrepay": "Adelanto de capital",
+    "prepayRecorded": "Adelanto de capital procesado",
+    "prepayError": "Error al procesar el adelanto",
+    "recalculateOnPrepay": "Recalcular intereses en prepago",
+    "paymentReference": "Referencia",
+    "settlementBreakdown": "Liquidación por cancelación anticipada",
+    "pendingCapital": "Capital pendiente",
+    "accumulatedInterest": "Intereses acumulados (vencidos)",
+    "accumulatedIVA": "IVA acumulado (vencidos)",
+    "settlementTotal": "Total a liquidar"
   },
   "profile": {
     "title": "Mi perfil",
@@ -362,7 +383,19 @@
     "orRegisterNew": "¿Cliente nuevo? Registrar cliente",
     "step1": "Buscar cliente",
     "step2": "Línea de crédito",
-    "step3": "Datos de la compra"
+    "step3": "Datos de la compra",
+    "withdrawals": "Retiros",
+    "requestWithdrawal": "Solicitar retiro",
+    "withdrawalAmount": "Monto del retiro ($)",
+    "withdrawalMethod": "Método de retiro",
+    "withdrawalSuccess": "Solicitud de retiro enviada",
+    "withdrawalError": "Error al solicitar retiro",
+    "noWithdrawals": "No hay retiros registrados",
+    "downloadReceipt": "Descargar comprobante",
+    "insufficientBalance": "Saldo insuficiente",
+    "balanceAfter": "Saldo posterior",
+    "installments": "Cuotas",
+    "amortizationSystem": "Sistema de amortización"
   },
   "adminVendor": {
     "title": "Gestión de vendedores",
@@ -394,7 +427,23 @@
     "address": "Dirección",
     "province": "Provincia",
     "registerSuccess": "Vendedor registrado",
-    "registerError": "Error al registrar vendedor"
+    "registerError": "Error al registrar vendedor",
+    "withdrawals": "Retiros",
+    "approveWithdrawal": "Aprobar retiro",
+    "rejectWithdrawal": "Rechazar retiro",
+    "rejectionReason": "Motivo de rechazo",
+    "approveSuccess": "Retiro aprobado",
+    "rejectSuccess": "Retiro rechazado",
+    "downloadReceipt": "Descargar comprobante",
+    "reference": "Referencia",
+    "pendingWithdrawals": "Retiros pendientes",
+    "registerSale": "Registrar venta",
+    "saleSuccess": "Venta registrada exitosamente",
+    "saleError": "Error al registrar la venta",
+    "searchClient": "Buscar cliente",
+    "selectCreditLine": "Seleccionar línea de crédito",
+    "saleAmount": "Monto de la venta ($)",
+    "saleDescription": "Descripción"
   },
   "status": {
     "pending": "Pendiente",

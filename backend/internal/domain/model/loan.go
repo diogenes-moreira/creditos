@@ -85,7 +85,7 @@ func (l *Loan) Approve(approvedBy uuid.UUID) error {
 	return nil
 }
 
-func (l *Loan) Disburse(startDate time.Time) ([]Installment, error) {
+func (l *Loan) Disburse(startDate time.Time, ivaRate decimal.Decimal) ([]Installment, error) {
 	if l.Status != LoanApproved {
 		return nil, fmt.Errorf("can only disburse approved loans, current status: %s", l.Status)
 	}
@@ -93,9 +93,9 @@ func (l *Loan) Disburse(startDate time.Time) ([]Installment, error) {
 	var schedule AmortizationSchedule
 	switch l.AmortizationType {
 	case AmortizationFrench:
-		schedule = CalculateFrenchAmortization(l.Principal, l.InterestRate, l.NumInstallments, startDate)
+		schedule = CalculateFrenchAmortization(l.Principal, l.InterestRate, l.NumInstallments, startDate, ivaRate)
 	case AmortizationGerman:
-		schedule = CalculateGermanAmortization(l.Principal, l.InterestRate, l.NumInstallments, startDate)
+		schedule = CalculateGermanAmortization(l.Principal, l.InterestRate, l.NumInstallments, startDate, ivaRate)
 	}
 
 	installments := make([]Installment, len(schedule.Installments))
@@ -107,6 +107,7 @@ func (l *Loan) Disburse(startDate time.Time) ([]Installment, error) {
 			DueDate:         calc.DueDate,
 			CapitalAmount:   calc.Capital,
 			InterestAmount:  calc.Interest,
+			IVAAmount:       calc.IVA,
 			TotalAmount:     calc.Total,
 			PaidAmount:      decimal.NewFromInt(0),
 			RemainingAmount: calc.Total,
@@ -178,10 +179,85 @@ func (l *Loan) TotalPaid() decimal.Decimal {
 	return total
 }
 
+// RecalculateRemainingInstallments recalculates interest for pending installments
+// based on the outstanding principal after a prepayment.
+func (l *Loan) RecalculateRemainingInstallments(interestRate, ivaRate decimal.Decimal) {
+	var pendingIndices []int
+	outstandingPrincipal := decimal.NewFromInt(0)
+	for i, inst := range l.Installments {
+		if inst.Status == InstallmentPending {
+			pendingIndices = append(pendingIndices, i)
+			outstandingPrincipal = outstandingPrincipal.Add(inst.CapitalAmount)
+		}
+	}
+
+	if len(pendingIndices) == 0 || outstandingPrincipal.IsZero() {
+		return
+	}
+
+	numRemaining := len(pendingIndices)
+	// Collect existing due dates
+	dueDates := make([]time.Time, numRemaining)
+	for j, idx := range pendingIndices {
+		dueDates[j] = l.Installments[idx].DueDate
+	}
+
+	// Recalculate using the same amortization type
+	var schedule AmortizationSchedule
+	// Use the first pending due date minus 1 month as start date for calculation
+	startDate := dueDates[0].AddDate(0, -1, 0)
+	switch l.AmortizationType {
+	case AmortizationFrench:
+		schedule = CalculateFrenchAmortization(outstandingPrincipal, interestRate, numRemaining, startDate, ivaRate)
+	case AmortizationGerman:
+		schedule = CalculateGermanAmortization(outstandingPrincipal, interestRate, numRemaining, startDate, ivaRate)
+	}
+
+	// Update each pending installment with recalculated amounts
+	for j, idx := range pendingIndices {
+		calc := schedule.Installments[j]
+		inst := &l.Installments[idx]
+		inst.CapitalAmount = calc.Capital
+		inst.InterestAmount = calc.Interest
+		inst.IVAAmount = calc.IVA
+		inst.TotalAmount = calc.Total
+		inst.RemainingAmount = calc.Total
+		inst.PaidAmount = decimal.NewFromInt(0)
+	}
+}
+
 func (l *Loan) TotalRemaining() decimal.Decimal {
 	total := decimal.NewFromInt(0)
 	for _, inst := range l.Installments {
 		total = total.Add(inst.RemainingAmount)
 	}
 	return total
+}
+
+// CancellationSettlement computes the early cancellation settlement breakdown.
+// Returns remaining capital for all unpaid installments, plus interest and IVA
+// only from past-due installments (future interest is forgiven).
+func (l *Loan) CancellationSettlement() (pendingCapital, accumulatedInterest, accumulatedIVA, total decimal.Decimal) {
+	now := time.Now()
+	pendingCapital = decimal.Zero
+	accumulatedInterest = decimal.Zero
+	accumulatedIVA = decimal.Zero
+
+	for _, inst := range l.Installments {
+		if inst.Status == InstallmentPaid {
+			continue
+		}
+		pendingCapital = pendingCapital.Add(inst.CapitalAmount)
+		if inst.DueDate.Before(now) {
+			unpaidRatio := decimal.NewFromInt(1)
+			if inst.TotalAmount.IsPositive() {
+				unpaidRatio = inst.RemainingAmount.Div(inst.TotalAmount)
+			}
+			accumulatedInterest = accumulatedInterest.Add(inst.InterestAmount.Mul(unpaidRatio))
+			accumulatedIVA = accumulatedIVA.Add(inst.IVAAmount.Mul(unpaidRatio))
+		}
+	}
+
+	total = pendingCapital.Add(accumulatedInterest).Add(accumulatedIVA)
+	return
 }

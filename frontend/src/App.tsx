@@ -21,7 +21,6 @@ import Profile from "./pages/client/Profile";
 import AdminDashboard from "./pages/admin/Dashboard";
 import ClientListAdmin from "./pages/admin/ClientList";
 import ClientDetailAdmin from "./pages/admin/ClientDetail";
-import CreditApproval from "./pages/admin/CreditApproval";
 import LoanManagement from "./pages/admin/LoanManagement";
 import PaymentAdjustment from "./pages/admin/PaymentAdjustment";
 import AuditLog from "./pages/admin/AuditLog";
@@ -141,12 +140,7 @@ const App: React.FC = () => {
           <AppLayout><ClientDetailAdmin /></AppLayout>
         </ProtectedRoute>
       } />
-      <Route path="/admin/credit-approval" element={
-        <ProtectedRoute requiredRole="admin">
-          <AppLayout><CreditApproval /></AppLayout>
-        </ProtectedRoute>
-      } />
-      <Route path="/admin/loans" element={
+<Route path="/admin/loans" element={
         <ProtectedRoute requiredRole="admin">
           <AppLayout><LoanManagement /></AppLayout>
         </ProtectedRoute>

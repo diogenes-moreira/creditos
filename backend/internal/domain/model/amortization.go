@@ -17,6 +17,7 @@ const (
 type AmortizationSchedule struct {
 	Installments  []InstallmentCalc
 	TotalInterest decimal.Decimal
+	TotalIVA      decimal.Decimal
 	TotalPayment  decimal.Decimal
 }
 
@@ -25,14 +26,17 @@ type InstallmentCalc struct {
 	DueDate   time.Time
 	Capital   decimal.Decimal
 	Interest  decimal.Decimal
+	IVA       decimal.Decimal
 	Total     decimal.Decimal
 	Remaining decimal.Decimal
 }
 
 // CalculateFrenchAmortization computes a fixed-payment (French) amortization schedule.
 // Monthly interest rate = annual rate / 12.
-func CalculateFrenchAmortization(principal, annualRate decimal.Decimal, installments int, startDate time.Time) AmortizationSchedule {
+// ivaRate is the IVA percentage applied on interest (e.g. 21 for 21%). Use zero to skip IVA.
+func CalculateFrenchAmortization(principal, annualRate decimal.Decimal, installments int, startDate time.Time, ivaRate decimal.Decimal) AmortizationSchedule {
 	monthlyRate := annualRate.Div(decimal.NewFromInt(12))
+	hundred := decimal.NewFromInt(100)
 	schedule := AmortizationSchedule{}
 	remaining := principal
 
@@ -50,11 +54,13 @@ func CalculateFrenchAmortization(principal, annualRate decimal.Decimal, installm
 				DueDate:   dueDate,
 				Capital:   capital,
 				Interest:  decimal.NewFromInt(0),
+				IVA:       decimal.NewFromInt(0),
 				Total:     capital,
 				Remaining: remaining,
 			})
 		}
 		schedule.TotalInterest = decimal.NewFromInt(0)
+		schedule.TotalIVA = decimal.NewFromInt(0)
 		schedule.TotalPayment = principal
 		return schedule
 	}
@@ -67,6 +73,7 @@ func CalculateFrenchAmortization(principal, annualRate decimal.Decimal, installm
 	pmt = pmt.Round(2)
 
 	totalInterest := decimal.NewFromInt(0)
+	totalIVA := decimal.NewFromInt(0)
 	for i := 1; i <= installments; i++ {
 		interest := remaining.Mul(monthlyRate).Round(2)
 		capital := pmt.Sub(interest)
@@ -78,7 +85,9 @@ func CalculateFrenchAmortization(principal, annualRate decimal.Decimal, installm
 		if remaining.IsNegative() {
 			remaining = decimal.NewFromInt(0)
 		}
+		iva := interest.Mul(ivaRate).Div(hundred).Round(2)
 		totalInterest = totalInterest.Add(interest)
+		totalIVA = totalIVA.Add(iva)
 		dueDate := startDate.AddDate(0, i, 0)
 
 		schedule.Installments = append(schedule.Installments, InstallmentCalc{
@@ -86,24 +95,29 @@ func CalculateFrenchAmortization(principal, annualRate decimal.Decimal, installm
 			DueDate:   dueDate,
 			Capital:   capital.Round(2),
 			Interest:  interest,
-			Total:     capital.Add(interest).Round(2),
+			IVA:       iva,
+			Total:     capital.Add(interest).Add(iva).Round(2),
 			Remaining: remaining.Round(2),
 		})
 	}
 
 	schedule.TotalInterest = totalInterest.Round(2)
-	schedule.TotalPayment = principal.Add(totalInterest).Round(2)
+	schedule.TotalIVA = totalIVA.Round(2)
+	schedule.TotalPayment = principal.Add(totalInterest).Add(totalIVA).Round(2)
 	return schedule
 }
 
 // CalculateGermanAmortization computes a fixed-capital (German) amortization schedule.
 // Capital portion is equal each month, interest decreases as remaining principal decreases.
-func CalculateGermanAmortization(principal, annualRate decimal.Decimal, installments int, startDate time.Time) AmortizationSchedule {
+// ivaRate is the IVA percentage applied on interest (e.g. 21 for 21%). Use zero to skip IVA.
+func CalculateGermanAmortization(principal, annualRate decimal.Decimal, installments int, startDate time.Time, ivaRate decimal.Decimal) AmortizationSchedule {
 	monthlyRate := annualRate.Div(decimal.NewFromInt(12))
+	hundred := decimal.NewFromInt(100)
 	capitalPerMonth := principal.Div(decimal.NewFromInt(int64(installments))).Round(2)
 	remaining := principal
 	schedule := AmortizationSchedule{}
 	totalInterest := decimal.NewFromInt(0)
+	totalIVA := decimal.NewFromInt(0)
 
 	for i := 1; i <= installments; i++ {
 		interest := remaining.Mul(monthlyRate).Round(2)
@@ -115,8 +129,10 @@ func CalculateGermanAmortization(principal, annualRate decimal.Decimal, installm
 		if remaining.IsNegative() {
 			remaining = decimal.NewFromInt(0)
 		}
-		total := capital.Add(interest).Round(2)
+		iva := interest.Mul(ivaRate).Div(hundred).Round(2)
+		total := capital.Add(interest).Add(iva).Round(2)
 		totalInterest = totalInterest.Add(interest)
+		totalIVA = totalIVA.Add(iva)
 		dueDate := startDate.AddDate(0, i, 0)
 
 		schedule.Installments = append(schedule.Installments, InstallmentCalc{
@@ -124,13 +140,15 @@ func CalculateGermanAmortization(principal, annualRate decimal.Decimal, installm
 			DueDate:   dueDate,
 			Capital:   capital.Round(2),
 			Interest:  interest,
+			IVA:       iva,
 			Total:     total,
 			Remaining: remaining.Round(2),
 		})
 	}
 
 	schedule.TotalInterest = totalInterest.Round(2)
-	schedule.TotalPayment = principal.Add(totalInterest).Round(2)
+	schedule.TotalIVA = totalIVA.Round(2)
+	schedule.TotalPayment = principal.Add(totalInterest).Add(totalIVA).Round(2)
 	return schedule
 }
 

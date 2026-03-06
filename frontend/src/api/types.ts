@@ -89,6 +89,7 @@ export interface CreditLine {
   availableAmount: string;
   interestRate: string;
   maxInstallments: number;
+  recalculateOnPrepay: boolean;
   status: string;
   approvedAt?: string;
   rejectionReason?: string;
@@ -100,13 +101,22 @@ export interface CreateCreditLineRequest {
   maxAmount: string;
   interestRate: string;
   maxInstallments: number;
+  recalculateOnPrepay?: boolean;
 }
 
 export interface UpdateCreditLineRequest {
   maxAmount: string;
+  recalculateOnPrepay?: boolean;
 }
 
 // ---- Loans ----
+export interface CancellationSettlement {
+  pendingCapital: string;
+  accumulatedInterest: string;
+  accumulatedIVA: string;
+  total: string;
+}
+
 export interface Loan {
   id: string;
   clientId: string;
@@ -120,6 +130,8 @@ export interface Loan {
   totalPaid: string;
   totalRemaining: string;
   disbursedAt?: string;
+  cancellationSettlement?: CancellationSettlement;
+  installments?: Installment[];
   createdAt: string;
 }
 
@@ -133,9 +145,11 @@ export interface Installment {
   dueDate: string;
   capitalAmount: string;
   interestAmount: string;
+  ivaAmount: string;
   totalAmount: string;
   paidAmount: string;
   remainingAmount: string;
+  penaltyApplied: boolean;
   status: string;
   paidAt?: string;
 }
@@ -178,6 +192,7 @@ export interface Payment {
 export interface RecordPaymentRequest {
   amount: number;
   method: string;
+  installmentId?: string;
 }
 
 export interface AdjustPaymentRequest {
@@ -199,6 +214,7 @@ export interface Client {
   city: string;
   province: string;
   isPEP: boolean;
+  ivaRate?: string;
   isBlocked: boolean;
   createdAt: string;
 }
@@ -283,6 +299,7 @@ export interface Purchase {
   clientId: string;
   clientName?: string;
   creditLineId: string;
+  loanId: string;
   amount: string;
   description: string;
   createdAt: string;
@@ -321,6 +338,8 @@ export interface RecordPurchaseRequest {
   creditLineId: string;
   amount: string;
   description: string;
+  numInstallments: number;
+  amortizationType: "french" | "german";
 }
 
 export interface RecordVendorPaymentRequest {
@@ -350,6 +369,34 @@ export interface RequestCreditLineByVendorRequest {
   maxAmount: string;
   interestRate: string;
   maxInstallments: number;
+}
+
+// ---- Withdrawal Requests ----
+export interface WithdrawalRequest {
+  id: string;
+  vendorId: string;
+  vendorName?: string;
+  amount: string;
+  method: string;
+  reference?: string;
+  status: string;
+  rejectionReason?: string;
+  requestedAt: string;
+  processedAt?: string;
+  paymentId?: string;
+}
+
+export interface CreateWithdrawalRequest {
+  amount: string;
+  method: string;
+}
+
+export interface ApproveWithdrawalRequest {
+  reference?: string;
+}
+
+export interface RejectWithdrawalRequest {
+  reason: string;
 }
 
 // ---- Pagination ----

@@ -30,7 +30,8 @@
     "viewAll": "View all",
     "create": "Create",
     "name": "Name",
-    "type": "Type"
+    "type": "Type",
+    "unknownError": "An unexpected error occurred"
   },
   "auth": {
     "login": "Log in",
@@ -189,7 +190,9 @@
     "sendRequest": "Submit request",
     "requestSuccess": "Request submitted successfully",
     "requestError": "Error submitting credit request",
-    "noInstallments": "No installments"
+    "noInstallments": "No installments",
+    "iva": "VAT",
+    "ivaRate": "VAT Rate"
   },
   "payments": {
     "title": "Payment history",
@@ -287,13 +290,31 @@
     "clientDetailMovementsTab": "Movements",
     "creditLineUpdated": "Credit line updated",
     "creditLineUpdateError": "Error updating credit line",
+    "ivaRateUpdated": "VAT rate updated",
+    "ivaRateUpdateError": "Error updating VAT rate",
     "noCreditLines": "No credit lines",
     "createLoan": "Create loan",
     "loanCreated": "Loan created successfully",
     "loanCreateError": "Error creating loan",
     "selectClient": "Select client",
     "selectCreditLine": "Select credit line",
-    "noCreditLineForClient": "This client has no approved credit line"
+    "noCreditLineForClient": "This client has no approved credit line",
+    "cashWithdrawal": "Cash Withdrawal",
+    "withdrawalCreated": "Withdrawal created and disbursed successfully",
+    "withdrawalCreateError": "Error creating withdrawal",
+    "recordPayment": "Record Payment",
+    "paymentRecorded": "Payment recorded successfully",
+    "paymentRecordError": "Error recording payment",
+    "capitalPrepay": "Capital Prepayment",
+    "prepayRecorded": "Capital prepayment processed",
+    "prepayError": "Error processing prepayment",
+    "recalculateOnPrepay": "Recalculate interest on prepayment",
+    "paymentReference": "Reference",
+    "settlementBreakdown": "Early cancellation settlement",
+    "pendingCapital": "Pending capital",
+    "accumulatedInterest": "Accumulated interest (past-due)",
+    "accumulatedIVA": "Accumulated VAT (past-due)",
+    "settlementTotal": "Settlement total"
   },
   "profile": {
     "title": "My profile",
@@ -362,7 +383,19 @@
     "orRegisterNew": "New client? Register client",
     "step1": "Search Client",
     "step2": "Credit Line",
-    "step3": "Purchase Details"
+    "step3": "Purchase Details",
+    "withdrawals": "Withdrawals",
+    "requestWithdrawal": "Request Withdrawal",
+    "withdrawalAmount": "Withdrawal Amount ($)",
+    "withdrawalMethod": "Withdrawal Method",
+    "withdrawalSuccess": "Withdrawal request submitted",
+    "withdrawalError": "Error requesting withdrawal",
+    "noWithdrawals": "No withdrawals recorded",
+    "downloadReceipt": "Download Receipt",
+    "insufficientBalance": "Insufficient balance",
+    "balanceAfter": "Balance After",
+    "installments": "Installments",
+    "amortizationSystem": "Amortization system"
   },
   "adminVendor": {
     "title": "Vendor Management",
@@ -394,7 +427,23 @@
     "address": "Address",
     "province": "Province",
     "registerSuccess": "Vendor registered",
-    "registerError": "Error registering vendor"
+    "registerError": "Error registering vendor",
+    "withdrawals": "Withdrawals",
+    "approveWithdrawal": "Approve Withdrawal",
+    "rejectWithdrawal": "Reject Withdrawal",
+    "rejectionReason": "Rejection Reason",
+    "approveSuccess": "Withdrawal approved",
+    "rejectSuccess": "Withdrawal rejected",
+    "downloadReceipt": "Download Receipt",
+    "reference": "Reference",
+    "pendingWithdrawals": "Pending Withdrawals",
+    "registerSale": "Register Sale",
+    "saleSuccess": "Sale registered successfully",
+    "saleError": "Error registering sale",
+    "searchClient": "Search client",
+    "selectCreditLine": "Select credit line",
+    "saleAmount": "Sale amount ($)",
+    "saleDescription": "Description"
   },
   "status": {
     "pending": "Pending",

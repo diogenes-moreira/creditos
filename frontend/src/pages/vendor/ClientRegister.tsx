@@ -15,7 +15,6 @@ import {
   Button,
   Divider,
   Alert,
-  Snackbar,
   FormControlLabel,
   Checkbox,
   InputAdornment,
@@ -23,6 +22,8 @@ import {
 } from "@mui/material";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 import { vendorRegisterClient } from "../../api/endpoints";
+import { useNotification } from "../../contexts/NotificationContext";
+import { getErrorMessage } from "../../api/errorUtils";
 import type { Client } from "../../api/types";
 
 const schema = z.object({
@@ -45,13 +46,9 @@ type FormData = z.infer<typeof schema>;
 const ClientRegister: React.FC = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const { showSuccess, showError } = useNotification();
   const [showPassword, setShowPassword] = useState(false);
   const [registeredClient, setRegisteredClient] = useState<Client | null>(null);
-  const [snackbar, setSnackbar] = useState({
-    open: false,
-    message: "",
-    severity: "success" as "success" | "error",
-  });
 
   const {
     control,
@@ -79,18 +76,10 @@ const ClientRegister: React.FC = () => {
     mutationFn: vendorRegisterClient,
     onSuccess: (client) => {
       setRegisteredClient(client);
-      setSnackbar({
-        open: true,
-        message: t("vendor.clientRegisterSuccess"),
-        severity: "success",
-      });
+      showSuccess(t("vendor.clientRegisterSuccess"));
     },
-    onError: () => {
-      setSnackbar({
-        open: true,
-        message: t("vendor.clientRegisterError"),
-        severity: "error",
-      });
+    onError: (err) => {
+      showError(getErrorMessage(err, t("vendor.clientRegisterError")));
     },
   });
 
@@ -439,19 +428,6 @@ const ClientRegister: React.FC = () => {
         </CardContent>
       </Card>
 
-      <Snackbar
-        open={snackbar.open}
-        autoHideDuration={4000}
-        onClose={() => setSnackbar({ ...snackbar, open: false })}
-        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
-      >
-        <Alert
-          severity={snackbar.severity}
-          onClose={() => setSnackbar({ ...snackbar, open: false })}
-        >
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
     </Box>
   );
 };

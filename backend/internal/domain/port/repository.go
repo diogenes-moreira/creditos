@@ -112,7 +112,16 @@ type PurchaseRepository interface {
 
 type VendorPaymentRepository interface {
 	Create(ctx context.Context, payment *model.VendorPayment) error
+	FindByID(ctx context.Context, id uuid.UUID) (*model.VendorPayment, error)
 	FindByVendorID(ctx context.Context, vendorID uuid.UUID, offset, limit int) ([]model.VendorPayment, int64, error)
+}
+
+type WithdrawalRequestRepository interface {
+	Create(ctx context.Context, req *model.WithdrawalRequest) error
+	FindByID(ctx context.Context, id uuid.UUID) (*model.WithdrawalRequest, error)
+	FindByVendorID(ctx context.Context, vendorID uuid.UUID, offset, limit int) ([]model.WithdrawalRequest, int64, error)
+	FindPending(ctx context.Context, offset, limit int) ([]model.WithdrawalRequest, int64, error)
+	Update(ctx context.Context, req *model.WithdrawalRequest) error
 }
 
 type DashboardRepository interface {

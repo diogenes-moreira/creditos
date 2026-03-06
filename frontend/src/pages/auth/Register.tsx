@@ -11,7 +11,6 @@ import {
   TextField,
   Button,
   Link,
-  Alert,
   Grid,
   InputAdornment,
   IconButton,
@@ -23,6 +22,8 @@ import {
 } from "@mui/icons-material";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../../auth/AuthContext";
+import { useNotification } from "../../contexts/NotificationContext";
+import { getErrorMessage } from "../../api/errorUtils";
 
 const schema = z.object({
   email: z.string().email("Email invalido"),
@@ -50,8 +51,8 @@ const Register: React.FC = () => {
   const { t } = useTranslation();
   const { register: authRegister } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const { showError } = useNotification();
 
   const { control, handleSubmit, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -64,15 +65,13 @@ const Register: React.FC = () => {
   });
 
   const onSubmit = async (data: FormData) => {
-    setError("");
     setLoading(true);
     try {
       const { confirmPassword, ...registerData } = data;
       await authRegister(registerData);
       navigate("/dashboard");
     } catch (err: unknown) {
-      const axiosErr = err as { response?: { data?: { message?: string } } };
-      setError(axiosErr.response?.data?.message || t("auth.registerError"));
+      showError(getErrorMessage(err, t("auth.registerError")));
     } finally {
       setLoading(false);
     }
@@ -100,8 +99,6 @@ const Register: React.FC = () => {
               {t("registration.title")}
             </Typography>
           </Box>
-
-          {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
           <form onSubmit={handleSubmit(onSubmit)}>
             <Grid container spacing={2}>

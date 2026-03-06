@@ -17,6 +17,7 @@ type PaymentService struct {
 	accountRepo     port.AccountRepository
 	movementRepo    port.MovementRepository
 	audit           *AuditService
+	latePenaltyRate decimal.Decimal
 }
 
 func NewPaymentService(
@@ -26,6 +27,7 @@ func NewPaymentService(
 	accountRepo port.AccountRepository,
 	movementRepo port.MovementRepository,
 	audit *AuditService,
+	latePenaltyRate decimal.Decimal,
 ) *PaymentService {
 	return &PaymentService{
 		paymentRepo:     paymentRepo,
@@ -34,10 +36,11 @@ func NewPaymentService(
 		accountRepo:     accountRepo,
 		movementRepo:    movementRepo,
 		audit:           audit,
+		latePenaltyRate: latePenaltyRate,
 	}
 }
 
-func (s *PaymentService) RecordPayment(ctx context.Context, userID uuid.UUID, loanID uuid.UUID, amount decimal.Decimal, method model.PaymentMethod, reference string) (*model.Payment, error) {
+func (s *PaymentService) RecordPayment(ctx context.Context, userID uuid.UUID, loanID uuid.UUID, amount decimal.Decimal, method model.PaymentMethod, reference string, installmentID *uuid.UUID) (*model.Payment, error) {
 	loan, err := s.loanRepo.FindByIDWithInstallments(ctx, loanID)
 	if err != nil {
 		return nil, fmt.Errorf("loan not found: %w", err)
@@ -51,27 +54,60 @@ func (s *PaymentService) RecordPayment(ctx context.Context, userID uuid.UUID, lo
 		return nil, err
 	}
 
-	// Apply payment to oldest unpaid installments
-	remaining := amount
-	for i := range loan.Installments {
-		if remaining.IsZero() || !remaining.IsPositive() {
-			break
+	if installmentID != nil {
+		// Pay a specific installment
+		var target *model.Installment
+		for i := range loan.Installments {
+			if loan.Installments[i].ID == *installmentID {
+				target = &loan.Installments[i]
+				break
+			}
 		}
-		inst := &loan.Installments[i]
-		if inst.Status == model.InstallmentPaid {
-			continue
+		if target == nil {
+			return nil, fmt.Errorf("installment not found in this loan")
 		}
-		applied, surplus, applyErr := inst.ApplyPayment(remaining)
+		if target.Status == model.InstallmentPaid {
+			return nil, fmt.Errorf("installment is already paid")
+		}
+		if target.IsOverdue() && !target.PenaltyApplied {
+			target.ApplyLatePenalty(s.latePenaltyRate)
+		}
+		applied, _, applyErr := target.ApplyPayment(amount)
 		if applyErr != nil {
 			return nil, applyErr
 		}
 		if applied.IsPositive() {
-			payment.LinkInstallment(inst.ID)
-			if err := s.installmentRepo.Update(ctx, inst); err != nil {
+			payment.LinkInstallment(target.ID)
+			if err := s.installmentRepo.Update(ctx, target); err != nil {
 				return nil, err
 			}
 		}
-		remaining = surplus
+	} else {
+		// Apply payment to oldest unpaid installments (free payment / capital prepay)
+		remaining := amount
+		for i := range loan.Installments {
+			if remaining.IsZero() || !remaining.IsPositive() {
+				break
+			}
+			inst := &loan.Installments[i]
+			if inst.Status == model.InstallmentPaid {
+				continue
+			}
+			if inst.IsOverdue() && !inst.PenaltyApplied {
+				inst.ApplyLatePenalty(s.latePenaltyRate)
+			}
+			applied, surplus, applyErr := inst.ApplyPayment(remaining)
+			if applyErr != nil {
+				return nil, applyErr
+			}
+			if applied.IsPositive() {
+				payment.LinkInstallment(inst.ID)
+				if err := s.installmentRepo.Update(ctx, inst); err != nil {
+					return nil, err
+				}
+			}
+			remaining = surplus
+		}
 	}
 
 	if err := s.paymentRepo.Create(ctx, payment); err != nil {

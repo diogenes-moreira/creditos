@@ -25,6 +25,7 @@ type ClientResponse struct {
 	City            string `json:"city"`
 	Province        string `json:"province"`
 	IsPEP           bool   `json:"isPEP"`
+	IVARate         string `json:"ivaRate"`
 	MercadoPagoLink string `json:"mercadoPagoLink,omitempty"`
 	IsBlocked       bool   `json:"isBlocked"`
 	Email           string `json:"email"`
@@ -48,35 +49,44 @@ type MovementResponse struct {
 }
 
 type CreditLineResponse struct {
-	ID              string  `json:"id"`
-	ClientID        string  `json:"clientId"`
-	ClientName      string  `json:"clientName,omitempty"`
-	MaxAmount       string  `json:"maxAmount"`
-	UsedAmount      string  `json:"usedAmount"`
-	AvailableAmount string  `json:"availableAmount"`
-	InterestRate    string  `json:"interestRate"`
-	MaxInstallments int     `json:"maxInstallments"`
-	Status          string  `json:"status"`
-	ApprovedAt      *string `json:"approvedAt,omitempty"`
-	RejectionReason string  `json:"rejectionReason,omitempty"`
-	CreatedAt       string  `json:"createdAt"`
+	ID                  string  `json:"id"`
+	ClientID            string  `json:"clientId"`
+	ClientName          string  `json:"clientName,omitempty"`
+	MaxAmount           string  `json:"maxAmount"`
+	UsedAmount          string  `json:"usedAmount"`
+	AvailableAmount     string  `json:"availableAmount"`
+	InterestRate        string  `json:"interestRate"`
+	MaxInstallments     int     `json:"maxInstallments"`
+	RecalculateOnPrepay bool    `json:"recalculateOnPrepay"`
+	Status              string  `json:"status"`
+	ApprovedAt          *string `json:"approvedAt,omitempty"`
+	RejectionReason     string  `json:"rejectionReason,omitempty"`
+	CreatedAt           string  `json:"createdAt"`
+}
+
+type CancellationSettlementResponse struct {
+	PendingCapital      string `json:"pendingCapital"`
+	AccumulatedInterest string `json:"accumulatedInterest"`
+	AccumulatedIVA      string `json:"accumulatedIVA"`
+	Total               string `json:"total"`
 }
 
 type LoanResponse struct {
-	ID               string                `json:"id"`
-	ClientID         string                `json:"clientId"`
-	ClientName       string                `json:"clientName,omitempty"`
-	CreditLineID     string                `json:"creditLineId"`
-	Principal        string                `json:"principal"`
-	InterestRate     string                `json:"interestRate"`
-	NumInstallments  int                   `json:"numInstallments"`
-	AmortizationType string                `json:"amortizationType"`
-	Status           string                `json:"status"`
-	DisbursedAt      *string               `json:"disbursedAt,omitempty"`
-	TotalPaid        string                `json:"totalPaid"`
-	TotalRemaining   string                `json:"totalRemaining"`
-	Installments     []InstallmentResponse `json:"installments,omitempty"`
-	CreatedAt        string                `json:"createdAt"`
+	ID                     string                           `json:"id"`
+	ClientID               string                           `json:"clientId"`
+	ClientName             string                           `json:"clientName,omitempty"`
+	CreditLineID           string                           `json:"creditLineId"`
+	Principal              string                           `json:"principal"`
+	InterestRate           string                           `json:"interestRate"`
+	NumInstallments        int                              `json:"numInstallments"`
+	AmortizationType       string                           `json:"amortizationType"`
+	Status                 string                           `json:"status"`
+	DisbursedAt            *string                          `json:"disbursedAt,omitempty"`
+	TotalPaid              string                           `json:"totalPaid"`
+	TotalRemaining         string                           `json:"totalRemaining"`
+	CancellationSettlement *CancellationSettlementResponse  `json:"cancellationSettlement,omitempty"`
+	Installments           []InstallmentResponse            `json:"installments,omitempty"`
+	CreatedAt              string                           `json:"createdAt"`
 }
 
 type InstallmentResponse struct {
@@ -85,9 +95,11 @@ type InstallmentResponse struct {
 	DueDate         string  `json:"dueDate"`
 	CapitalAmount   string  `json:"capitalAmount"`
 	InterestAmount  string  `json:"interestAmount"`
+	IVAAmount       string  `json:"ivaAmount"`
 	TotalAmount     string  `json:"totalAmount"`
 	PaidAmount      string  `json:"paidAmount"`
 	RemainingAmount string  `json:"remainingAmount"`
+	PenaltyApplied  bool    `json:"penaltyApplied"`
 	Status          string  `json:"status"`
 	PaidAt          *string `json:"paidAt,omitempty"`
 }
@@ -196,6 +208,7 @@ type PurchaseResponse struct {
 	ClientID     string `json:"clientId"`
 	ClientName   string `json:"clientName,omitempty"`
 	CreditLineID string `json:"creditLineId"`
+	LoanID       string `json:"loanId"`
 	Amount       string `json:"amount"`
 	Description  string `json:"description"`
 	CreatedAt    string `json:"createdAt"`
@@ -209,6 +222,20 @@ type VendorPaymentResponse struct {
 	Reference string `json:"reference,omitempty"`
 	PaidBy    string `json:"paidBy"`
 	CreatedAt string `json:"createdAt"`
+}
+
+type WithdrawalRequestResponse struct {
+	ID              string  `json:"id"`
+	VendorID        string  `json:"vendorId"`
+	VendorName      string  `json:"vendorName,omitempty"`
+	Amount          string  `json:"amount"`
+	Method          string  `json:"method"`
+	Reference       string  `json:"reference,omitempty"`
+	Status          string  `json:"status"`
+	RejectionReason string  `json:"rejectionReason,omitempty"`
+	RequestedAt     string  `json:"requestedAt"`
+	ProcessedAt     *string `json:"processedAt,omitempty"`
+	PaymentID       *string `json:"paymentId,omitempty"`
 }
 
 type ErrorResponse struct {

@@ -1,4 +1,6 @@
-import React, { useState } from "react";
+import React from "react";
+import { useNotification } from "../../contexts/NotificationContext";
+import { getErrorMessage } from "../../api/errorUtils";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { useForm, Controller } from "react-hook-form";
@@ -13,8 +15,6 @@ import {
   TextField,
   Button,
   Divider,
-  Snackbar,
-  Alert,
   CircularProgress,
 } from "@mui/material";
 import { getProfile, updateProfile, updateMercadoPago } from "../../api/endpoints";
@@ -39,7 +39,7 @@ type MPForm = z.infer<typeof mpSchema>;
 const Profile: React.FC = () => {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
-  const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" as "success" | "error" });
+  const { showSuccess, showError } = useNotification();
 
   const { data: profile, isLoading } = useQuery({
     queryKey: ["profile"],
@@ -78,18 +78,18 @@ const Profile: React.FC = () => {
     mutationFn: updateProfile,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["profile"] });
-      setSnackbar({ open: true, message: t("profile.updateSuccess"), severity: "success" });
+      showSuccess(t("profile.updateSuccess"));
     },
-    onError: () => setSnackbar({ open: true, message: t("profile.updateError"), severity: "error" }),
+    onError: (err) => showError(getErrorMessage(err, t("profile.updateError"))),
   });
 
   const mpMutation = useMutation({
     mutationFn: updateMercadoPago,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["profile"] });
-      setSnackbar({ open: true, message: t("profile.mpUpdated"), severity: "success" });
+      showSuccess(t("profile.mpUpdated"));
     },
-    onError: () => setSnackbar({ open: true, message: t("profile.mpError"), severity: "error" }),
+    onError: (err) => showError(getErrorMessage(err, t("profile.mpError"))),
   });
 
   if (isLoading) {
@@ -207,16 +207,6 @@ const Profile: React.FC = () => {
         </CardContent>
       </Card>
 
-      <Snackbar
-        open={snackbar.open}
-        autoHideDuration={4000}
-        onClose={() => setSnackbar({ ...snackbar, open: false })}
-        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
-      >
-        <Alert severity={snackbar.severity} onClose={() => setSnackbar({ ...snackbar, open: false })}>
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
     </Box>
   );
 };

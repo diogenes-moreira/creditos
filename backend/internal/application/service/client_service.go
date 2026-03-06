@@ -129,6 +129,19 @@ func (s *ClientService) Search(ctx context.Context, query string, offset, limit 
 	return s.clientRepo.FindAll(ctx, offset, limit)
 }
 
+func (s *ClientService) UpdateIVARate(ctx context.Context, adminID, clientID uuid.UUID, rate float64) (*model.Client, error) {
+	client, err := s.clientRepo.FindByID(ctx, clientID)
+	if err != nil {
+		return nil, err
+	}
+	client.SetIVARate(decimal.NewFromFloat(rate))
+	if err := s.clientRepo.Update(ctx, client); err != nil {
+		return nil, err
+	}
+	s.audit.Record(ctx, &adminID, "update_iva_rate", "client", client.ID.String(), fmt.Sprintf("IVA rate updated to %.2f%%", rate))
+	return client, nil
+}
+
 func (s *ClientService) Block(ctx context.Context, adminID, clientID uuid.UUID) error {
 	client, err := s.clientRepo.FindByID(ctx, clientID)
 	if err != nil {

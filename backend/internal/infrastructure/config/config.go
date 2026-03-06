@@ -6,10 +6,12 @@ import (
 )
 
 type Config struct {
-	DB     DBConfig
-	Server ServerConfig
-	JWT    JWTConfig
-	GCS    GCSConfig
+	DB              DBConfig
+	Server          ServerConfig
+	JWT             JWTConfig
+	GCS             GCSConfig
+	DefaultIVARate  float64
+	LatePenaltyRate float64
 }
 
 type DBConfig struct {
@@ -77,6 +79,8 @@ func Load() *Config {
 			CredentialsFile: getEnv("GCS_CREDENTIALS_FILE", ""),
 			LocalPath:       getEnv("LOCAL_STORAGE_PATH", "./storage"),
 		},
+		DefaultIVARate:  getEnvFloat("DEFAULT_IVA_RATE", 21),
+		LatePenaltyRate: getEnvFloat("LATE_PENALTY_RATE", 10),
 	}
 }
 
@@ -91,6 +95,15 @@ func getEnvInt(key string, fallback int) int {
 	if v := os.Getenv(key); v != "" {
 		if i, err := strconv.Atoi(v); err == nil {
 			return i
+		}
+	}
+	return fallback
+}
+
+func getEnvFloat(key string, fallback float64) float64 {
+	if v := os.Getenv(key); v != "" {
+		if f, err := strconv.ParseFloat(v, 64); err == nil {
+			return f
 		}
 	}
 	return fallback

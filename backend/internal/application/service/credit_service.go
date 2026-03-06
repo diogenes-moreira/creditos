@@ -17,6 +17,7 @@ type CreditService struct {
 	installmentRepo port.InstallmentRepository
 	accountRepo     port.AccountRepository
 	movementRepo    port.MovementRepository
+	clientRepo      port.ClientRepository
 	audit           *AuditService
 }
 
@@ -27,6 +28,7 @@ func NewCreditService(
 	accountRepo port.AccountRepository,
 	movementRepo port.MovementRepository,
 	audit *AuditService,
+	clientRepo port.ClientRepository,
 ) *CreditService {
 	return &CreditService{
 		creditLineRepo:  creditLineRepo,
@@ -34,11 +36,12 @@ func NewCreditService(
 		installmentRepo: installmentRepo,
 		accountRepo:     accountRepo,
 		movementRepo:    movementRepo,
+		clientRepo:      clientRepo,
 		audit:           audit,
 	}
 }
 
-func (s *CreditService) CreateCreditLine(ctx context.Context, adminID, clientID uuid.UUID, maxAmount, interestRate decimal.Decimal, maxInstallments int) (*model.CreditLine, error) {
+func (s *CreditService) CreateCreditLine(ctx context.Context, adminID, clientID uuid.UUID, maxAmount, interestRate decimal.Decimal, maxInstallments int, recalculateOnPrepay bool) (*model.CreditLine, error) {
 	existing, err := s.creditLineRepo.FindByClientID(ctx, clientID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to check existing credit lines: %w", err)
@@ -47,14 +50,18 @@ func (s *CreditService) CreateCreditLine(ctx context.Context, adminID, clientID 
 		return nil, fmt.Errorf("client already has a credit line")
 	}
 
-	cl, err := model.NewCreditLine(clientID, maxAmount, interestRate, maxInstallments)
+	cl, err := model.NewCreditLine(clientID, maxAmount, interestRate, maxInstallments, recalculateOnPrepay)
 	if err != nil {
+		return nil, err
+	}
+	// Admin-created credit lines are auto-approved
+	if err := cl.Approve(adminID); err != nil {
 		return nil, err
 	}
 	if err := s.creditLineRepo.Create(ctx, cl); err != nil {
 		return nil, fmt.Errorf("failed to create credit line: %w", err)
 	}
-	s.audit.Record(ctx, &adminID, "create_credit_line", "credit_line", cl.ID.String(), fmt.Sprintf("Credit line created: %s", maxAmount.StringFixed(2)))
+	s.audit.Record(ctx, &adminID, "create_credit_line", "credit_line", cl.ID.String(), fmt.Sprintf("Credit line created and approved: %s", maxAmount.StringFixed(2)))
 	return cl, nil
 }
 
@@ -99,13 +106,13 @@ func (s *CreditService) GetPendingCreditLines(ctx context.Context, offset, limit
 	return s.creditLineRepo.FindByStatus(ctx, model.CreditLinePending, offset, limit)
 }
 
-func (s *CreditService) SimulateLoan(principal, interestRate decimal.Decimal, numInstallments int, amortType model.AmortizationType) model.AmortizationSchedule {
+func (s *CreditService) SimulateLoan(principal, interestRate decimal.Decimal, numInstallments int, amortType model.AmortizationType, ivaRate decimal.Decimal) model.AmortizationSchedule {
 	startDate := time.Now()
 	switch amortType {
 	case model.AmortizationGerman:
-		return model.CalculateGermanAmortization(principal, interestRate, numInstallments, startDate)
+		return model.CalculateGermanAmortization(principal, interestRate, numInstallments, startDate, ivaRate)
 	default:
-		return model.CalculateFrenchAmortization(principal, interestRate, numInstallments, startDate)
+		return model.CalculateFrenchAmortization(principal, interestRate, numInstallments, startDate, ivaRate)
 	}
 }
 
@@ -167,7 +174,12 @@ func (s *CreditService) DisburseLoan(ctx context.Context, adminID, loanID uuid.U
 		return nil, err
 	}
 
-	installments, err := loan.Disburse(time.Now())
+	client, err := s.clientRepo.FindByID(ctx, loan.ClientID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch client for IVA rate: %w", err)
+	}
+
+	installments, err := loan.Disburse(time.Now(), client.IVARate)
 	if err != nil {
 		return nil, err
 	}
@@ -261,6 +273,28 @@ func (s *CreditService) PrepayLoan(ctx context.Context, adminID, loanID uuid.UUI
 		_ = loan.Complete()
 	}
 
+	// Recalculate remaining installments if credit line has recalculate enabled
+	if loan.Status == model.LoanActive {
+		cl, clErr := s.creditLineRepo.FindByID(ctx, loan.CreditLineID)
+		if clErr == nil && cl.RecalculateOnPrepay {
+			prepayClient, _ := s.clientRepo.FindByID(ctx, loan.ClientID)
+			prepayIVARate := decimal.NewFromInt(21)
+			if prepayClient != nil {
+				prepayIVARate = prepayClient.IVARate
+			}
+			loan.RecalculateRemainingInstallments(loan.InterestRate, prepayIVARate)
+			for i := range loan.Installments {
+				inst := &loan.Installments[i]
+				if inst.Status == model.InstallmentPending {
+					if err := s.installmentRepo.Update(ctx, inst); err != nil {
+						return nil, err
+					}
+				}
+			}
+			s.audit.Record(ctx, &adminID, "recalculate_installments", "loan", loan.ID.String(), "Remaining installments recalculated after prepayment")
+		}
+	}
+
 	if err := s.loanRepo.Update(ctx, loan); err != nil {
 		return nil, err
 	}
@@ -281,6 +315,81 @@ func (s *CreditService) UpdateCreditLineMaxAmount(ctx context.Context, adminID, 
 	}
 	s.audit.Record(ctx, &adminID, "update_credit_line", "credit_line", cl.ID.String(), fmt.Sprintf("Credit line max amount updated to %s", newMaxAmount.StringFixed(2)))
 	return cl, nil
+}
+
+func (s *CreditService) UpdateCreditLineFields(ctx context.Context, cl *model.CreditLine) error {
+	return s.creditLineRepo.Update(ctx, cl)
+}
+
+func (s *CreditService) CreateWithdrawal(ctx context.Context, adminID, clientID, creditLineID uuid.UUID, amount decimal.Decimal, numInstallments int, amortType model.AmortizationType) (*model.Loan, error) {
+	loan, err := s.RequestLoan(ctx, clientID, creditLineID, amount, numInstallments, amortType)
+	if err != nil {
+		return nil, fmt.Errorf("failed to request loan for withdrawal: %w", err)
+	}
+
+	loan, err = s.ApproveLoan(ctx, adminID, loan.ID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to approve loan for withdrawal: %w", err)
+	}
+
+	loan, err = s.DisburseLoan(ctx, adminID, loan.ID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to disburse loan for withdrawal: %w", err)
+	}
+
+	s.audit.Record(ctx, &adminID, "create_withdrawal", "loan", loan.ID.String(), fmt.Sprintf("Cash withdrawal created and disbursed: %s", amount.StringFixed(2)))
+	return loan, nil
+}
+
+func (s *CreditService) CreatePurchaseLoan(ctx context.Context, adminID, clientID, creditLineID uuid.UUID, amount decimal.Decimal, numInstallments int, amortType model.AmortizationType) (*model.Loan, error) {
+	loan, err := s.RequestLoan(ctx, clientID, creditLineID, amount, numInstallments, amortType)
+	if err != nil {
+		return nil, fmt.Errorf("failed to request loan for purchase: %w", err)
+	}
+
+	loan, err = s.ApproveLoan(ctx, adminID, loan.ID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to approve loan for purchase: %w", err)
+	}
+
+	loan, err = s.loanRepo.FindByIDWithInstallments(ctx, loan.ID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch loan: %w", err)
+	}
+
+	cl, err := s.creditLineRepo.FindByID(ctx, loan.CreditLineID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch credit line: %w", err)
+	}
+	if err := cl.CanDisburse(loan.Principal); err != nil {
+		return nil, err
+	}
+
+	client, err := s.clientRepo.FindByID(ctx, loan.ClientID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch client for IVA rate: %w", err)
+	}
+
+	installments, err := loan.Disburse(time.Now(), client.IVARate)
+	if err != nil {
+		return nil, err
+	}
+
+	cl.RecordDisbursement(loan.Principal)
+	if err := s.creditLineRepo.Update(ctx, cl); err != nil {
+		return nil, err
+	}
+
+	if err := s.installmentRepo.CreateBatch(ctx, installments); err != nil {
+		return nil, fmt.Errorf("failed to create installments: %w", err)
+	}
+
+	if err := s.loanRepo.Update(ctx, loan); err != nil {
+		return nil, err
+	}
+
+	s.audit.Record(ctx, &adminID, "create_purchase_loan", "loan", loan.ID.String(), fmt.Sprintf("Purchase loan created and disbursed: %s", amount.StringFixed(2)))
+	return loan, nil
 }
 
 func (s *CreditService) GetLoansByClient(ctx context.Context, clientID uuid.UUID, offset, limit int) ([]model.Loan, int64, error) {

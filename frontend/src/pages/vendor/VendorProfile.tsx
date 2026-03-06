@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { useForm, Controller } from "react-hook-form";
@@ -13,11 +13,11 @@ import {
   TextField,
   Button,
   Divider,
-  Snackbar,
-  Alert,
   CircularProgress,
 } from "@mui/material";
 import { getVendorProfile, updateVendorProfile } from "../../api/endpoints";
+import { useNotification } from "../../contexts/NotificationContext";
+import { getErrorMessage } from "../../api/errorUtils";
 
 const profileSchema = z.object({
   phone: z.string().min(1),
@@ -31,11 +31,7 @@ type ProfileForm = z.infer<typeof profileSchema>;
 const VendorProfile: React.FC = () => {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
-  const [snackbar, setSnackbar] = useState({
-    open: false,
-    message: "",
-    severity: "success" as "success" | "error",
-  });
+  const { showSuccess, showError } = useNotification();
 
   const { data: profile, isLoading } = useQuery({
     queryKey: ["vendor-profile"],
@@ -62,18 +58,10 @@ const VendorProfile: React.FC = () => {
     mutationFn: updateVendorProfile,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["vendor-profile"] });
-      setSnackbar({
-        open: true,
-        message: t("vendor.profileUpdateSuccess"),
-        severity: "success",
-      });
+      showSuccess(t("vendor.profileUpdateSuccess"));
     },
-    onError: () =>
-      setSnackbar({
-        open: true,
-        message: t("vendor.profileUpdateError"),
-        severity: "error",
-      }),
+    onError: (err) =>
+      showError(getErrorMessage(err, t("vendor.profileUpdateError"))),
   });
 
   if (isLoading) {
@@ -212,19 +200,6 @@ const VendorProfile: React.FC = () => {
         </CardContent>
       </Card>
 
-      <Snackbar
-        open={snackbar.open}
-        autoHideDuration={4000}
-        onClose={() => setSnackbar({ ...snackbar, open: false })}
-        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
-      >
-        <Alert
-          severity={snackbar.severity}
-          onClose={() => setSnackbar({ ...snackbar, open: false })}
-        >
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
     </Box>
   );
 };

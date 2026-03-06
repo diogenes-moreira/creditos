@@ -13,14 +13,18 @@ import (
 )
 
 type LoanHandler struct {
-	creditService *service.CreditService
-	clientRepo    port.ClientRepository
+	creditService  *service.CreditService
+	paymentService *service.PaymentService
+	clientRepo     port.ClientRepository
+	defaultIVARate decimal.Decimal
 }
 
-func NewLoanHandler(creditService *service.CreditService, clientRepo port.ClientRepository) *LoanHandler {
+func NewLoanHandler(creditService *service.CreditService, paymentService *service.PaymentService, clientRepo port.ClientRepository, defaultIVARate float64) *LoanHandler {
 	return &LoanHandler{
-		creditService: creditService,
-		clientRepo:    clientRepo,
+		creditService:  creditService,
+		paymentService: paymentService,
+		clientRepo:     clientRepo,
+		defaultIVARate: decimal.NewFromFloat(defaultIVARate),
 	}
 }
 
@@ -49,7 +53,7 @@ func (h *LoanHandler) Simulate(c *gin.Context) {
 
 	// Use a placeholder rate for simulation
 	rate := decimal.NewFromFloat(0.45) // 45% annual as default
-	schedule := h.creditService.SimulateLoan(amount, rate, req.NumInstallments, model.AmortizationType(req.AmortizationType))
+	schedule := h.creditService.SimulateLoan(amount, rate, req.NumInstallments, model.AmortizationType(req.AmortizationType), h.defaultIVARate)
 
 	installments := make([]dto.InstallmentResponse, len(schedule.Installments))
 	for i, inst := range schedule.Installments {
@@ -58,6 +62,7 @@ func (h *LoanHandler) Simulate(c *gin.Context) {
 			DueDate:        inst.DueDate.Format("2006-01-02"),
 			CapitalAmount:  inst.Capital.StringFixed(2),
 			InterestAmount: inst.Interest.StringFixed(2),
+			IVAAmount:      inst.IVA.StringFixed(2),
 			TotalAmount:    inst.Total.StringFixed(2),
 		}
 	}
@@ -337,4 +342,85 @@ func (h *LoanHandler) AdminCreateLoan(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusCreated, dto.ToLoanResponse(loan))
+}
+
+// AdminCreateWithdrawal godoc
+// @Summary Create a cash withdrawal for a client
+// @Description Admin creates a loan that is immediately approved and disbursed (cash withdrawal)
+// @Tags Admin Loans
+// @Accept json
+// @Produce json
+// @Param request body dto.AdminCreateLoanRequest true "Withdrawal data"
+// @Success 201 {object} dto.LoanResponse
+// @Failure 400 {object} dto.ErrorResponse
+// @Security BearerAuth
+// @Router /admin/loans/withdrawal [post]
+func (h *LoanHandler) AdminCreateWithdrawal(c *gin.Context) {
+	adminID := c.MustGet("userID").(uuid.UUID)
+	var req dto.AdminCreateLoanRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
+		return
+	}
+	clientID, _ := uuid.Parse(req.ClientID)
+	clID, _ := uuid.Parse(req.CreditLineID)
+	amount, err := decimal.NewFromString(req.Amount)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "invalid amount"})
+		return
+	}
+
+	loan, err := h.creditService.CreateWithdrawal(c.Request.Context(), adminID, clientID, clID, amount, req.NumInstallments, model.AmortizationType(req.AmortizationType))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
+		return
+	}
+	c.JSON(http.StatusCreated, dto.ToLoanResponse(loan))
+}
+
+// AdminRecordPayment godoc
+// @Summary Record a payment on behalf of a client
+// @Description Admin records a payment for a client's active loan
+// @Tags Admin Loans
+// @Accept json
+// @Produce json
+// @Param id path string true "Loan UUID"
+// @Param request body dto.RecordPaymentRequest true "Payment data"
+// @Success 201 {object} dto.PaymentResponse
+// @Failure 400 {object} dto.ErrorResponse
+// @Security BearerAuth
+// @Router /admin/loans/{id}/payments [post]
+func (h *LoanHandler) AdminRecordPayment(c *gin.Context) {
+	adminID := c.MustGet("userID").(uuid.UUID)
+	loanID, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "invalid loan ID"})
+		return
+	}
+	var req dto.RecordPaymentRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
+		return
+	}
+	amount, err := decimal.NewFromString(req.Amount)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "invalid amount"})
+		return
+	}
+	var instID *uuid.UUID
+	if req.InstallmentID != "" {
+		parsed, parseErr := uuid.Parse(req.InstallmentID)
+		if parseErr != nil {
+			c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "invalid installment ID"})
+			return
+		}
+		instID = &parsed
+	}
+
+	payment, err := h.paymentService.RecordPayment(c.Request.Context(), adminID, loanID, amount, model.PaymentMethod(req.Method), req.Reference, instID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
+		return
+	}
+	c.JSON(http.StatusCreated, dto.ToPaymentResponse(payment))
 }

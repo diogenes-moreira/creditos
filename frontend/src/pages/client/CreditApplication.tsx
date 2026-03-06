@@ -1,4 +1,6 @@
 import React, { useState } from "react";
+import { useNotification } from "../../contexts/NotificationContext";
+import { getErrorMessage } from "../../api/errorUtils";
 import { useNavigate } from "react-router-dom";
 import { useMutation } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
@@ -19,7 +21,6 @@ import {
   StepLabel,
   Divider,
   Alert,
-  Snackbar,
 } from "@mui/material";
 import { simulateLoan, requestLoan } from "../../api/endpoints";
 import DataTable, { Column } from "../../components/DataTable";
@@ -40,9 +41,9 @@ const CreditApplication: React.FC = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const steps = [t("loans.configureCredit"), t("loans.simulate"), t("loans.confirmStep")];
+  const { showSuccess, showError } = useNotification();
   const [activeStep, setActiveStep] = useState(0);
   const [simulation, setSimulation] = useState<SimulationResult | null>(null);
-  const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" as "success" | "error" });
 
   const { control, handleSubmit, watch, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -63,19 +64,19 @@ const CreditApplication: React.FC = () => {
       setSimulation(data);
       setActiveStep(1);
     },
-    onError: () => {
-      setSnackbar({ open: true, message: t("loans.simulationError"), severity: "error" });
+    onError: (err) => {
+      showError(getErrorMessage(err, t("loans.simulationError")));
     },
   });
 
   const requestMutation = useMutation({
     mutationFn: requestLoan,
     onSuccess: () => {
-      setSnackbar({ open: true, message: t("loans.requestSuccess"), severity: "success" });
+      showSuccess(t("loans.requestSuccess"));
       setTimeout(() => navigate("/loans"), 1500);
     },
-    onError: () => {
-      setSnackbar({ open: true, message: t("loans.requestError"), severity: "error" });
+    onError: (err) => {
+      showError(getErrorMessage(err, t("loans.requestError")));
     },
   });
 
@@ -334,16 +335,6 @@ const CreditApplication: React.FC = () => {
         </Card>
       )}
 
-      <Snackbar
-        open={snackbar.open}
-        autoHideDuration={4000}
-        onClose={() => setSnackbar({ ...snackbar, open: false })}
-        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
-      >
-        <Alert severity={snackbar.severity} onClose={() => setSnackbar({ ...snackbar, open: false })}>
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
     </Box>
   );
 };

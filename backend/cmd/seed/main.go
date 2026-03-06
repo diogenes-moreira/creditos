@@ -39,7 +39,7 @@ func main() {
 	seedAdmins(db)
 	clients := seedClients(db, 50)
 	creditLines := seedCreditLines(db, clients, 30)
-	loans := seedLoans(db, clients, creditLines, 40)
+	loans := seedLoans(db, clients, creditLines, 40, cfg.DefaultIVARate)
 	seedPayments(db, loans)
 	log.Println("Seed completed successfully!")
 }
@@ -189,7 +189,7 @@ func seedCreditLines(db *gorm.DB, clients []model.Client, count int) []model.Cre
 	return cls
 }
 
-func seedLoans(db *gorm.DB, clients []model.Client, cls []model.CreditLine, count int) []model.Loan {
+func seedLoans(db *gorm.DB, clients []model.Client, cls []model.CreditLine, count int, defaultIVARate float64) []model.Loan {
 	var loans []model.Loan
 	adminID := uuid.New()
 
@@ -230,11 +230,12 @@ func seedLoans(db *gorm.DB, clients []model.Client, cls []model.CreditLine, coun
 		}
 
 		// Generate installments
+		defaultIVARate := decimal.NewFromFloat(defaultIVARate)
 		var schedule model.AmortizationSchedule
 		if amortType == model.AmortizationFrench {
-			schedule = model.CalculateFrenchAmortization(principal, cl.InterestRate, numInst, startDate)
+			schedule = model.CalculateFrenchAmortization(principal, cl.InterestRate, numInst, startDate, defaultIVARate)
 		} else {
-			schedule = model.CalculateGermanAmortization(principal, cl.InterestRate, numInst, startDate)
+			schedule = model.CalculateGermanAmortization(principal, cl.InterestRate, numInst, startDate, defaultIVARate)
 		}
 
 		var installments []model.Installment
@@ -247,6 +248,7 @@ func seedLoans(db *gorm.DB, clients []model.Client, cls []model.CreditLine, coun
 				DueDate:         calc.DueDate,
 				CapitalAmount:   calc.Capital,
 				InterestAmount:  calc.Interest,
+				IVAAmount:       calc.IVA,
 				TotalAmount:     calc.Total,
 				PaidAmount:      decimal.NewFromInt(0),
 				RemainingAmount: calc.Total,

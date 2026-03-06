@@ -30,13 +30,14 @@ type CreditLine struct {
 	ApprovedAt      *time.Time       `gorm:""`
 	RejectedBy      *uuid.UUID       `gorm:"type:uuid"`
 	RejectedAt      *time.Time       `gorm:""`
-	RejectionReason string           `gorm:""`
-	CreatedAt       time.Time        `gorm:"not null"`
+	RejectionReason     string           `gorm:""`
+	RecalculateOnPrepay bool             `gorm:"default:false"`
+	CreatedAt           time.Time        `gorm:"not null"`
 	UpdatedAt       time.Time        `gorm:"not null"`
 	DeletedAt       gorm.DeletedAt   `gorm:"index"`
 }
 
-func NewCreditLine(clientID uuid.UUID, maxAmount, interestRate decimal.Decimal, maxInstallments int) (*CreditLine, error) {
+func NewCreditLine(clientID uuid.UUID, maxAmount, interestRate decimal.Decimal, maxInstallments int, recalculateOnPrepay bool) (*CreditLine, error) {
 	if !maxAmount.IsPositive() {
 		return nil, fmt.Errorf("max amount must be positive")
 	}
@@ -48,13 +49,14 @@ func NewCreditLine(clientID uuid.UUID, maxAmount, interestRate decimal.Decimal, 
 	}
 
 	return &CreditLine{
-		ID:              uuid.New(),
-		ClientID:        clientID,
-		MaxAmount:       maxAmount,
-		UsedAmount:      decimal.NewFromInt(0),
-		InterestRate:    interestRate,
-		MaxInstallments: maxInstallments,
-		Status:          CreditLinePending,
+		ID:                  uuid.New(),
+		ClientID:            clientID,
+		MaxAmount:           maxAmount,
+		UsedAmount:          decimal.NewFromInt(0),
+		InterestRate:        interestRate,
+		MaxInstallments:     maxInstallments,
+		RecalculateOnPrepay: recalculateOnPrepay,
+		Status:              CreditLinePending,
 	}, nil
 }
 

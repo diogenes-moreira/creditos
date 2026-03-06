@@ -4,7 +4,6 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Box,
   Typography,
-  Snackbar,
   Alert,
   Button,
   Chip,
@@ -26,6 +25,7 @@ import {
   PaymentOutlined as PrepayIcon,
   Add as AddIcon,
   Search as SearchIcon,
+  AccountBalanceWallet as WithdrawalIcon,
 } from "@mui/icons-material";
 import { format } from "date-fns";
 import {
@@ -35,9 +35,12 @@ import {
   adminCancelLoan,
   adminPrepayLoan,
   adminCreateLoan,
+  adminCreateWithdrawal,
   adminSearchClients,
   adminGetClientCreditLines,
 } from "../../api/endpoints";
+import { useNotification } from "../../contexts/NotificationContext";
+import { getErrorMessage } from "../../api/errorUtils";
 import DataTable, { Column } from "../../components/DataTable";
 import MoneyDisplay from "../../components/MoneyDisplay";
 import StatusBadge from "../../components/StatusBadge";
@@ -50,10 +53,11 @@ const LoanManagement: React.FC = () => {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [confirmAction, setConfirmAction] = useState<{ type: ActionType; loan: Loan } | null>(null);
-  const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" as "success" | "error" });
+  const { showSuccess, showError } = useNotification();
 
-  // Create loan dialog state
+  // Create loan / withdrawal dialog state
   const [createOpen, setCreateOpen] = useState(false);
+  const [dialogMode, setDialogMode] = useState<"loan" | "withdrawal">("loan");
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<Client[]>([]);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
@@ -68,32 +72,44 @@ const LoanManagement: React.FC = () => {
     queryFn: adminGetPendingLoans,
   });
 
-  const mutationOptions = (successMsg: string) => ({
+  const mutationOptions = (successMsg: string, errorMsg: string) => ({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-pending-loans"] });
       setConfirmAction(null);
-      setSnackbar({ open: true, message: successMsg, severity: "success" });
+      showSuccess(successMsg);
     },
-    onError: () => {
+    onError: (err: unknown) => {
       setConfirmAction(null);
-      setSnackbar({ open: true, message: t("admin.processError"), severity: "error" });
+      showError(getErrorMessage(err, errorMsg));
     },
   });
 
-  const approveMutation = useMutation({ mutationFn: adminApproveLoan, ...mutationOptions(t("admin.loanApproved")) });
-  const disburseMutation = useMutation({ mutationFn: adminDisburseLoan, ...mutationOptions(t("admin.loanDisbursed")) });
-  const cancelMutation = useMutation({ mutationFn: adminCancelLoan, ...mutationOptions(t("admin.loanCancelled")) });
-  const prepayMutation = useMutation({ mutationFn: adminPrepayLoan, ...mutationOptions(t("admin.earlyCancelProcessed")) });
+  const approveMutation = useMutation({ mutationFn: adminApproveLoan, ...mutationOptions(t("admin.loanApproved"), t("admin.processError")) });
+  const disburseMutation = useMutation({ mutationFn: adminDisburseLoan, ...mutationOptions(t("admin.loanDisbursed"), t("admin.processError")) });
+  const cancelMutation = useMutation({ mutationFn: adminCancelLoan, ...mutationOptions(t("admin.loanCancelled"), t("admin.processError")) });
+  const prepayMutation = useMutation({ mutationFn: ({ id, amount }: { id: string; amount: string }) => adminPrepayLoan(id, amount), ...mutationOptions(t("admin.earlyCancelProcessed"), t("admin.processError")) });
 
   const createLoanMutation = useMutation({
     mutationFn: adminCreateLoan,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-pending-loans"] });
       handleCloseCreate();
-      setSnackbar({ open: true, message: t("admin.loanCreated"), severity: "success" });
+      showSuccess(t("admin.loanCreated"));
     },
-    onError: () => {
-      setSnackbar({ open: true, message: t("admin.loanCreateError"), severity: "error" });
+    onError: (err: unknown) => {
+      showError(getErrorMessage(err, t("admin.loanCreateError")));
+    },
+  });
+
+  const createWithdrawalMutation = useMutation({
+    mutationFn: adminCreateWithdrawal,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-pending-loans"] });
+      handleCloseCreate();
+      showSuccess(t("admin.withdrawalCreated"));
+    },
+    onError: (err: unknown) => {
+      showError(getErrorMessage(err, t("admin.withdrawalCreateError")));
     },
   });
 
@@ -104,12 +120,13 @@ const LoanManagement: React.FC = () => {
       case "approve": approveMutation.mutate(loan.id); break;
       case "disburse": disburseMutation.mutate(loan.id); break;
       case "cancel": cancelMutation.mutate(loan.id); break;
-      case "prepay": prepayMutation.mutate(loan.id); break;
+      case "prepay": prepayMutation.mutate({ id: loan.id, amount: loan.totalRemaining }); break;
     }
   };
 
   const handleCloseCreate = () => {
     setCreateOpen(false);
+    setDialogMode("loan");
     setSearchQuery("");
     setSearchResults([]);
     setSelectedClient(null);
@@ -141,13 +158,18 @@ const LoanManagement: React.FC = () => {
 
   const handleCreateLoan = () => {
     if (!selectedClient || !selectedCreditLine || !loanAmount) return;
-    createLoanMutation.mutate({
+    const data = {
       clientId: selectedClient.id,
       creditLineId: selectedCreditLine.id,
       amount: loanAmount,
       numInstallments: loanInstallments,
       amortizationType: loanAmortType,
-    });
+    };
+    if (dialogMode === "withdrawal") {
+      createWithdrawalMutation.mutate(data);
+    } else {
+      createLoanMutation.mutate(data);
+    }
   };
 
   const actionLabels: Record<ActionType, { label: string; color: "success" | "primary" | "error" | "warning"; message: string }> = {
@@ -255,9 +277,14 @@ const LoanManagement: React.FC = () => {
     <Box>
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
         <Typography variant="h4">{t("admin.loanManagement")}</Typography>
-        <Button variant="contained" startIcon={<AddIcon />} onClick={() => setCreateOpen(true)}>
-          {t("admin.createLoan")}
-        </Button>
+        <Box display="flex" gap={1}>
+          <Button variant="contained" startIcon={<AddIcon />} onClick={() => { setDialogMode("loan"); setCreateOpen(true); }}>
+            {t("admin.createLoan")}
+          </Button>
+          <Button variant="contained" color="secondary" startIcon={<WithdrawalIcon />} onClick={() => { setDialogMode("withdrawal"); setCreateOpen(true); }}>
+            {t("admin.cashWithdrawal")}
+          </Button>
+        </Box>
       </Box>
       <Typography variant="body1" color="text.secondary" mb={3}>
         {t("admin.pendingAction")}
@@ -273,7 +300,7 @@ const LoanManagement: React.FC = () => {
 
       {/* Create Loan Dialog */}
       <Dialog open={createOpen} onClose={handleCloseCreate} maxWidth="sm" fullWidth>
-        <DialogTitle>{t("admin.createLoan")}</DialogTitle>
+        <DialogTitle>{dialogMode === "withdrawal" ? t("admin.cashWithdrawal") : t("admin.createLoan")}</DialogTitle>
         <DialogContent>
           <Box mt={1} display="flex" flexDirection="column" gap={2}>
             {/* Step 1: Search & select client */}
@@ -389,41 +416,65 @@ const LoanManagement: React.FC = () => {
           <Button
             variant="contained"
             onClick={handleCreateLoan}
-            disabled={createLoanMutation.isPending || !selectedClient || !selectedCreditLine || !loanAmount}
+            disabled={createLoanMutation.isPending || createWithdrawalMutation.isPending || !selectedClient || !selectedCreditLine || !loanAmount}
           >
-            {createLoanMutation.isPending ? t("common.creating") : t("common.create")}
+            {(createLoanMutation.isPending || createWithdrawalMutation.isPending) ? t("common.creating") : t("common.create")}
           </Button>
         </DialogActions>
       </Dialog>
 
       {confirmAction && currentAction && (
-        <ConfirmDialog
-          open={true}
-          title={`${currentAction.label} Prestamo #${confirmAction.loan.id.slice(0, 8)}`}
-          message={currentAction.message}
-          confirmLabel={currentAction.label}
-          confirmColor={currentAction.color}
-          onConfirm={handleConfirm}
-          onCancel={() => setConfirmAction(null)}
-          loading={
-            approveMutation.isPending ||
-            disburseMutation.isPending ||
-            cancelMutation.isPending ||
-            prepayMutation.isPending
-          }
-        />
+        confirmAction.type === "cancel" && confirmAction.loan.cancellationSettlement ? (
+          <Dialog open={true} onClose={() => setConfirmAction(null)} maxWidth="sm" fullWidth>
+            <DialogTitle>{`${currentAction.label} ${t("loans.loanNumber")} #${confirmAction.loan.id.slice(0, 8)}`}</DialogTitle>
+            <DialogContent>
+              <Typography variant="body1" gutterBottom>{currentAction.message}</Typography>
+              <Box sx={{ mt: 2, p: 2, bgcolor: "grey.50", borderRadius: 1 }}>
+                <Typography variant="subtitle2" gutterBottom>{t("admin.settlementBreakdown")}</Typography>
+                <Box display="flex" justifyContent="space-between" mb={0.5}>
+                  <Typography variant="body2" color="text.secondary">{t("admin.pendingCapital")}</Typography>
+                  <MoneyDisplay amount={confirmAction.loan.cancellationSettlement.pendingCapital} variant="body2" />
+                </Box>
+                <Box display="flex" justifyContent="space-between" mb={0.5}>
+                  <Typography variant="body2" color="text.secondary">{t("admin.accumulatedInterest")}</Typography>
+                  <MoneyDisplay amount={confirmAction.loan.cancellationSettlement.accumulatedInterest} variant="body2" />
+                </Box>
+                <Box display="flex" justifyContent="space-between" mb={0.5}>
+                  <Typography variant="body2" color="text.secondary">{t("admin.accumulatedIVA")}</Typography>
+                  <MoneyDisplay amount={confirmAction.loan.cancellationSettlement.accumulatedIVA} variant="body2" />
+                </Box>
+                <Box display="flex" justifyContent="space-between" mt={1} pt={1} sx={{ borderTop: 1, borderColor: "divider" }}>
+                  <Typography variant="subtitle2">{t("admin.settlementTotal")}</Typography>
+                  <MoneyDisplay amount={confirmAction.loan.cancellationSettlement.total} fontWeight={700} variant="subtitle2" />
+                </Box>
+              </Box>
+            </DialogContent>
+            <DialogActions sx={{ px: 3, pb: 2 }}>
+              <Button onClick={() => setConfirmAction(null)} disabled={cancelMutation.isPending}>{t("common.cancel")}</Button>
+              <Button variant="contained" color="error" onClick={handleConfirm} disabled={cancelMutation.isPending}>
+                {cancelMutation.isPending ? t("common.processing") : currentAction.label}
+              </Button>
+            </DialogActions>
+          </Dialog>
+        ) : (
+          <ConfirmDialog
+            open={true}
+            title={`${currentAction.label} ${t("loans.loanNumber")} #${confirmAction.loan.id.slice(0, 8)}`}
+            message={currentAction.message}
+            confirmLabel={currentAction.label}
+            confirmColor={currentAction.color}
+            onConfirm={handleConfirm}
+            onCancel={() => setConfirmAction(null)}
+            loading={
+              approveMutation.isPending ||
+              disburseMutation.isPending ||
+              cancelMutation.isPending ||
+              prepayMutation.isPending
+            }
+          />
+        )
       )}
 
-      <Snackbar
-        open={snackbar.open}
-        autoHideDuration={4000}
-        onClose={() => setSnackbar({ ...snackbar, open: false })}
-        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
-      >
-        <Alert severity={snackbar.severity} onClose={() => setSnackbar({ ...snackbar, open: false })}>
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
     </Box>
   );
 };

@@ -1,4 +1,6 @@
 import React, { useState } from "react";
+import { useNotification } from "../../contexts/NotificationContext";
+import { getErrorMessage } from "../../api/errorUtils";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
@@ -17,7 +19,6 @@ import {
   DialogActions,
   TextField,
   MenuItem,
-  Snackbar,
 } from "@mui/material";
 import { ArrowBack as BackIcon, Payment as PaymentIcon } from "@mui/icons-material";
 import { format } from "date-fns";
@@ -35,7 +36,7 @@ const LoanDetail: React.FC = () => {
   const [payDialog, setPayDialog] = useState(false);
   const [selectedInstallment, setSelectedInstallment] = useState<Installment | null>(null);
   const [paymentMethod, setPaymentMethod] = useState("transfer");
-  const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" as "success" | "error" });
+  const { showSuccess, showError } = useNotification();
 
   const { data: loan, isLoading } = useQuery({
     queryKey: ["loan", id],
@@ -44,15 +45,15 @@ const LoanDetail: React.FC = () => {
   });
 
   const payMutation = useMutation({
-    mutationFn: (data: { amount: number; method: string }) =>
+    mutationFn: (data: { amount: number; method: string; installmentId?: string }) =>
       recordPayment(id!, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["loan", id] });
       setPayDialog(false);
-      setSnackbar({ open: true, message: t("loans.paymentSuccess"), severity: "success" });
+      showSuccess(t("loans.paymentSuccess"));
     },
-    onError: () => {
-      setSnackbar({ open: true, message: t("loans.paymentError"), severity: "error" });
+    onError: (err) => {
+      showError(getErrorMessage(err, t("loans.paymentError")));
     },
   });
 
@@ -64,8 +65,9 @@ const LoanDetail: React.FC = () => {
   const confirmPayment = () => {
     if (!selectedInstallment) return;
     payMutation.mutate({
-      amount: parseFloat(selectedInstallment.totalAmount) || 0,
+      amount: parseFloat(selectedInstallment.remainingAmount) || 0,
       method: paymentMethod,
+      installmentId: selectedInstallment.id,
     });
   };
 
@@ -87,6 +89,12 @@ const LoanDetail: React.FC = () => {
       label: t("loans.interest"),
       align: "right",
       render: (row) => <MoneyDisplay amount={row.interestAmount} />,
+    },
+    {
+      id: "ivaAmount",
+      label: t("loans.iva"),
+      align: "right",
+      render: (row) => <MoneyDisplay amount={row.ivaAmount} />,
     },
     {
       id: "totalAmount",
@@ -202,7 +210,7 @@ const LoanDetail: React.FC = () => {
         <DialogContent>
           <Box mt={1}>
             <Typography variant="body1" gutterBottom>
-              {t("loans.amountToPay")}: <MoneyDisplay amount={selectedInstallment?.totalAmount || "0"} fontWeight={600} />
+              {t("loans.amountToPay")}: <MoneyDisplay amount={selectedInstallment?.remainingAmount || "0"} fontWeight={600} />
             </Typography>
             <TextField
               select
@@ -230,16 +238,6 @@ const LoanDetail: React.FC = () => {
         </DialogActions>
       </Dialog>
 
-      <Snackbar
-        open={snackbar.open}
-        autoHideDuration={4000}
-        onClose={() => setSnackbar({ ...snackbar, open: false })}
-        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
-      >
-        <Alert severity={snackbar.severity} onClose={() => setSnackbar({ ...snackbar, open: false })}>
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
     </Box>
   );
 };

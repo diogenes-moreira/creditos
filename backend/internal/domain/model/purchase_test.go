@@ -49,10 +49,11 @@ func TestNewPurchase(t *testing.T) {
 	vendorID := uuid.New()
 	clientID := uuid.New()
 	creditLineID := uuid.New()
+	loanID := uuid.New()
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			purchase, err := model.NewPurchase(vendorID, clientID, creditLineID, tt.amount, tt.description)
+			purchase, err := model.NewPurchase(vendorID, clientID, creditLineID, loanID, tt.amount, tt.description)
 			if tt.wantErr {
 				require.Error(t, err)
 				assert.Contains(t, err.Error(), tt.errMsg)
@@ -64,6 +65,7 @@ func TestNewPurchase(t *testing.T) {
 				assert.Equal(t, vendorID, purchase.VendorID)
 				assert.Equal(t, clientID, purchase.ClientID)
 				assert.Equal(t, creditLineID, purchase.CreditLineID)
+				assert.Equal(t, loanID, purchase.LoanID)
 				assert.True(t, purchase.Amount.Equal(tt.amount))
 				assert.Equal(t, tt.description, purchase.Description)
 			}

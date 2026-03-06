@@ -55,11 +55,12 @@ func main() {
 		&model.VendorMovement{},
 		&model.Purchase{},
 		&model.VendorPayment{},
+		&model.WithdrawalRequest{},
 	); err != nil {
 		log.Fatalf("Failed to migrate database: %v", err)
 	}
 
-	router := ginRouter.NewRouter(db, cfg.JWT.Secret)
+	router := ginRouter.NewRouter(db, cfg.JWT.Secret, cfg.DefaultIVARate, cfg.LatePenaltyRate)
 
 	log.Printf("Starting server on port %s", cfg.Server.Port)
 	if err := router.Engine().Run(":" + cfg.Server.Port); err != nil {

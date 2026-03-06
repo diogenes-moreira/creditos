@@ -102,3 +102,47 @@ func (g *Generator) GeneratePaymentReceipt(payment *model.Payment, loan *model.L
 	}
 	return &buf, nil
 }
+
+func (g *Generator) GenerateVendorPaymentReceipt(payment *model.VendorPayment, vendor *model.Vendor) (io.Reader, error) {
+	pdf := gofpdf.New("P", "mm", "A4", "")
+	pdf.AddPage()
+
+	pdf.SetFont("Arial", "B", 16)
+	pdf.Cell(190, 10, "Prestia - Comprobante de Pago a Vendedor")
+	pdf.Ln(15)
+
+	pdf.SetFont("Arial", "", 11)
+	pdf.Cell(190, 7, fmt.Sprintf("Comprobante #: %s", payment.ID.String()[:8]))
+	pdf.Ln(7)
+	pdf.Cell(190, 7, fmt.Sprintf("Fecha: %s", payment.CreatedAt.Format("02/01/2006 15:04")))
+	pdf.Ln(12)
+
+	pdf.Cell(95, 7, fmt.Sprintf("Vendedor: %s", vendor.BusinessName))
+	pdf.Cell(95, 7, fmt.Sprintf("CUIT: %s", vendor.CUIT))
+	pdf.Ln(7)
+	pdf.Cell(190, 7, fmt.Sprintf("Direccion: %s, %s, %s", vendor.Address, vendor.City, vendor.Province))
+	pdf.Ln(12)
+
+	pdf.SetFont("Arial", "B", 14)
+	pdf.Cell(190, 10, fmt.Sprintf("Monto Pagado: $%s", payment.Amount.StringFixed(2)))
+	pdf.Ln(10)
+
+	pdf.SetFont("Arial", "", 11)
+	pdf.Cell(190, 7, fmt.Sprintf("Metodo: %s", string(payment.Method)))
+	pdf.Ln(7)
+
+	if payment.Reference != "" {
+		pdf.Cell(190, 7, fmt.Sprintf("Referencia: %s", payment.Reference))
+		pdf.Ln(7)
+	}
+
+	pdf.Ln(20)
+	pdf.SetFont("Arial", "I", 9)
+	pdf.Cell(190, 7, "Este comprobante es valido como constancia de pago.")
+
+	var buf bytes.Buffer
+	if err := pdf.Output(&buf); err != nil {
+		return nil, fmt.Errorf("failed to generate PDF: %w", err)
+	}
+	return &buf, nil
+}

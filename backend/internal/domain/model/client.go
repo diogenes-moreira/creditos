@@ -6,6 +6,7 @@ import (
 
 	"github.com/diogenes-moreira/creditos/backend/pkg/validator"
 	"github.com/google/uuid"
+	"github.com/shopspring/decimal"
 	"gorm.io/gorm"
 )
 
@@ -15,16 +16,17 @@ type Client struct {
 	User            User           `gorm:"foreignKey:UserID"`
 	FirstName       string         `gorm:"not null"`
 	LastName        string         `gorm:"not null"`
-	DNI             string         `gorm:"uniqueIndex;not null"`
-	CUIT            string         `gorm:"uniqueIndex;not null"`
+	DNI             string         `gorm:"column:dni;uniqueIndex;not null"`
+	CUIT            string         `gorm:"column:cuit;uniqueIndex;not null"`
 	DateOfBirth     time.Time      `gorm:"not null"`
 	Phone           string         `gorm:"not null"`
 	Address         string         `gorm:"not null"`
 	City            string         `gorm:"not null"`
 	Province        string         `gorm:"not null"`
-	IsPEP           bool           `gorm:"not null;default:false"`
-	MercadoPagoLink string         `gorm:""`
-	IsBlocked       bool           `gorm:"not null;default:false"`
+	IsPEP           bool            `gorm:"not null;default:false"`
+	IVARate         decimal.Decimal `gorm:"type:decimal(5,2);not null;default:21.00"`
+	MercadoPagoLink string          `gorm:""`
+	IsBlocked       bool            `gorm:"not null;default:false"`
 	CreatedAt       time.Time      `gorm:"not null"`
 	UpdatedAt       time.Time      `gorm:"not null"`
 	DeletedAt       gorm.DeletedAt `gorm:"index"`
@@ -95,6 +97,10 @@ func (c *Client) Unblock() {
 
 func (c *Client) SetMercadoPagoLink(link string) {
 	c.MercadoPagoLink = link
+}
+
+func (c *Client) SetIVARate(rate decimal.Decimal) {
+	c.IVARate = rate
 }
 
 func (c *Client) UpdateProfile(phone, address, city, province string) {

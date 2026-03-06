@@ -47,7 +47,7 @@ func (h *CreditHandler) CreateCreditLine(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "invalid interest rate"})
 		return
 	}
-	cl, err := h.creditService.CreateCreditLine(c.Request.Context(), adminID, clientID, maxAmount, interestRate, req.MaxInstallments)
+	cl, err := h.creditService.CreateCreditLine(c.Request.Context(), adminID, clientID, maxAmount, interestRate, req.MaxInstallments, req.RecalculateOnPrepay)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
 		return
@@ -145,6 +145,13 @@ func (h *CreditHandler) UpdateCreditLine(c *gin.Context) {
 	if err != nil {
 		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
 		return
+	}
+	if req.RecalculateOnPrepay != nil {
+		cl.RecalculateOnPrepay = *req.RecalculateOnPrepay
+		if err := h.creditService.UpdateCreditLineFields(c.Request.Context(), cl); err != nil {
+			c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
+			return
+		}
 	}
 	c.JSON(http.StatusOK, dto.ToCreditLineResponse(cl))
 }

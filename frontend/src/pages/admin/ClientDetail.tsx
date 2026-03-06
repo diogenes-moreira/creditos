@@ -14,7 +14,6 @@ import {
   Alert,
   Tabs,
   Tab,
-  Snackbar,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -22,6 +21,7 @@ import {
   TextField,
   Chip,
   IconButton,
+  MenuItem,
 } from "@mui/material";
 import {
   ArrowBack as BackIcon,
@@ -30,6 +30,10 @@ import {
   Payment as PaymentIcon,
   ShoppingCart as PurchaseIcon,
   Edit as EditIcon,
+  Add as AddIcon,
+  AccountBalanceWallet as WithdrawalIcon,
+  CheckCircle as ApproveIcon,
+  Cancel as RejectIcon,
 } from "@mui/icons-material";
 import {
   BarChart,
@@ -50,12 +54,22 @@ import {
   adminGetClientAccount,
   adminGetClientMovements,
   adminUpdateCreditLine,
+  adminCreateCreditLine,
+  adminCreateLoan,
+  adminCreateWithdrawal,
+  adminRecordLoanPayment,
+  adminPrepayLoan,
+  adminUpdateIVARate,
+  adminApproveCreditLine,
+  adminRejectCreditLine,
 } from "../../api/endpoints";
+import { useNotification } from "../../contexts/NotificationContext";
+import { getErrorMessage } from "../../api/errorUtils";
 import DataTable, { Column } from "../../components/DataTable";
 import MoneyDisplay from "../../components/MoneyDisplay";
 import StatusBadge from "../../components/StatusBadge";
 import KPICard from "../../components/KPICard";
-import type { Loan, Payment, Purchase, Movement, CreditLine } from "../../api/types";
+import type { Loan, Payment, Purchase, Movement, CreditLine, Installment } from "../../api/types";
 
 const ClientDetail: React.FC = () => {
   const { t } = useTranslation();
@@ -71,7 +85,39 @@ const ClientDetail: React.FC = () => {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editingCreditLine, setEditingCreditLine] = useState<CreditLine | null>(null);
   const [newMaxAmount, setNewMaxAmount] = useState("");
-  const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" as "success" | "error" });
+  // Create loan dialog state
+  const [loanDialogOpen, setLoanDialogOpen] = useState(false);
+  const [loanDialogMode, setLoanDialogMode] = useState<"loan" | "withdrawal">("loan");
+  const [loanCreditLine, setLoanCreditLine] = useState<CreditLine | null>(null);
+  const [loanAmount, setLoanAmount] = useState("");
+  const [loanInstallments, setLoanInstallments] = useState(12);
+  const [loanAmortType, setLoanAmortType] = useState<"french" | "german">("french");
+  // Payment dialog state
+  const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
+  const [paymentLoan, setPaymentLoan] = useState<Loan | null>(null);
+  const [paymentAmount, setPaymentAmount] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState("cash");
+  const [paymentReference, setPaymentReference] = useState("");
+  // Loan detail dialog state
+  const [detailLoan, setDetailLoan] = useState<Loan | null>(null);
+  const [detailDialogOpen, setDetailDialogOpen] = useState(false);
+  // Prepay dialog state
+  const [prepayDialogOpen, setPrepayDialogOpen] = useState(false);
+  const [prepayLoan, setPrepayLoan] = useState<Loan | null>(null);
+  const [prepayAmount, setPrepayAmount] = useState("");
+  // Create credit line dialog state
+  const [createCLOpen, setCreateCLOpen] = useState(false);
+  const [clMaxAmount, setClMaxAmount] = useState("100000");
+  const [clInterestRate, setClInterestRate] = useState("5");
+  const [clMaxInstallments, setClMaxInstallments] = useState("12");
+  // Reject credit line dialog
+  const [rejectCLOpen, setRejectCLOpen] = useState(false);
+  const [rejectCLId, setRejectCLId] = useState<string | null>(null);
+  const [rejectReason, setRejectReason] = useState("");
+  // IVA rate editing
+  const [editingIVA, setEditingIVA] = useState(false);
+  const [ivaRateValue, setIvaRateValue] = useState("");
+  const { showSuccess, showError } = useNotification();
 
   const { data: client, isLoading } = useQuery({
     queryKey: ["admin-client", id],
@@ -123,12 +169,155 @@ const ClientDetail: React.FC = () => {
       setEditDialogOpen(false);
       setEditingCreditLine(null);
       setNewMaxAmount("");
-      setSnackbar({ open: true, message: t("admin.creditLineUpdated"), severity: "success" });
+      showSuccess(t("admin.creditLineUpdated"));
     },
-    onError: () => {
-      setSnackbar({ open: true, message: t("admin.creditLineUpdateError"), severity: "error" });
+    onError: (err: unknown) => {
+      showError(getErrorMessage(err, t("admin.creditLineUpdateError")));
     },
   });
+
+  const updateIVARateMutation = useMutation({
+    mutationFn: ({ clientId, ivaRate }: { clientId: string; ivaRate: number }) =>
+      adminUpdateIVARate(clientId, ivaRate),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-client", id] });
+      setEditingIVA(false);
+      showSuccess(t("admin.ivaRateUpdated"));
+    },
+    onError: (err: unknown) => showError(getErrorMessage(err, t("admin.ivaRateUpdateError"))),
+  });
+
+  const handleOpenLoanDialog = (cl: CreditLine, mode: "loan" | "withdrawal") => {
+    setLoanCreditLine(cl);
+    setLoanDialogMode(mode);
+    setLoanAmount("");
+    setLoanInstallments(12);
+    setLoanAmortType("french");
+    setLoanDialogOpen(true);
+  };
+
+  const handleCloseLoanDialog = () => {
+    setLoanDialogOpen(false);
+    setLoanCreditLine(null);
+  };
+
+  const createLoanMutation = useMutation({
+    mutationFn: adminCreateLoan,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-client-loans", id] });
+      queryClient.invalidateQueries({ queryKey: ["admin-client-credit-lines", id] });
+      handleCloseLoanDialog();
+      showSuccess(t("admin.loanCreated"));
+    },
+    onError: (err: unknown) => {
+      showError(getErrorMessage(err, t("admin.loanCreateError")));
+    },
+  });
+
+  const createWithdrawalMutation = useMutation({
+    mutationFn: adminCreateWithdrawal,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-client-loans", id] });
+      queryClient.invalidateQueries({ queryKey: ["admin-client-credit-lines", id] });
+      queryClient.invalidateQueries({ queryKey: ["admin-client-account", id] });
+      queryClient.invalidateQueries({ queryKey: ["admin-client-movements", id] });
+      handleCloseLoanDialog();
+      showSuccess(t("admin.withdrawalCreated"));
+    },
+    onError: (err: unknown) => {
+      showError(getErrorMessage(err, t("admin.withdrawalCreateError")));
+    },
+  });
+
+  const recordPaymentMutation = useMutation({
+    mutationFn: ({ loanId, data }: { loanId: string; data: { amount: string; method: string; reference?: string } }) =>
+      adminRecordLoanPayment(loanId, { amount: parseFloat(data.amount), method: data.method }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-client-loans", id] });
+      queryClient.invalidateQueries({ queryKey: ["admin-client-payments", id] });
+      queryClient.invalidateQueries({ queryKey: ["admin-client-account", id] });
+      queryClient.invalidateQueries({ queryKey: ["admin-client-movements", id] });
+      setPaymentDialogOpen(false);
+      setPaymentLoan(null);
+      setPaymentAmount("");
+      setPaymentMethod("cash");
+      setPaymentReference("");
+      showSuccess(t("admin.paymentRecorded"));
+    },
+    onError: (err: unknown) => {
+      showError(getErrorMessage(err, t("admin.paymentRecordError")));
+    },
+  });
+
+  const prepayMutation = useMutation({
+    mutationFn: ({ loanId, amount }: { loanId: string; amount: string }) =>
+      adminPrepayLoan(loanId, amount),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-client-loans", id] });
+      queryClient.invalidateQueries({ queryKey: ["admin-client-payments", id] });
+      queryClient.invalidateQueries({ queryKey: ["admin-client-account", id] });
+      queryClient.invalidateQueries({ queryKey: ["admin-client-movements", id] });
+      queryClient.invalidateQueries({ queryKey: ["admin-client-credit-lines", id] });
+      setPrepayDialogOpen(false);
+      setPrepayLoan(null);
+      setPrepayAmount("");
+      showSuccess(t("admin.prepayRecorded"));
+    },
+    onError: (err: unknown) => {
+      showError(getErrorMessage(err, t("admin.prepayError")));
+    },
+  });
+
+  const createCreditLineMutation = useMutation({
+    mutationFn: adminCreateCreditLine,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-client-credit-lines", id] });
+      setCreateCLOpen(false);
+      setClMaxAmount("100000");
+      setClInterestRate("5");
+      setClMaxInstallments("12");
+      showSuccess(t("creditLines.created"));
+    },
+    onError: (err: unknown) => showError(getErrorMessage(err, t("creditLines.createError"))),
+  });
+
+  const approveCreditLineMutation = useMutation({
+    mutationFn: (creditLineId: string) => adminApproveCreditLine(creditLineId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-client-credit-lines", id] });
+      showSuccess(t("creditLines.approved"));
+    },
+    onError: (err: unknown) => showError(getErrorMessage(err, t("creditLines.approveError"))),
+  });
+
+  const rejectCreditLineMutation = useMutation({
+    mutationFn: ({ creditLineId, reason }: { creditLineId: string; reason: string }) =>
+      adminRejectCreditLine(creditLineId, reason),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-client-credit-lines", id] });
+      setRejectCLOpen(false);
+      setRejectCLId(null);
+      setRejectReason("");
+      showSuccess(t("creditLines.rejected"));
+    },
+    onError: (err: unknown) => showError(getErrorMessage(err, t("creditLines.rejectError"))),
+  });
+
+  const handleSubmitLoan = () => {
+    if (!loanCreditLine || !loanAmount || !id) return;
+    const data = {
+      clientId: id,
+      creditLineId: loanCreditLine.id,
+      amount: loanAmount,
+      numInstallments: loanInstallments,
+      amortizationType: loanAmortType,
+    };
+    if (loanDialogMode === "withdrawal") {
+      createWithdrawalMutation.mutate(data);
+    } else {
+      createLoanMutation.mutate(data);
+    }
+  };
 
   const formatMoney = (amount: number) =>
     new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 }).format(amount);
@@ -150,13 +339,29 @@ const ClientDetail: React.FC = () => {
   const totalPurchasesCount = purchasesData?.total || 0;
 
   const loanColumns: Column<Loan>[] = [
-    { id: "id", label: "ID", minWidth: 90, render: (row) => `#${row.id.slice(0, 8)}` },
+    { id: "id", label: "ID", minWidth: 90, render: (row) => (
+      <Button size="small" variant="text" sx={{ textTransform: "none", minWidth: 0, p: 0 }} onClick={() => { setDetailLoan(row); setDetailDialogOpen(true); }}>
+        #{row.id.slice(0, 8)}
+      </Button>
+    ) },
     { id: "principal", label: t("loans.principal"), align: "right", render: (row) => <MoneyDisplay amount={row.principal} fontWeight={500} /> },
     { id: "interestRate", label: t("admin.rate"), align: "center", render: (row) => `${row.interestRate}%` },
     { id: "numInstallments", label: t("loans.installments"), align: "center" },
     { id: "amortizationType", label: t("loans.system"), render: (row) => <Chip label={row.amortizationType === "french" ? t("loans.french") : t("loans.german")} size="small" variant="outlined" /> },
     { id: "status", label: t("common.status"), render: (row) => <StatusBadge status={row.status} /> },
     { id: "createdAt", label: t("common.date"), render: (row) => format(new Date(row.createdAt), "dd/MM/yyyy") },
+    { id: "actions" as keyof Loan, label: t("common.actions"), render: (row) =>
+      (row.status === "active") ? (
+        <Box display="flex" gap={0.5}>
+          <Button size="small" variant="outlined" onClick={() => { setPaymentLoan(row); setPaymentDialogOpen(true); }}>
+            {t("admin.recordPayment")}
+          </Button>
+          <Button size="small" variant="outlined" color="warning" onClick={() => { setPrepayLoan(row); setPrepayDialogOpen(true); }}>
+            {t("admin.capitalPrepay")}
+          </Button>
+        </Box>
+      ) : null
+    },
   ];
 
   const paymentColumns: Column<Payment>[] = [
@@ -257,6 +462,9 @@ const ClientDetail: React.FC = () => {
         <CardContent>
           <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
             <Typography variant="h6">{t("admin.clientDetailCreditLine")}</Typography>
+            <Button size="small" variant="contained" startIcon={<AddIcon />} onClick={() => setCreateCLOpen(true)}>
+              {t("creditLines.newLine")}
+            </Button>
           </Box>
           <Divider sx={{ mb: 2 }} />
           {creditLines && creditLines.length > 0 ? (
@@ -290,6 +498,26 @@ const ClientDetail: React.FC = () => {
                   </Grid>
                   <Grid item xs={12} sm={6} md={2}>
                     <StatusBadge status={cl.status} />
+                    {cl.status === "approved" && (
+                      <Box display="flex" gap={0.5} mt={1}>
+                        <Button size="small" variant="contained" color="secondary" startIcon={<WithdrawalIcon />} onClick={() => handleOpenLoanDialog(cl, "withdrawal")}>
+                          {t("admin.cashWithdrawal")}
+                        </Button>
+                      </Box>
+                    )}
+                    {cl.status === "pending" && (
+                      <Box display="flex" gap={0.5} mt={1}>
+                        <Button size="small" variant="contained" color="success" startIcon={<ApproveIcon />}
+                          disabled={approveCreditLineMutation.isPending}
+                          onClick={() => approveCreditLineMutation.mutate(cl.id)}>
+                          {t("creditLines.approve")}
+                        </Button>
+                        <Button size="small" variant="outlined" color="error" startIcon={<RejectIcon />}
+                          onClick={() => { setRejectCLId(cl.id); setRejectReason(""); setRejectCLOpen(true); }}>
+                          {t("creditLines.reject")}
+                        </Button>
+                      </Box>
+                    )}
                   </Grid>
                 </Grid>
                 {creditLines.length > 1 && <Divider sx={{ mt: 2 }} />}
@@ -350,6 +578,35 @@ const ClientDetail: React.FC = () => {
             <Grid item xs={12} sm={6} md={4}>
               <Typography variant="body2" color="text.secondary">{t("admin.registrationDate")}</Typography>
               <Typography>{format(new Date(client.createdAt), "dd/MM/yyyy")}</Typography>
+            </Grid>
+            <Grid item xs={12} sm={6} md={4}>
+              <Typography variant="body2" color="text.secondary">{t("loans.ivaRate")}</Typography>
+              {editingIVA ? (
+                <Box display="flex" alignItems="center" gap={1}>
+                  <TextField
+                    size="small"
+                    type="number"
+                    value={ivaRateValue}
+                    onChange={(e) => setIvaRateValue(e.target.value)}
+                    inputProps={{ min: 0, max: 100, step: 0.5 }}
+                    sx={{ width: 100 }}
+                  />
+                  <Typography variant="body2">%</Typography>
+                  <Button size="small" variant="contained"
+                    disabled={updateIVARateMutation.isPending}
+                    onClick={() => id && updateIVARateMutation.mutate({ clientId: id, ivaRate: parseFloat(ivaRateValue) })}>
+                    {t("common.save")}
+                  </Button>
+                  <Button size="small" onClick={() => setEditingIVA(false)}>{t("common.cancel")}</Button>
+                </Box>
+              ) : (
+                <Box display="flex" alignItems="center" gap={0.5}>
+                  <Typography fontWeight={500}>{client.ivaRate}%</Typography>
+                  <IconButton size="small" onClick={() => { setIvaRateValue(client.ivaRate || "21"); setEditingIVA(true); }}>
+                    <EditIcon fontSize="small" />
+                  </IconButton>
+                </Box>
+              )}
             </Grid>
           </Grid>
         </CardContent>
@@ -421,6 +678,60 @@ const ClientDetail: React.FC = () => {
         </CardContent>
       </Card>
 
+      {/* Create Loan / Withdrawal Dialog */}
+      <Dialog open={loanDialogOpen} onClose={handleCloseLoanDialog} maxWidth="sm" fullWidth>
+        <DialogTitle>{loanDialogMode === "withdrawal" ? t("admin.cashWithdrawal") : t("admin.createLoan")}</DialogTitle>
+        <DialogContent>
+          {loanCreditLine && (
+            <Box mt={1} display="flex" flexDirection="column" gap={2}>
+              <Box sx={{ p: 1.5, border: 1, borderColor: "divider", borderRadius: 1 }}>
+                <Typography variant="body2">
+                  {t("creditLines.availableAmount")}: <MoneyDisplay amount={loanCreditLine.availableAmount} variant="body2" color="success.main" />
+                  {" | "}{t("loans.interestRate")}: {loanCreditLine.interestRate}%
+                  {" | "}{t("creditLines.maxInstallments")}: {loanCreditLine.maxInstallments}
+                </Typography>
+              </Box>
+              <TextField
+                fullWidth
+                type="number"
+                label={t("loans.loanAmount")}
+                value={loanAmount}
+                onChange={(e) => setLoanAmount(e.target.value)}
+                inputProps={{ min: 1, max: parseFloat(loanCreditLine.availableAmount) }}
+              />
+              <TextField
+                fullWidth
+                type="number"
+                label={t("loans.numberOfInstallments")}
+                value={loanInstallments}
+                onChange={(e) => setLoanInstallments(Number(e.target.value))}
+                inputProps={{ min: 1, max: loanCreditLine.maxInstallments }}
+              />
+              <TextField
+                select
+                fullWidth
+                label={t("loans.amortizationSystem")}
+                value={loanAmortType}
+                onChange={(e) => setLoanAmortType(e.target.value as "french" | "german")}
+              >
+                <MenuItem value="french">{t("loans.frenchFull")}</MenuItem>
+                <MenuItem value="german">{t("loans.germanFull")}</MenuItem>
+              </TextField>
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button onClick={handleCloseLoanDialog}>{t("common.cancel")}</Button>
+          <Button
+            variant="contained"
+            onClick={handleSubmitLoan}
+            disabled={createLoanMutation.isPending || createWithdrawalMutation.isPending || !loanAmount}
+          >
+            {(createLoanMutation.isPending || createWithdrawalMutation.isPending) ? t("common.creating") : t("common.create")}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
       {/* Edit Credit Line Dialog */}
       <Dialog open={editDialogOpen} onClose={() => setEditDialogOpen(false)} maxWidth="sm" fullWidth>
         <DialogTitle>{t("admin.clientDetailEditLimit")}</DialogTitle>
@@ -455,16 +766,219 @@ const ClientDetail: React.FC = () => {
         </DialogActions>
       </Dialog>
 
-      <Snackbar
-        open={snackbar.open}
-        autoHideDuration={4000}
-        onClose={() => setSnackbar({ ...snackbar, open: false })}
-        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
-      >
-        <Alert severity={snackbar.severity} onClose={() => setSnackbar({ ...snackbar, open: false })}>
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
+      {/* Record Payment Dialog */}
+      <Dialog open={paymentDialogOpen} onClose={() => setPaymentDialogOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>{t("admin.recordPayment")}</DialogTitle>
+        <DialogContent>
+          {paymentLoan && (
+            <Box mt={1} display="flex" flexDirection="column" gap={2}>
+              <Box sx={{ p: 1.5, border: 1, borderColor: "divider", borderRadius: 1 }}>
+                <Typography variant="body2">
+                  {t("loans.loanNumber")} #{paymentLoan.id.slice(0, 8)}
+                  {" | "}{t("loans.totalRemaining")}: <MoneyDisplay amount={paymentLoan.totalRemaining} variant="body2" color="error.main" />
+                </Typography>
+              </Box>
+              <TextField
+                fullWidth
+                type="number"
+                label={t("common.amount")}
+                value={paymentAmount}
+                onChange={(e) => setPaymentAmount(e.target.value)}
+                inputProps={{ min: 1 }}
+              />
+              <TextField
+                select
+                fullWidth
+                label={t("payments.method")}
+                value={paymentMethod}
+                onChange={(e) => setPaymentMethod(e.target.value)}
+              >
+                <MenuItem value="cash">{t("payments.cash")}</MenuItem>
+                <MenuItem value="transfer">{t("payments.transfer")}</MenuItem>
+                <MenuItem value="mercado_pago">{t("payments.mercadoPago")}</MenuItem>
+              </TextField>
+              <TextField
+                fullWidth
+                label={t("admin.paymentReference")}
+                value={paymentReference}
+                onChange={(e) => setPaymentReference(e.target.value)}
+              />
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button onClick={() => setPaymentDialogOpen(false)}>{t("common.cancel")}</Button>
+          <Button
+            variant="contained"
+            onClick={() => paymentLoan && recordPaymentMutation.mutate({
+              loanId: paymentLoan.id,
+              data: { amount: paymentAmount, method: paymentMethod, reference: paymentReference },
+            })}
+            disabled={recordPaymentMutation.isPending || !paymentAmount}
+          >
+            {recordPaymentMutation.isPending ? t("common.processing") : t("common.confirm")}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Capital Prepay Dialog */}
+      <Dialog open={prepayDialogOpen} onClose={() => setPrepayDialogOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>{t("admin.capitalPrepay")}</DialogTitle>
+        <DialogContent>
+          {prepayLoan && (
+            <Box mt={1} display="flex" flexDirection="column" gap={2}>
+              <Box sx={{ p: 1.5, border: 1, borderColor: "divider", borderRadius: 1 }}>
+                <Typography variant="body2">
+                  {t("loans.loanNumber")} #{prepayLoan.id.slice(0, 8)}
+                  {" | "}{t("loans.totalRemaining")}: <MoneyDisplay amount={prepayLoan.totalRemaining} variant="body2" color="error.main" />
+                </Typography>
+              </Box>
+              <TextField
+                fullWidth
+                type="number"
+                label={t("admin.prepayAmount")}
+                value={prepayAmount}
+                onChange={(e) => setPrepayAmount(e.target.value)}
+                inputProps={{ min: 1 }}
+              />
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button onClick={() => setPrepayDialogOpen(false)}>{t("common.cancel")}</Button>
+          <Button
+            variant="contained"
+            color="warning"
+            onClick={() => prepayLoan && prepayMutation.mutate({ loanId: prepayLoan.id, amount: prepayAmount })}
+            disabled={prepayMutation.isPending || !prepayAmount}
+          >
+            {prepayMutation.isPending ? t("common.processing") : t("common.confirm")}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Create Credit Line Dialog */}
+      <Dialog open={createCLOpen} onClose={() => setCreateCLOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>{t("creditLines.create")}</DialogTitle>
+        <DialogContent>
+          <Box mt={1} display="flex" flexDirection="column" gap={2}>
+            <TextField
+              fullWidth
+              label={t("admin.client")}
+              value={client ? `${client.firstName} ${client.lastName} (DNI: ${client.dni})` : ""}
+              InputProps={{ readOnly: true }}
+              disabled
+            />
+            <TextField
+              fullWidth
+              type="number"
+              label={t("creditLines.maxAmount")}
+              value={clMaxAmount}
+              onChange={(e) => setClMaxAmount(e.target.value)}
+              inputProps={{ min: 1000 }}
+            />
+            <TextField
+              fullWidth
+              type="number"
+              label={t("loans.interestRate") + " (%)"}
+              value={clInterestRate}
+              onChange={(e) => setClInterestRate(e.target.value)}
+              inputProps={{ min: 0.1, step: 0.1 }}
+            />
+            <TextField
+              fullWidth
+              type="number"
+              label={t("creditLines.maxInstallments")}
+              value={clMaxInstallments}
+              onChange={(e) => setClMaxInstallments(e.target.value)}
+              inputProps={{ min: 1, max: 60 }}
+            />
+          </Box>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button onClick={() => setCreateCLOpen(false)}>{t("common.cancel")}</Button>
+          <Button
+            variant="contained"
+            disabled={createCreditLineMutation.isPending}
+            onClick={() => id && createCreditLineMutation.mutate({
+              clientId: id,
+              maxAmount: clMaxAmount,
+              interestRate: clInterestRate,
+              maxInstallments: Number(clMaxInstallments),
+            })}
+          >
+            {createCreditLineMutation.isPending ? t("common.creating") : t("common.create")}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Reject Credit Line Dialog */}
+      <Dialog open={rejectCLOpen} onClose={() => setRejectCLOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>{t("creditLines.rejectLine")}</DialogTitle>
+        <DialogContent>
+          <TextField
+            fullWidth
+            multiline
+            rows={3}
+            label={t("creditLines.rejectionReason")}
+            value={rejectReason}
+            onChange={(e) => setRejectReason(e.target.value)}
+            sx={{ mt: 1 }}
+          />
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button onClick={() => setRejectCLOpen(false)}>{t("common.cancel")}</Button>
+          <Button
+            variant="contained"
+            color="error"
+            disabled={rejectCreditLineMutation.isPending || !rejectReason.trim()}
+            onClick={() => rejectCLId && rejectCreditLineMutation.mutate({ creditLineId: rejectCLId, reason: rejectReason })}
+          >
+            {rejectCreditLineMutation.isPending ? t("common.processing") : t("creditLines.reject")}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Loan Detail Dialog */}
+      <Dialog open={detailDialogOpen} onClose={() => setDetailDialogOpen(false)} maxWidth="lg" fullWidth>
+        <DialogTitle>
+          {t("loans.loanDetail")} #{detailLoan?.id.slice(0, 8)}
+        </DialogTitle>
+        <DialogContent>
+          {detailLoan && (
+            <Box mt={1}>
+              <Box sx={{ mb: 2, p: 1.5, border: 1, borderColor: "divider", borderRadius: 1 }}>
+                <Typography variant="body2">
+                  {t("loans.principal")}: <MoneyDisplay amount={detailLoan.principal} variant="body2" fontWeight={600} />
+                  {" | "}{t("loans.interestRate")}: {detailLoan.interestRate}%
+                  {" | "}{t("loans.system")}: {detailLoan.amortizationType === "french" ? t("loans.french") : t("loans.german")}
+                  {" | "}<StatusBadge status={detailLoan.status} />
+                </Typography>
+              </Box>
+              <DataTable<Installment>
+                columns={[
+                  { id: "number", label: "#", align: "center" },
+                  { id: "dueDate", label: t("loans.dueDate"), render: (row) => format(new Date(row.dueDate), "dd/MM/yyyy") },
+                  { id: "capitalAmount", label: t("loans.capital"), align: "right", render: (row) => <MoneyDisplay amount={row.capitalAmount} /> },
+                  { id: "interestAmount", label: t("loans.interest"), align: "right", render: (row) => <MoneyDisplay amount={row.interestAmount} /> },
+                  { id: "ivaAmount", label: t("loans.iva"), align: "right", render: (row) => <MoneyDisplay amount={row.ivaAmount} /> },
+                  { id: "totalAmount", label: t("loans.installmentTotal"), align: "right", render: (row) => <MoneyDisplay amount={row.totalAmount} fontWeight={600} /> },
+                  { id: "paidAmount", label: t("loans.paid"), align: "right", render: (row) => <MoneyDisplay amount={row.paidAmount} /> },
+                  { id: "remainingAmount", label: t("loans.remaining"), align: "right", render: (row) => <MoneyDisplay amount={row.remainingAmount} /> },
+                  { id: "status", label: t("common.status"), render: (row) => <StatusBadge status={row.status} /> },
+                ]}
+                rows={detailLoan.installments || []}
+                keyExtractor={(row) => row.id || String(row.number)}
+                emptyMessage={t("loans.noInstallments")}
+              />
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button onClick={() => setDetailDialogOpen(false)}>{t("common.back")}</Button>
+        </DialogActions>
+      </Dialog>
+
     </Box>
   );
 };

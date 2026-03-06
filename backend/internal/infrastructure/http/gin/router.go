@@ -15,20 +15,25 @@ import (
 	"github.com/diogenes-moreira/creditos/backend/internal/infrastructure/pdf"
 	"github.com/diogenes-moreira/creditos/backend/internal/infrastructure/storage"
 	"github.com/gin-gonic/gin"
+	"github.com/shopspring/decimal"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 	"gorm.io/gorm"
 )
 
 type Router struct {
-	engine *gin.Engine
-	db     *gorm.DB
+	engine          *gin.Engine
+	db              *gorm.DB
+	defaultIVARate  float64
+	latePenaltyRate decimal.Decimal
 }
 
-func NewRouter(db *gorm.DB, jwtSecret string) *Router {
+func NewRouter(db *gorm.DB, jwtSecret string, defaultIVARate float64, latePenaltyRate float64) *Router {
 	r := &Router{
-		engine: gin.Default(),
-		db:     db,
+		engine:          gin.Default(),
+		db:              db,
+		defaultIVARate:  defaultIVARate,
+		latePenaltyRate: decimal.NewFromFloat(latePenaltyRate),
 	}
 	r.engine.Use(middleware.CORS())
 	r.engine.Use(middleware.AuditContext())
@@ -66,14 +71,16 @@ func (r *Router) setupRoutes(jwtSecret string) {
 	// Application services
 	auditService := service.NewAuditService(auditLogRepo)
 	clientService := service.NewClientService(userRepo, clientRepo, accountRepo, authService, auditService)
-	creditService := service.NewCreditService(creditLineRepo, loanRepo, installmentRepo, accountRepo, movementRepo, auditService)
-	paymentService := service.NewPaymentService(paymentRepo, loanRepo, installmentRepo, accountRepo, movementRepo, auditService)
+	creditService := service.NewCreditService(creditLineRepo, loanRepo, installmentRepo, accountRepo, movementRepo, auditService, clientRepo)
+	paymentService := service.NewPaymentService(paymentRepo, loanRepo, installmentRepo, accountRepo, movementRepo, auditService, r.latePenaltyRate)
 	accountService := service.NewAccountService(accountRepo, movementRepo)
 	dashboardService := service.NewDashboardService(dashboardRepo)
 	_ = service.NewPDFAppService(pdfGenerator, localStorage, loanRepo, clientRepo, paymentRepo)
 	vendorService := service.NewVendorService(userRepo, vendorRepo, vendorAccountRepo, authService, auditService)
-	purchaseService := service.NewPurchaseService(purchaseRepo, creditLineRepo, accountRepo, movementRepo, vendorRepo, vendorAccountRepo, vendorMovementRepo, clientRepo, auditService)
+	purchaseService := service.NewPurchaseService(purchaseRepo, vendorRepo, vendorAccountRepo, vendorMovementRepo, clientRepo, creditService, auditService)
 	vendorPaymentService := service.NewVendorPaymentService(vendorPaymentRepo, vendorAccountRepo, vendorMovementRepo, vendorRepo, auditService)
+	withdrawalRepo := postgres.NewWithdrawalRequestRepository(r.db)
+	withdrawalService := service.NewWithdrawalService(withdrawalRepo, vendorRepo, vendorAccountRepo, vendorPaymentRepo, vendorMovementRepo, auditService)
 
 	// Handlers
 	healthHandler := handler.NewHealthHandler(r.db)
@@ -81,11 +88,11 @@ func (r *Router) setupRoutes(jwtSecret string) {
 	clientHandler := handler.NewClientHandler(clientService, creditService, paymentService, purchaseRepo, accountRepo, movementRepo)
 	accountHandler := handler.NewAccountHandler(accountService, clientRepo)
 	creditHandler := handler.NewCreditHandler(creditService)
-	loanHandler := handler.NewLoanHandler(creditService, clientRepo)
+	loanHandler := handler.NewLoanHandler(creditService, paymentService, clientRepo, r.defaultIVARate)
 	paymentHandler := handler.NewPaymentHandler(paymentService, clientRepo)
 	dashboardHandler := handler.NewDashboardHandler(dashboardService)
 	auditHandler := handler.NewAuditHandler(auditService)
-	vendorHandler := handler.NewVendorHandler(vendorService, purchaseService, vendorPaymentService, vendorRepo, vendorAccountRepo, vendorMovementRepo, clientService, creditService)
+	vendorHandler := handler.NewVendorHandler(vendorService, purchaseService, vendorPaymentService, withdrawalService, pdfGenerator, vendorRepo, vendorAccountRepo, vendorMovementRepo, clientService, creditService)
 
 	// Health
 	r.engine.GET("/health", healthHandler.Health)
@@ -137,6 +144,9 @@ func (r *Router) setupRoutes(jwtSecret string) {
 		vendorRoutes.POST("/clients/register", vendorHandler.RegisterClient)
 		vendorRoutes.GET("/clients/:id/credit-lines", vendorHandler.GetClientCreditLines)
 		vendorRoutes.POST("/clients/:id/credit-lines", vendorHandler.RequestCreditLine)
+		vendorRoutes.POST("/withdrawals", vendorHandler.RequestWithdrawal)
+		vendorRoutes.GET("/withdrawals", vendorHandler.GetMyWithdrawals)
+		vendorRoutes.GET("/payments/:id/receipt", vendorHandler.GetMyPaymentReceipt)
 	}
 
 	// Admin routes
@@ -144,8 +154,9 @@ func (r *Router) setupRoutes(jwtSecret string) {
 	adminRoutes.Use(middleware.RequireRole(userRepo, model.RoleAdmin))
 	{
 		adminRoutes.GET("/clients", clientHandler.ListClients)
-		adminRoutes.GET("/clients/:id", clientHandler.GetClient)
 		adminRoutes.GET("/clients/search", clientHandler.ListClients)
+		adminRoutes.GET("/clients/:id", clientHandler.GetClient)
+		adminRoutes.PUT("/clients/:id/iva-rate", clientHandler.UpdateIVARate)
 		adminRoutes.POST("/clients/:id/block", clientHandler.BlockClient)
 		adminRoutes.POST("/clients/:id/unblock", clientHandler.UnblockClient)
 		adminRoutes.GET("/clients/:id/loans", clientHandler.GetClientLoans)
@@ -162,11 +173,13 @@ func (r *Router) setupRoutes(jwtSecret string) {
 		adminRoutes.POST("/credit-lines/:id/reject", creditHandler.RejectCreditLine)
 
 		adminRoutes.POST("/loans", loanHandler.AdminCreateLoan)
+		adminRoutes.POST("/loans/withdrawal", loanHandler.AdminCreateWithdrawal)
 		adminRoutes.GET("/loans/pending", loanHandler.GetPendingLoans)
 		adminRoutes.POST("/loans/:id/approve", loanHandler.ApproveLoan)
 		adminRoutes.POST("/loans/:id/disburse", loanHandler.DisburseLoan)
 		adminRoutes.POST("/loans/:id/cancel", loanHandler.CancelLoan)
 		adminRoutes.POST("/loans/:id/prepay", loanHandler.PrepayLoan)
+		adminRoutes.POST("/loans/:id/payments", loanHandler.AdminRecordPayment)
 
 		adminRoutes.PUT("/payments/:id/adjust", paymentHandler.AdjustPayment)
 
@@ -185,8 +198,14 @@ func (r *Router) setupRoutes(jwtSecret string) {
 		adminRoutes.POST("/vendors/:id/activate", vendorHandler.AdminActivateVendor)
 		adminRoutes.POST("/vendors/:id/deactivate", vendorHandler.AdminDeactivateVendor)
 		adminRoutes.GET("/vendors/:id/purchases", vendorHandler.AdminGetVendorPurchases)
+		adminRoutes.POST("/vendors/:id/purchases", vendorHandler.AdminRecordPurchase)
 		adminRoutes.GET("/vendors/:id/payments", vendorHandler.AdminGetVendorPayments)
 		adminRoutes.POST("/vendors/:id/payments", vendorHandler.AdminRecordVendorPayment)
+		adminRoutes.GET("/vendors/:id/withdrawals", vendorHandler.AdminGetVendorWithdrawals)
+		adminRoutes.GET("/vendors/:id/payments/:paymentId/receipt", vendorHandler.AdminGetVendorPaymentReceipt)
+		adminRoutes.GET("/withdrawals/pending", vendorHandler.AdminGetPendingWithdrawals)
+		adminRoutes.POST("/withdrawals/:id/approve", vendorHandler.AdminApproveWithdrawal)
+		adminRoutes.POST("/withdrawals/:id/reject", vendorHandler.AdminRejectWithdrawal)
 	}
 
 	// Serve frontend SPA if FRONTEND_DIR is set

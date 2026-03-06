@@ -20,11 +20,12 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  Alert,
 } from "@mui/material";
 import { Search as SearchIcon, Add as AddIcon } from "@mui/icons-material";
 import { adminGetVendors, adminRegisterVendor } from "../../api/endpoints";
 import type { Vendor, RegisterVendorRequest } from "../../api/types";
+import { useNotification } from "../../contexts/NotificationContext";
+import { getErrorMessage } from "../../api/errorUtils";
 
 const VendorList: React.FC = () => {
   const { t } = useTranslation();
@@ -35,7 +36,7 @@ const VendorList: React.FC = () => {
   const [rowsPerPage, setRowsPerPage] = useState(20);
   const [search, setSearch] = useState("");
   const [openRegister, setOpenRegister] = useState(false);
-  const [error, setError] = useState("");
+  const { showError } = useNotification();
   const [formData, setFormData] = useState<RegisterVendorRequest>({
     email: "", password: "", businessName: "", cuit: "", phone: "", address: "", city: "", province: "",
   });
@@ -58,8 +59,8 @@ const VendorList: React.FC = () => {
       setOpenRegister(false);
       setFormData({ email: "", password: "", businessName: "", cuit: "", phone: "", address: "", city: "", province: "" });
       fetchVendors();
-    } catch {
-      setError(t("adminVendor.registerError"));
+    } catch (err) {
+      showError(getErrorMessage(err, t("adminVendor.registerError")));
     }
   };
 
@@ -113,13 +114,13 @@ const VendorList: React.FC = () => {
         <TablePagination
           component="div" count={total} page={page} onPageChange={(_, p) => setPage(p)}
           rowsPerPage={rowsPerPage} onRowsPerPageChange={(e) => { setRowsPerPage(parseInt(e.target.value)); setPage(0); }}
+          rowsPerPageOptions={[10, 20, 50]}
         />
       </TableContainer>
 
       <Dialog open={openRegister} onClose={() => setOpenRegister(false)} maxWidth="sm" fullWidth>
         <DialogTitle>{t("adminVendor.registerVendor")}</DialogTitle>
         <DialogContent>
-          {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
           <Box display="flex" flexDirection="column" gap={2} mt={1}>
             <TextField label={t("adminVendor.email")} value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} />
             <TextField label={t("adminVendor.password")} type="password" value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} />
