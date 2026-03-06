@@ -31,6 +31,13 @@ func main() {
 		&model.Installment{},
 		&model.Payment{},
 		&model.AuditLog{},
+		&model.Vendor{},
+		&model.VendorAccount{},
+		&model.VendorMovement{},
+		&model.Purchase{},
+		&model.VendorPayment{},
+		&model.WithdrawalRequest{},
+		&model.OTPCode{},
 	); err != nil {
 		log.Fatalf("Failed to migrate: %v", err)
 	}
