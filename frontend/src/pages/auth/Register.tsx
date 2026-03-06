@@ -13,9 +13,6 @@ import {
   Link,
   Grid,
 } from "@mui/material";
-import {
-  AdminPanelSettings as LogoIcon,
-} from "@mui/icons-material";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../../auth/AuthContext";
 import { useNotification } from "../../contexts/NotificationContext";
@@ -82,7 +79,7 @@ const Register: React.FC = () => {
       <Card sx={{ maxWidth: 640, width: "100%", p: 1 }}>
         <CardContent>
           <Box textAlign="center" mb={3}>
-            <LogoIcon sx={{ fontSize: 48, color: "primary.main", mb: 1 }} />
+            <Box component="img" src="/logo.png" alt="Prestia" sx={{ height: 56, mb: 1 }} />
             <Typography variant="h5" fontWeight={700} color="primary.main">
               {t("common.appName")}
             </Typography>

@@ -15,7 +15,6 @@ import {
 } from "@mui/material";
 import {
   Email as EmailIcon,
-  AdminPanelSettings as LogoIcon,
 } from "@mui/icons-material";
 import { useAuth } from "../../auth/AuthContext";
 import { useTranslation } from "react-i18next";
@@ -97,7 +96,7 @@ const Login: React.FC = () => {
         <CardContent>
           <Box textAlign="center" mb={2}>
             <Box sx={{ display: "flex", justifyContent: "flex-end" }}><LanguageSwitcher /></Box>
-            <LogoIcon sx={{ fontSize: 48, color: "primary.main", mb: 1 }} />
+            <Box component="img" src="/logo.png" alt="Prestia" sx={{ height: 56, mb: 1 }} />
             <Typography variant="h5" fontWeight={700} color="primary.main">
               {t("common.appName")}
             </Typography>

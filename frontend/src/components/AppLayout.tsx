@@ -31,7 +31,6 @@ Gavel as GavelIcon,
   Receipt as ReceiptIcon,
   History as HistoryIcon,
   ExitToApp as LogoutIcon,
-  AdminPanelSettings as AdminIcon,
   RequestQuote as RequestQuoteIcon,
   ShoppingCart as ShoppingCartIcon,
   Store as StoreIcon,
@@ -104,7 +103,7 @@ const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const drawer = (
     <Box>
       <Box sx={{ p: 2, display: "flex", alignItems: "center", gap: 1.5 }}>
-        <AdminIcon color="primary" sx={{ fontSize: 32 }} />
+        <Box component="img" src="/logo.png" alt="Prestia" sx={{ height: 32 }} />
         <Typography variant="h6" color="primary" fontWeight={700} noWrap>
           Prestia
         </Typography>
