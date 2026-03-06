@@ -45,7 +45,7 @@ const LoanDetail: React.FC = () => {
   });
 
   const payMutation = useMutation({
-    mutationFn: (data: { amount: number; method: string; installmentId?: string }) =>
+    mutationFn: (data: { amount: string; method: string; installmentId?: string }) =>
       recordPayment(id!, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["loan", id] });
@@ -65,7 +65,7 @@ const LoanDetail: React.FC = () => {
   const confirmPayment = () => {
     if (!selectedInstallment) return;
     payMutation.mutate({
-      amount: parseFloat(selectedInstallment.remainingAmount) || 0,
+      amount: selectedInstallment.remainingAmount,
       method: paymentMethod,
       installmentId: selectedInstallment.id,
     });

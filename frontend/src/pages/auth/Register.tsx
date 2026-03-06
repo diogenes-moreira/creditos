@@ -24,6 +24,7 @@ import { useTranslation } from "react-i18next";
 import { useAuth } from "../../auth/AuthContext";
 import { useNotification } from "../../contexts/NotificationContext";
 import { getErrorMessage } from "../../api/errorUtils";
+import LocationSelector from "../../components/LocationSelector";
 
 const schema = z.object({
   email: z.string().email("Email invalido"),
@@ -36,6 +37,7 @@ const schema = z.object({
   dateOfBirth: z.string().min(1, "Fecha de nacimiento requerida"),
   phone: z.string().min(8, "Telefono invalido"),
   address: z.string().min(1, "Direccion requerida"),
+  country: z.string().min(1, "Pais requerido"),
   city: z.string().min(1, "Ciudad requerida"),
   province: z.string().min(1, "Provincia requerida"),
   isPEP: z.boolean(),
@@ -54,12 +56,12 @@ const Register: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const { showError } = useNotification();
 
-  const { control, handleSubmit, formState: { errors } } = useForm<FormData>({
+  const { control, handleSubmit, watch, setValue, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: {
       email: "", password: "", confirmPassword: "",
       firstName: "", lastName: "", dni: "", cuit: "",
-      dateOfBirth: "", phone: "", address: "", city: "", province: "",
+      dateOfBirth: "", phone: "", address: "", country: "Argentina", city: "", province: "",
       isPEP: false,
     },
   });
@@ -176,18 +178,17 @@ const Register: React.FC = () => {
                     <TextField {...field} fullWidth label={t("registration.address")} error={!!errors.address} helperText={errors.address?.message} />
                   )} />
               </Grid>
-              <Grid item xs={12} sm={6}>
-                <Controller name="city" control={control}
-                  render={({ field }) => (
-                    <TextField {...field} fullWidth label={t("registration.city")} error={!!errors.city} helperText={errors.city?.message} />
-                  )} />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <Controller name="province" control={control}
-                  render={({ field }) => (
-                    <TextField {...field} fullWidth label={t("registration.province")} error={!!errors.province} helperText={errors.province?.message} />
-                  )} />
-              </Grid>
+              <LocationSelector
+                country={watch("country")}
+                province={watch("province")}
+                city={watch("city")}
+                onChange={(field, value) => setValue(field, value, { shouldValidate: true })}
+                errors={{
+                  country: !!errors.country,
+                  province: !!errors.province,
+                  city: !!errors.city,
+                }}
+              />
             </Grid>
 
             <Button

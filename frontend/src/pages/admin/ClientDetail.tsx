@@ -22,6 +22,11 @@ import {
   Chip,
   IconButton,
   MenuItem,
+  RadioGroup,
+  Radio,
+  FormControlLabel,
+  FormControl,
+  FormLabel,
 } from "@mui/material";
 import {
   ArrowBack as BackIcon,
@@ -34,6 +39,8 @@ import {
   AccountBalanceWallet as WithdrawalIcon,
   CheckCircle as ApproveIcon,
   Cancel as RejectIcon,
+  Download as DownloadIcon,
+  CalculateOutlined as SimulateIcon,
 } from "@mui/icons-material";
 import {
   BarChart,
@@ -60,8 +67,12 @@ import {
   adminRecordLoanPayment,
   adminPrepayLoan,
   adminUpdateIVARate,
+  adminUpdateClientComments,
   adminApproveCreditLine,
   adminRejectCreditLine,
+  adminDownloadPaymentReceipt,
+  adminDownloadLoanSchedule,
+  adminSimulateCancellation,
 } from "../../api/endpoints";
 import { useNotification } from "../../contexts/NotificationContext";
 import { getErrorMessage } from "../../api/errorUtils";
@@ -69,7 +80,7 @@ import DataTable, { Column } from "../../components/DataTable";
 import MoneyDisplay from "../../components/MoneyDisplay";
 import StatusBadge from "../../components/StatusBadge";
 import KPICard from "../../components/KPICard";
-import type { Loan, Payment, Purchase, Movement, CreditLine, Installment } from "../../api/types";
+import type { Loan, Payment, Purchase, Movement, CreditLine, Installment, CancellationSettlement } from "../../api/types";
 
 const ClientDetail: React.FC = () => {
   const { t } = useTranslation();
@@ -95,7 +106,6 @@ const ClientDetail: React.FC = () => {
   // Payment dialog state
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
   const [paymentLoan, setPaymentLoan] = useState<Loan | null>(null);
-  const [paymentAmount, setPaymentAmount] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("cash");
   const [paymentReference, setPaymentReference] = useState("");
   // Loan detail dialog state
@@ -105,6 +115,7 @@ const ClientDetail: React.FC = () => {
   const [prepayDialogOpen, setPrepayDialogOpen] = useState(false);
   const [prepayLoan, setPrepayLoan] = useState<Loan | null>(null);
   const [prepayAmount, setPrepayAmount] = useState("");
+  const [prepayStrategy, setPrepayStrategy] = useState<"reduce_installment" | "reduce_term">("reduce_installment");
   // Create credit line dialog state
   const [createCLOpen, setCreateCLOpen] = useState(false);
   const [clMaxAmount, setClMaxAmount] = useState("100000");
@@ -117,6 +128,15 @@ const ClientDetail: React.FC = () => {
   // IVA rate editing
   const [editingIVA, setEditingIVA] = useState(false);
   const [ivaRateValue, setIvaRateValue] = useState("");
+  // Comments editing
+  const [editingComments, setEditingComments] = useState(false);
+  const [commentsValue, setCommentsValue] = useState("");
+  // Cancellation simulation dialog
+  const [simulateLoan, setSimulateLoan] = useState<Loan | null>(null);
+  const [simulationData, setSimulationData] = useState<CancellationSettlement | null>(null);
+  const [simulationLoading, setSimulationLoading] = useState(false);
+  // Last recorded payment for receipt download
+  const [lastPayment, setLastPayment] = useState<{ paymentId: string; loanId: string } | null>(null);
   const { showSuccess, showError } = useNotification();
 
   const { data: client, isLoading } = useQuery({
@@ -187,6 +207,17 @@ const ClientDetail: React.FC = () => {
     onError: (err: unknown) => showError(getErrorMessage(err, t("admin.ivaRateUpdateError"))),
   });
 
+  const updateCommentsMutation = useMutation({
+    mutationFn: ({ clientId, comments }: { clientId: string; comments: string }) =>
+      adminUpdateClientComments(clientId, comments),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-client", id] });
+      setEditingComments(false);
+      showSuccess(t("admin.commentsUpdated"));
+    },
+    onError: (err: unknown) => showError(getErrorMessage(err, t("admin.commentsUpdateError"))),
+  });
+
   const handleOpenLoanDialog = (cl: CreditLine, mode: "loan" | "withdrawal") => {
     setLoanCreditLine(cl);
     setLoanDialogMode(mode);
@@ -230,18 +261,19 @@ const ClientDetail: React.FC = () => {
   });
 
   const recordPaymentMutation = useMutation({
-    mutationFn: ({ loanId, data }: { loanId: string; data: { amount: string; method: string; reference?: string } }) =>
-      adminRecordLoanPayment(loanId, { amount: parseFloat(data.amount), method: data.method }),
-    onSuccess: () => {
+    mutationFn: ({ loanId, installment, method }: { loanId: string; installment: Installment; method: string }) =>
+      adminRecordLoanPayment(loanId, { amount: installment.remainingAmount, method, installmentId: installment.id }),
+    onSuccess: (payment: Payment) => {
       queryClient.invalidateQueries({ queryKey: ["admin-client-loans", id] });
       queryClient.invalidateQueries({ queryKey: ["admin-client-payments", id] });
       queryClient.invalidateQueries({ queryKey: ["admin-client-account", id] });
       queryClient.invalidateQueries({ queryKey: ["admin-client-movements", id] });
+      const loanId = paymentLoan?.id || "";
       setPaymentDialogOpen(false);
       setPaymentLoan(null);
-      setPaymentAmount("");
       setPaymentMethod("cash");
       setPaymentReference("");
+      setLastPayment({ paymentId: payment.id, loanId });
       showSuccess(t("admin.paymentRecorded"));
     },
     onError: (err: unknown) => {
@@ -250,8 +282,8 @@ const ClientDetail: React.FC = () => {
   });
 
   const prepayMutation = useMutation({
-    mutationFn: ({ loanId, amount }: { loanId: string; amount: string }) =>
-      adminPrepayLoan(loanId, amount),
+    mutationFn: ({ loanId, amount, strategy }: { loanId: string; amount: string; strategy: string }) =>
+      adminPrepayLoan(loanId, amount, strategy),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-client-loans", id] });
       queryClient.invalidateQueries({ queryKey: ["admin-client-payments", id] });
@@ -261,6 +293,7 @@ const ClientDetail: React.FC = () => {
       setPrepayDialogOpen(false);
       setPrepayLoan(null);
       setPrepayAmount("");
+      setPrepayStrategy("reduce_installment");
       showSuccess(t("admin.prepayRecorded"));
     },
     onError: (err: unknown) => {
@@ -302,6 +335,35 @@ const ClientDetail: React.FC = () => {
     },
     onError: (err: unknown) => showError(getErrorMessage(err, t("creditLines.rejectError"))),
   });
+
+  const handleDownloadReceipt = async (loanId: string, paymentId: string) => {
+    try {
+      const blob = await adminDownloadPaymentReceipt(loanId, paymentId);
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `recibo-${paymentId.slice(0, 8)}.pdf`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+    } catch {
+      showError(t("admin.receiptDownloadError"));
+    }
+  };
+
+  const handleSimulateCancellation = async (loan: Loan) => {
+    setSimulateLoan(loan);
+    setSimulationLoading(true);
+    setSimulationData(null);
+    try {
+      const data = await adminSimulateCancellation(loan.id);
+      setSimulationData(data);
+    } catch {
+      showError(t("admin.simulationError"));
+      setSimulateLoan(null);
+    } finally {
+      setSimulationLoading(false);
+    }
+  };
 
   const handleSubmitLoan = () => {
     if (!loanCreditLine || !loanAmount || !id) return;
@@ -350,14 +412,17 @@ const ClientDetail: React.FC = () => {
     { id: "amortizationType", label: t("loans.system"), render: (row) => <Chip label={row.amortizationType === "french" ? t("loans.french") : t("loans.german")} size="small" variant="outlined" /> },
     { id: "status", label: t("common.status"), render: (row) => <StatusBadge status={row.status} /> },
     { id: "createdAt", label: t("common.date"), render: (row) => format(new Date(row.createdAt), "dd/MM/yyyy") },
-    { id: "actions" as keyof Loan, label: t("common.actions"), render: (row) =>
+    { id: "actions" as keyof Loan, label: t("common.actions"), minWidth: 340, render: (row) =>
       (row.status === "active") ? (
-        <Box display="flex" gap={0.5}>
+        <Box display="flex" gap={0.5} flexWrap="wrap">
           <Button size="small" variant="outlined" onClick={() => { setPaymentLoan(row); setPaymentDialogOpen(true); }}>
-            {t("admin.recordPayment")}
+            {t("admin.payInstallment")}
           </Button>
           <Button size="small" variant="outlined" color="warning" onClick={() => { setPrepayLoan(row); setPrepayDialogOpen(true); }}>
             {t("admin.capitalPrepay")}
+          </Button>
+          <Button size="small" variant="outlined" color="info" startIcon={<SimulateIcon />} onClick={() => handleSimulateCancellation(row)}>
+            {t("admin.simulateCancellation")}
           </Button>
         </Box>
       ) : null
@@ -381,8 +446,8 @@ const ClientDetail: React.FC = () => {
 
   const movementColumns: Column<Movement>[] = [
     { id: "createdAt", label: t("common.date"), minWidth: 120, render: (row) => format(new Date(row.createdAt), "dd/MM/yyyy HH:mm") },
-    { id: "type", label: t("common.type"), render: (row) => <Chip label={row.type === "credit" ? t("account.credit") : t("account.debit")} size="small" color={row.type === "credit" ? "success" : "error"} /> },
-    { id: "amount", label: t("common.amount"), align: "right", render: (row) => <MoneyDisplay amount={row.amount} fontWeight={500} color={row.type === "credit" ? "success.main" : "error.main"} /> },
+    { id: "type", label: t("common.type"), render: (row) => <Chip label={row.type === "debit" ? t("account.credit") : t("account.debit")} size="small" color={row.type === "debit" ? "success" : "error"} /> },
+    { id: "amount", label: t("common.amount"), align: "right", render: (row) => <MoneyDisplay amount={row.amount} fontWeight={500} color={row.type === "debit" ? "success.main" : "error.main"} /> },
     { id: "balanceAfter", label: t("account.balance"), align: "right", render: (row) => <MoneyDisplay amount={row.balanceAfter} /> },
     { id: "description", label: t("common.description") },
   ];
@@ -576,6 +641,10 @@ const ClientDetail: React.FC = () => {
               <Typography>{client.city}, {client.province}</Typography>
             </Grid>
             <Grid item xs={12} sm={6} md={4}>
+              <Typography variant="body2" color="text.secondary">{t("registration.country")}</Typography>
+              <Typography>{client.country || "Argentina"}</Typography>
+            </Grid>
+            <Grid item xs={12} sm={6} md={4}>
               <Typography variant="body2" color="text.secondary">{t("admin.registrationDate")}</Typography>
               <Typography>{format(new Date(client.createdAt), "dd/MM/yyyy")}</Typography>
             </Grid>
@@ -609,6 +678,48 @@ const ClientDetail: React.FC = () => {
               )}
             </Grid>
           </Grid>
+        </CardContent>
+      </Card>
+
+      {/* Comments Card */}
+      <Card sx={{ mb: 3 }}>
+        <CardContent>
+          <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
+            <Typography variant="h6">{t("admin.comments")}</Typography>
+            {!editingComments && (
+              <IconButton size="small" onClick={() => { setCommentsValue(client.comments || ""); setEditingComments(true); }}>
+                <EditIcon fontSize="small" />
+              </IconButton>
+            )}
+          </Box>
+          <Divider sx={{ mb: 2 }} />
+          {editingComments ? (
+            <Box>
+              <TextField
+                fullWidth
+                multiline
+                rows={3}
+                value={commentsValue}
+                onChange={(e) => setCommentsValue(e.target.value)}
+                placeholder={t("admin.commentsPlaceholder")}
+              />
+              <Box display="flex" gap={1} mt={1}>
+                <Button
+                  size="small"
+                  variant="contained"
+                  disabled={updateCommentsMutation.isPending}
+                  onClick={() => id && updateCommentsMutation.mutate({ clientId: id, comments: commentsValue })}
+                >
+                  {updateCommentsMutation.isPending ? t("common.saving") : t("common.save")}
+                </Button>
+                <Button size="small" onClick={() => setEditingComments(false)}>{t("common.cancel")}</Button>
+              </Box>
+            </Box>
+          ) : (
+            <Typography color={client.comments ? "text.primary" : "text.secondary"}>
+              {client.comments || t("admin.commentsPlaceholder")}
+            </Typography>
+          )}
         </CardContent>
       </Card>
 
@@ -766,55 +877,75 @@ const ClientDetail: React.FC = () => {
         </DialogActions>
       </Dialog>
 
-      {/* Record Payment Dialog */}
+      {/* Pay Installment Dialog */}
       <Dialog open={paymentDialogOpen} onClose={() => setPaymentDialogOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>{t("admin.recordPayment")}</DialogTitle>
+        <DialogTitle>{t("admin.payInstallment")}</DialogTitle>
         <DialogContent>
-          {paymentLoan && (
-            <Box mt={1} display="flex" flexDirection="column" gap={2}>
-              <Box sx={{ p: 1.5, border: 1, borderColor: "divider", borderRadius: 1 }}>
-                <Typography variant="body2">
-                  {t("loans.loanNumber")} #{paymentLoan.id.slice(0, 8)}
-                  {" | "}{t("loans.totalRemaining")}: <MoneyDisplay amount={paymentLoan.totalRemaining} variant="body2" color="error.main" />
-                </Typography>
+          {paymentLoan && (() => {
+            const nextInstallment = (paymentLoan.installments || []).find((i) => i.status !== "paid");
+            if (!nextInstallment) return <Alert severity="info" sx={{ mt: 1 }}>{t("loans.noInstallments")}</Alert>;
+            return (
+              <Box mt={1} display="flex" flexDirection="column" gap={2}>
+                <Box sx={{ p: 1.5, border: 1, borderColor: "divider", borderRadius: 1 }}>
+                  <Typography variant="body2">
+                    {t("loans.loanNumber")} #{paymentLoan.id.slice(0, 8)}
+                    {" | "}{t("loans.installments")}: #{nextInstallment.number}
+                    {" | "}{t("loans.dueDate")}: {format(new Date(nextInstallment.dueDate), "dd/MM/yyyy")}
+                    {nextInstallment.status === "overdue" && (
+                      <Chip label={t("status.overdue")} size="small" color="error" sx={{ ml: 1 }} />
+                    )}
+                  </Typography>
+                </Box>
+                <Box sx={{ p: 1.5, bgcolor: "grey.50", borderRadius: 1 }}>
+                  <Box display="flex" justifyContent="space-between" mb={0.5}>
+                    <Typography variant="body2" color="text.secondary">{t("loans.capital")}</Typography>
+                    <MoneyDisplay amount={nextInstallment.capitalAmount} variant="body2" />
+                  </Box>
+                  <Box display="flex" justifyContent="space-between" mb={0.5}>
+                    <Typography variant="body2" color="text.secondary">{t("loans.interest")}</Typography>
+                    <MoneyDisplay amount={nextInstallment.interestAmount} variant="body2" />
+                  </Box>
+                  <Box display="flex" justifyContent="space-between" mb={0.5}>
+                    <Typography variant="body2" color="text.secondary">{t("loans.iva")}</Typography>
+                    <MoneyDisplay amount={nextInstallment.ivaAmount} variant="body2" />
+                  </Box>
+                  <Box display="flex" justifyContent="space-between" pt={1} sx={{ borderTop: 1, borderColor: "divider" }}>
+                    <Typography variant="subtitle2">{t("loans.amountToPay")}</Typography>
+                    <MoneyDisplay amount={nextInstallment.remainingAmount} fontWeight={700} variant="subtitle2" />
+                  </Box>
+                </Box>
+                <TextField
+                  select
+                  fullWidth
+                  label={t("payments.method")}
+                  value={paymentMethod}
+                  onChange={(e) => setPaymentMethod(e.target.value)}
+                >
+                  <MenuItem value="cash">{t("payments.cash")}</MenuItem>
+                  <MenuItem value="transfer">{t("payments.transfer")}</MenuItem>
+                  <MenuItem value="mercado_pago">{t("payments.mercadoPago")}</MenuItem>
+                </TextField>
+                <TextField
+                  fullWidth
+                  label={t("admin.paymentReference")}
+                  value={paymentReference}
+                  onChange={(e) => setPaymentReference(e.target.value)}
+                />
               </Box>
-              <TextField
-                fullWidth
-                type="number"
-                label={t("common.amount")}
-                value={paymentAmount}
-                onChange={(e) => setPaymentAmount(e.target.value)}
-                inputProps={{ min: 1 }}
-              />
-              <TextField
-                select
-                fullWidth
-                label={t("payments.method")}
-                value={paymentMethod}
-                onChange={(e) => setPaymentMethod(e.target.value)}
-              >
-                <MenuItem value="cash">{t("payments.cash")}</MenuItem>
-                <MenuItem value="transfer">{t("payments.transfer")}</MenuItem>
-                <MenuItem value="mercado_pago">{t("payments.mercadoPago")}</MenuItem>
-              </TextField>
-              <TextField
-                fullWidth
-                label={t("admin.paymentReference")}
-                value={paymentReference}
-                onChange={(e) => setPaymentReference(e.target.value)}
-              />
-            </Box>
-          )}
+            );
+          })()}
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
           <Button onClick={() => setPaymentDialogOpen(false)}>{t("common.cancel")}</Button>
           <Button
             variant="contained"
-            onClick={() => paymentLoan && recordPaymentMutation.mutate({
-              loanId: paymentLoan.id,
-              data: { amount: paymentAmount, method: paymentMethod, reference: paymentReference },
-            })}
-            disabled={recordPaymentMutation.isPending || !paymentAmount}
+            onClick={() => {
+              if (!paymentLoan) return;
+              const nextInst = (paymentLoan.installments || []).find((i) => i.status !== "paid");
+              if (!nextInst) return;
+              recordPaymentMutation.mutate({ loanId: paymentLoan.id, installment: nextInst, method: paymentMethod });
+            }}
+            disabled={recordPaymentMutation.isPending || !(paymentLoan?.installments || []).some((i) => i.status !== "paid")}
           >
             {recordPaymentMutation.isPending ? t("common.processing") : t("common.confirm")}
           </Button>
@@ -841,15 +972,25 @@ const ClientDetail: React.FC = () => {
                 onChange={(e) => setPrepayAmount(e.target.value)}
                 inputProps={{ min: 1 }}
               />
+              <FormControl>
+                <FormLabel>{t("admin.prepayStrategy")}</FormLabel>
+                <RadioGroup
+                  value={prepayStrategy}
+                  onChange={(e) => setPrepayStrategy(e.target.value as "reduce_installment" | "reduce_term")}
+                >
+                  <FormControlLabel value="reduce_installment" control={<Radio />} label={t("admin.prepayReduceInstallment")} />
+                  <FormControlLabel value="reduce_term" control={<Radio />} label={t("admin.prepayReduceTerm")} />
+                </RadioGroup>
+              </FormControl>
             </Box>
           )}
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
-          <Button onClick={() => setPrepayDialogOpen(false)}>{t("common.cancel")}</Button>
+          <Button onClick={() => { setPrepayDialogOpen(false); setPrepayStrategy("reduce_installment"); }}>{t("common.cancel")}</Button>
           <Button
             variant="contained"
             color="warning"
-            onClick={() => prepayLoan && prepayMutation.mutate({ loanId: prepayLoan.id, amount: prepayAmount })}
+            onClick={() => prepayLoan && prepayMutation.mutate({ loanId: prepayLoan.id, amount: prepayAmount, strategy: prepayStrategy })}
             disabled={prepayMutation.isPending || !prepayAmount}
           >
             {prepayMutation.isPending ? t("common.processing") : t("common.confirm")}
@@ -939,6 +1080,72 @@ const ClientDetail: React.FC = () => {
         </DialogActions>
       </Dialog>
 
+      {/* Cancellation Simulation Dialog */}
+      <Dialog open={!!simulateLoan} onClose={() => { setSimulateLoan(null); setSimulationData(null); }} maxWidth="sm" fullWidth>
+        <DialogTitle>{t("admin.simulateCancellation")}</DialogTitle>
+        <DialogContent>
+          {simulateLoan && (
+            <Box mt={1}>
+              <Box sx={{ mb: 2, p: 1.5, border: 1, borderColor: "divider", borderRadius: 1 }}>
+                <Typography variant="body2">
+                  {t("loans.loanNumber")} #{simulateLoan.id.slice(0, 8)}
+                  {" | "}{t("loans.principal")}: <MoneyDisplay amount={simulateLoan.principal} variant="body2" fontWeight={600} />
+                </Typography>
+              </Box>
+              {simulationLoading ? (
+                <Box display="flex" justifyContent="center" py={3}><CircularProgress /></Box>
+              ) : simulationData ? (
+                <Box sx={{ p: 2, bgcolor: "grey.50", borderRadius: 1 }}>
+                  <Typography variant="subtitle2" gutterBottom>{t("admin.settlementBreakdown")}</Typography>
+                  <Box display="flex" justifyContent="space-between" mb={0.5}>
+                    <Typography variant="body2" color="text.secondary">{t("admin.pendingCapital")}</Typography>
+                    <MoneyDisplay amount={simulationData.pendingCapital} variant="body2" />
+                  </Box>
+                  <Box display="flex" justifyContent="space-between" mb={0.5}>
+                    <Typography variant="body2" color="text.secondary">{t("admin.accumulatedInterest")}</Typography>
+                    <MoneyDisplay amount={simulationData.accumulatedInterest} variant="body2" />
+                  </Box>
+                  <Box display="flex" justifyContent="space-between" mb={0.5}>
+                    <Typography variant="body2" color="text.secondary">{t("admin.accumulatedIVA")}</Typography>
+                    <MoneyDisplay amount={simulationData.accumulatedIVA} variant="body2" />
+                  </Box>
+                  <Box display="flex" justifyContent="space-between" mt={1} pt={1} sx={{ borderTop: 1, borderColor: "divider" }}>
+                    <Typography variant="subtitle2">{t("admin.settlementTotal")}</Typography>
+                    <MoneyDisplay amount={simulationData.total} fontWeight={700} variant="subtitle2" />
+                  </Box>
+                </Box>
+              ) : null}
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button onClick={() => { setSimulateLoan(null); setSimulationData(null); }}>{t("common.back")}</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Receipt Download Dialog */}
+      <Dialog open={!!lastPayment} onClose={() => setLastPayment(null)} maxWidth="xs" fullWidth>
+        <DialogTitle>{t("admin.paymentRecorded")}</DialogTitle>
+        <DialogContent>
+          <Typography variant="body1" sx={{ mt: 1 }}>{t("admin.receiptReady")}</Typography>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button onClick={() => setLastPayment(null)}>{t("common.back")}</Button>
+          <Button
+            variant="contained"
+            startIcon={<DownloadIcon />}
+            onClick={() => {
+              if (lastPayment) {
+                handleDownloadReceipt(lastPayment.loanId, lastPayment.paymentId);
+                setLastPayment(null);
+              }
+            }}
+          >
+            {t("admin.downloadReceipt")}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
       {/* Loan Detail Dialog */}
       <Dialog open={detailDialogOpen} onClose={() => setDetailDialogOpen(false)} maxWidth="lg" fullWidth>
         <DialogTitle>
@@ -975,6 +1182,25 @@ const ClientDetail: React.FC = () => {
           )}
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button
+            startIcon={<DownloadIcon />}
+            onClick={async () => {
+              if (!detailLoan) return;
+              try {
+                const blob = await adminDownloadLoanSchedule(detailLoan.id);
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = `plan-cuotas-${detailLoan.id.slice(0, 8)}.pdf`;
+                a.click();
+                window.URL.revokeObjectURL(url);
+              } catch {
+                showError(t("admin.receiptDownloadError"));
+              }
+            }}
+          >
+            {t("loans.downloadSchedule")}
+          </Button>
           <Button onClick={() => setDetailDialogOpen(false)}>{t("common.back")}</Button>
         </DialogActions>
       </Dialog>

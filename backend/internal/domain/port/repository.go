@@ -65,6 +65,7 @@ type InstallmentRepository interface {
 	FindUnpaidByLoanID(ctx context.Context, loanID uuid.UUID) ([]model.Installment, error)
 	FindOverdue(ctx context.Context) ([]model.Installment, error)
 	Update(ctx context.Context, installment *model.Installment) error
+	DeleteBatch(ctx context.Context, ids []uuid.UUID) error
 }
 
 type PaymentRepository interface {
@@ -153,4 +154,25 @@ type TrendPoint struct {
 	Date   time.Time
 	Amount decimal.Decimal
 	Count  int64
+}
+
+type FinancialReport struct {
+	InterestAccrued   decimal.Decimal
+	InterestCollected decimal.Decimal
+	IVAAccrued        decimal.Decimal
+	IVACollected      decimal.Decimal
+	CapitalCollected  decimal.Decimal
+	CapitalPending    decimal.Decimal
+}
+
+type PortfolioPosition struct {
+	Status           string
+	LoanCount        int64
+	TotalPrincipal   decimal.Decimal
+	TotalOutstanding decimal.Decimal
+}
+
+type ReportRepository interface {
+	FinancialReport(ctx context.Context, from, to time.Time) (*FinancialReport, error)
+	PortfolioPosition(ctx context.Context, from, to time.Time) ([]PortfolioPosition, error)
 }

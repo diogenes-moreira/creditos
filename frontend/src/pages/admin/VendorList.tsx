@@ -20,12 +20,14 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  Grid,
 } from "@mui/material";
 import { Search as SearchIcon, Add as AddIcon } from "@mui/icons-material";
 import { adminGetVendors, adminRegisterVendor } from "../../api/endpoints";
 import type { Vendor, RegisterVendorRequest } from "../../api/types";
 import { useNotification } from "../../contexts/NotificationContext";
 import { getErrorMessage } from "../../api/errorUtils";
+import LocationSelector from "../../components/LocationSelector";
 
 const VendorList: React.FC = () => {
   const { t } = useTranslation();
@@ -38,7 +40,7 @@ const VendorList: React.FC = () => {
   const [openRegister, setOpenRegister] = useState(false);
   const { showError } = useNotification();
   const [formData, setFormData] = useState<RegisterVendorRequest>({
-    email: "", password: "", businessName: "", cuit: "", phone: "", address: "", city: "", province: "",
+    email: "", password: "", businessName: "", cuit: "", phone: "", address: "", country: "Argentina", city: "", province: "",
   });
 
   const fetchVendors = async () => {
@@ -57,7 +59,7 @@ const VendorList: React.FC = () => {
     try {
       await adminRegisterVendor(formData);
       setOpenRegister(false);
-      setFormData({ email: "", password: "", businessName: "", cuit: "", phone: "", address: "", city: "", province: "" });
+      setFormData({ email: "", password: "", businessName: "", cuit: "", phone: "", address: "", country: "Argentina", city: "", province: "" });
       fetchVendors();
     } catch (err) {
       showError(getErrorMessage(err, t("adminVendor.registerError")));
@@ -128,8 +130,14 @@ const VendorList: React.FC = () => {
             <TextField label={t("adminVendor.cuit")} value={formData.cuit} onChange={(e) => setFormData({ ...formData, cuit: e.target.value })} />
             <TextField label={t("adminVendor.phone")} value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} />
             <TextField label={t("adminVendor.address")} value={formData.address} onChange={(e) => setFormData({ ...formData, address: e.target.value })} />
-            <TextField label={t("adminVendor.city")} value={formData.city} onChange={(e) => setFormData({ ...formData, city: e.target.value })} />
-            <TextField label={t("adminVendor.province")} value={formData.province} onChange={(e) => setFormData({ ...formData, province: e.target.value })} />
+            <Grid container spacing={2}>
+              <LocationSelector
+                country={formData.country}
+                province={formData.province}
+                city={formData.city}
+                onChange={(field, value) => setFormData(prev => ({ ...prev, [field]: value }))}
+              />
+            </Grid>
           </Box>
         </DialogContent>
         <DialogActions>

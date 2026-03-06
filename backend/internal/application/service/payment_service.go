@@ -157,6 +157,10 @@ func (s *PaymentService) AdjustPayment(ctx context.Context, adminID, paymentID u
 	return payment, nil
 }
 
+func (s *PaymentService) GetPaymentByID(ctx context.Context, paymentID uuid.UUID) (*model.Payment, error) {
+	return s.paymentRepo.FindByID(ctx, paymentID)
+}
+
 func (s *PaymentService) GetPaymentsByLoan(ctx context.Context, loanID uuid.UUID, offset, limit int) ([]model.Payment, int64, error) {
 	if limit <= 0 {
 		limit = 20

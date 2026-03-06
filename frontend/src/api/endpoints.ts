@@ -15,7 +15,7 @@ import type {
   SimulationResult,
   Payment,
   RecordPaymentRequest,
-  AdjustPaymentRequest,
+  CancellationSettlement,
   Client,
   CreditLine,
   CreateCreditLineRequest,
@@ -41,6 +41,8 @@ import type {
   CreateWithdrawalRequest,
   ApproveWithdrawalRequest,
   RejectWithdrawalRequest,
+  FinancialReport,
+  PortfolioPositionReport,
 } from "./types";
 
 // ==================== Auth ====================
@@ -120,6 +122,11 @@ export const getPayments = async (): Promise<Payment[]> => {
 
 // ==================== Admin: Clients ====================
 
+export const adminRegisterClient = async (data: RegisterRequest): Promise<Client> => {
+  const res = await apiClient.post("/admin/clients", data);
+  return res.data;
+};
+
 export const adminGetClients = async (page = 1, pageSize = 20): Promise<PaginatedResponse<Client>> => {
   const res = await apiClient.get("/admin/clients", { params: { offset: (page - 1) * pageSize, limit: pageSize } });
   return res.data;
@@ -137,6 +144,11 @@ export const adminSearchClients = async (query: string): Promise<Client[]> => {
 
 export const adminUpdateIVARate = async (clientId: string, ivaRate: number): Promise<Client> => {
   const res = await apiClient.put(`/admin/clients/${clientId}/iva-rate`, { ivaRate });
+  return res.data;
+};
+
+export const adminUpdateClientComments = async (clientId: string, comments: string): Promise<Client> => {
+  const res = await apiClient.put(`/admin/clients/${clientId}/comments`, { comments });
   return res.data;
 };
 
@@ -224,8 +236,8 @@ export const adminCancelLoan = async (id: string): Promise<Loan> => {
   return res.data;
 };
 
-export const adminPrepayLoan = async (id: string, amount: string): Promise<Loan> => {
-  const res = await apiClient.post(`/admin/loans/${id}/prepay`, { amount });
+export const adminPrepayLoan = async (id: string, amount: string, strategy: string = "reduce_installment"): Promise<Loan> => {
+  const res = await apiClient.post(`/admin/loans/${id}/prepay`, { amount, strategy });
   return res.data;
 };
 
@@ -234,10 +246,20 @@ export const adminRecordLoanPayment = async (loanId: string, data: RecordPayment
   return res.data;
 };
 
-// ==================== Admin: Payments ====================
+// ==================== Admin: Loan Receipts & Simulation ====================
 
-export const adminAdjustPayment = async (id: string, data: AdjustPaymentRequest): Promise<Payment> => {
-  const res = await apiClient.put(`/admin/payments/${id}/adjust`, data);
+export const adminDownloadPaymentReceipt = async (loanId: string, paymentId: string): Promise<Blob> => {
+  const res = await apiClient.get(`/admin/loans/${loanId}/payments/${paymentId}/receipt`, { responseType: "blob" });
+  return res.data;
+};
+
+export const adminDownloadLoanSchedule = async (loanId: string): Promise<Blob> => {
+  const res = await apiClient.get(`/admin/loans/${loanId}/schedule-pdf`, { responseType: "blob" });
+  return res.data;
+};
+
+export const adminSimulateCancellation = async (loanId: string): Promise<CancellationSettlement> => {
+  const res = await apiClient.get(`/admin/loans/${loanId}/simulate-cancellation`);
   return res.data;
 };
 
@@ -421,6 +443,24 @@ export const adminRejectWithdrawal = async (id: string, data: RejectWithdrawalRe
 
 export const downloadAdminVendorPaymentReceipt = async (vendorId: string, paymentId: string): Promise<Blob> => {
   const res = await apiClient.get(`/admin/vendors/${vendorId}/payments/${paymentId}/receipt`, { responseType: "blob" });
+  return res.data;
+};
+
+// ==================== Admin: Reports ====================
+
+export const getFinancialReport = async (from?: string, to?: string): Promise<FinancialReport> => {
+  const params: Record<string, string> = {};
+  if (from) params.from = from;
+  if (to) params.to = to;
+  const res = await apiClient.get("/admin/reports/financial", { params });
+  return res.data;
+};
+
+export const getPortfolioPosition = async (from?: string, to?: string): Promise<PortfolioPositionReport> => {
+  const params: Record<string, string> = {};
+  if (from) params.from = from;
+  if (to) params.to = to;
+  const res = await apiClient.get("/admin/reports/portfolio", { params });
   return res.data;
 };
 

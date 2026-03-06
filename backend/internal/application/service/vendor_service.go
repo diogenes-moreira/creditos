@@ -33,7 +33,7 @@ func NewVendorService(
 	}
 }
 
-func (s *VendorService) Register(ctx context.Context, email, password, businessName, cuit, phone, address, city, province string) (*model.Vendor, *model.User, error) {
+func (s *VendorService) Register(ctx context.Context, email, password, businessName, cuit, phone, address, city, province, country string) (*model.Vendor, *model.User, error) {
 	existing, _ := s.vendorRepo.FindByCUIT(ctx, cuit)
 	if existing != nil {
 		return nil, nil, fmt.Errorf("a vendor with CUIT %s already exists", cuit)
@@ -53,7 +53,7 @@ func (s *VendorService) Register(ctx context.Context, email, password, businessN
 		return nil, nil, fmt.Errorf("failed to create user: %w", err)
 	}
 
-	vendor, err := model.NewVendor(user.ID, businessName, cuit, phone, address, city, province)
+	vendor, err := model.NewVendor(user.ID, businessName, cuit, phone, address, city, province, country)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -90,12 +90,12 @@ func (s *VendorService) Search(ctx context.Context, query string, offset, limit 
 	return s.vendorRepo.FindAll(ctx, offset, limit)
 }
 
-func (s *VendorService) UpdateProfile(ctx context.Context, userID uuid.UUID, phone, address, city, province string) (*model.Vendor, error) {
+func (s *VendorService) UpdateProfile(ctx context.Context, userID uuid.UUID, phone, address, city, province, country string) (*model.Vendor, error) {
 	vendor, err := s.vendorRepo.FindByUserID(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
-	vendor.UpdateProfile(phone, address, city, province)
+	vendor.UpdateProfile(phone, address, city, province, country)
 	if err := s.vendorRepo.Update(ctx, vendor); err != nil {
 		return nil, err
 	}

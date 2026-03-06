@@ -18,10 +18,12 @@ import {
 import { getVendorProfile, updateVendorProfile } from "../../api/endpoints";
 import { useNotification } from "../../contexts/NotificationContext";
 import { getErrorMessage } from "../../api/errorUtils";
+import LocationSelector from "../../components/LocationSelector";
 
 const profileSchema = z.object({
   phone: z.string().min(1),
   address: z.string().min(1),
+  country: z.string().min(1),
   city: z.string().min(1),
   province: z.string().min(1),
 });
@@ -41,6 +43,8 @@ const VendorProfile: React.FC = () => {
   const {
     control,
     handleSubmit,
+    watch,
+    setValue,
     formState: { errors },
   } = useForm<ProfileForm>({
     resolver: zodResolver(profileSchema),
@@ -48,6 +52,7 @@ const VendorProfile: React.FC = () => {
       ? {
           phone: profile.phone,
           address: profile.address,
+          country: profile.country || "Argentina",
           city: profile.city,
           province: profile.province,
         }
@@ -147,40 +152,17 @@ const VendorProfile: React.FC = () => {
                   )}
                 />
               </Grid>
-              <Grid item xs={12} sm={6}>
-                <Controller
-                  name="city"
-                  control={control}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      fullWidth
-                      label={t("registration.city")}
-                      error={!!errors.city}
-                      helperText={
-                        errors.city ? t("vendor.fieldRequired") : undefined
-                      }
-                    />
-                  )}
-                />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <Controller
-                  name="province"
-                  control={control}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      fullWidth
-                      label={t("registration.province")}
-                      error={!!errors.province}
-                      helperText={
-                        errors.province ? t("vendor.fieldRequired") : undefined
-                      }
-                    />
-                  )}
-                />
-              </Grid>
+              <LocationSelector
+                country={watch("country")}
+                province={watch("province")}
+                city={watch("city")}
+                onChange={(field, value) => setValue(field as keyof ProfileForm, value, { shouldValidate: true })}
+                errors={{
+                  country: !!errors.country,
+                  province: !!errors.province,
+                  city: !!errors.city,
+                }}
+              />
               <Grid item xs={12}>
                 <Typography variant="body2" color="text.secondary" mb={1}>
                   Email: {profile?.email}

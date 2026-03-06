@@ -60,6 +60,7 @@
     "address": "Address",
     "city": "City",
     "province": "Province",
+    "country": "Country",
     "isPEP": "Politically Exposed Person (PEP)?",
     "submit": "Create account",
     "confirmPassword": "Confirm password"
@@ -91,7 +92,8 @@
     "purchaseHistory": "Purchase History",
     "vendorBalance": "Balance",
     "vendorProfile": "Profile",
-    "vendors": "Vendors"
+    "vendors": "Vendors",
+    "reports": "Reports"
   },
   "dashboard": {
     "welcome": "Welcome",
@@ -191,6 +193,7 @@
     "requestSuccess": "Request submitted successfully",
     "requestError": "Error submitting credit request",
     "noInstallments": "No installments",
+    "downloadSchedule": "Download PDF",
     "iva": "VAT",
     "ivaRate": "VAT Rate"
   },
@@ -314,7 +317,24 @@
     "pendingCapital": "Pending capital",
     "accumulatedInterest": "Accumulated interest (past-due)",
     "accumulatedIVA": "Accumulated VAT (past-due)",
-    "settlementTotal": "Settlement total"
+    "settlementTotal": "Settlement total",
+    "payInstallment": "Pay installment",
+    "prepayAmount": "Prepayment amount",
+    "registerClient": "Register Client",
+    "clientCreated": "Client registered successfully",
+    "clientCreateError": "Error registering client",
+    "prepayStrategy": "Recalculation strategy",
+    "prepayReduceInstallment": "Reduce installment amount (keep term)",
+    "prepayReduceTerm": "Reduce number of installments (keep amount)",
+    "comments": "Comments",
+    "commentsPlaceholder": "Add comments about the client...",
+    "commentsUpdated": "Comments updated",
+    "commentsUpdateError": "Error updating comments",
+    "simulateCancellation": "Simulate cancellation",
+    "simulationError": "Error simulating cancellation",
+    "downloadReceipt": "Download receipt",
+    "receiptReady": "The payment receipt with installment schedule is ready to download.",
+    "receiptDownloadError": "Error downloading receipt"
   },
   "profile": {
     "title": "My profile",
@@ -444,6 +464,23 @@
     "selectCreditLine": "Select credit line",
     "saleAmount": "Sale amount ($)",
     "saleDescription": "Description"
+  },
+  "reports": {
+    "title": "Financial Reports",
+    "description": "Portfolio financial metrics: interest, VAT, capital and position by status",
+    "from": "From",
+    "to": "To",
+    "filter": "Filter",
+    "interestAccrued": "Interest Accrued",
+    "interestCollected": "Interest Collected",
+    "ivaAccrued": "VAT Accrued",
+    "ivaCollected": "VAT Collected",
+    "capitalCollected": "Capital Collected",
+    "capitalPending": "Capital Pending",
+    "portfolioPosition": "Portfolio Position",
+    "loanCount": "Loan Count",
+    "totalPrincipal": "Total Principal",
+    "totalOutstanding": "Outstanding Balance"
   },
   "status": {
     "pending": "Pending",

@@ -35,7 +35,7 @@ func NewClientService(
 	}
 }
 
-func (s *ClientService) Register(ctx context.Context, email, password, firstName, lastName, dni, cuit, dobStr, phone, address, city, province string, isPEP bool) (*model.Client, *model.User, error) {
+func (s *ClientService) Register(ctx context.Context, email, password, firstName, lastName, dni, cuit, dobStr, phone, address, city, province, country string, isPEP bool) (*model.Client, *model.User, error) {
 	dob, err := time.Parse("2006-01-02", dobStr)
 	if err != nil {
 		return nil, nil, fmt.Errorf("invalid date of birth format, use YYYY-MM-DD")
@@ -65,7 +65,7 @@ func (s *ClientService) Register(ctx context.Context, email, password, firstName
 		return nil, nil, fmt.Errorf("failed to create user: %w", err)
 	}
 
-	client, err := model.NewClient(user.ID, firstName, lastName, dni, cuit, dob, phone, address, city, province, isPEP)
+	client, err := model.NewClient(user.ID, firstName, lastName, dni, cuit, dob, phone, address, city, province, country, isPEP)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -93,12 +93,12 @@ func (s *ClientService) GetByID(ctx context.Context, id uuid.UUID) (*model.Clien
 	return s.clientRepo.FindByID(ctx, id)
 }
 
-func (s *ClientService) UpdateProfile(ctx context.Context, userID uuid.UUID, phone, address, city, province string) (*model.Client, error) {
+func (s *ClientService) UpdateProfile(ctx context.Context, userID uuid.UUID, phone, address, city, province, country string) (*model.Client, error) {
 	client, err := s.clientRepo.FindByUserID(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
-	client.UpdateProfile(phone, address, city, province)
+	client.UpdateProfile(phone, address, city, province, country)
 	if err := s.clientRepo.Update(ctx, client); err != nil {
 		return nil, err
 	}
@@ -139,6 +139,19 @@ func (s *ClientService) UpdateIVARate(ctx context.Context, adminID, clientID uui
 		return nil, err
 	}
 	s.audit.Record(ctx, &adminID, "update_iva_rate", "client", client.ID.String(), fmt.Sprintf("IVA rate updated to %.2f%%", rate))
+	return client, nil
+}
+
+func (s *ClientService) UpdateComments(ctx context.Context, adminID, clientID uuid.UUID, comments string) (*model.Client, error) {
+	client, err := s.clientRepo.FindByID(ctx, clientID)
+	if err != nil {
+		return nil, err
+	}
+	client.SetComments(comments)
+	if err := s.clientRepo.Update(ctx, client); err != nil {
+		return nil, err
+	}
+	s.audit.Record(ctx, &adminID, "update_comments", "client", client.ID.String(), "Client comments updated")
 	return client, nil
 }
 

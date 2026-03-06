@@ -16,6 +16,7 @@ export interface RegisterRequest {
   address: string;
   city: string;
   province: string;
+  country: string;
   isPEP: boolean;
 }
 
@@ -44,6 +45,7 @@ export interface Profile {
   address: string;
   city: string;
   province: string;
+  country: string;
   mercadoPagoLink?: string;
   createdAt: string;
 }
@@ -55,6 +57,7 @@ export interface UpdateProfileRequest {
   address: string;
   city: string;
   province: string;
+  country: string;
 }
 
 export interface UpdateMercadoPagoRequest {
@@ -190,7 +193,7 @@ export interface Payment {
 }
 
 export interface RecordPaymentRequest {
-  amount: number;
+  amount: string;
   method: string;
   installmentId?: string;
 }
@@ -213,6 +216,8 @@ export interface Client {
   address: string;
   city: string;
   province: string;
+  country: string;
+  comments?: string;
   isPEP: boolean;
   ivaRate?: string;
   isBlocked: boolean;
@@ -271,6 +276,7 @@ export interface Vendor {
   address: string;
   city: string;
   province: string;
+  country: string;
   isActive: boolean;
   email: string;
   createdAt: string;
@@ -324,6 +330,7 @@ export interface RegisterVendorRequest {
   address: string;
   city: string;
   province: string;
+  country: string;
 }
 
 export interface UpdateVendorProfileRequest {
@@ -331,6 +338,7 @@ export interface UpdateVendorProfileRequest {
   address: string;
   city: string;
   province: string;
+  country: string;
 }
 
 export interface RecordPurchaseRequest {
@@ -361,6 +369,7 @@ export interface RegisterClientByVendorRequest {
   address: string;
   city: string;
   province: string;
+  country: string;
   isPEP: boolean;
 }
 
@@ -397,6 +406,27 @@ export interface ApproveWithdrawalRequest {
 
 export interface RejectWithdrawalRequest {
   reason: string;
+}
+
+// ---- Reports ----
+export interface FinancialReport {
+  interestAccrued: string;
+  interestCollected: string;
+  ivaAccrued: string;
+  ivaCollected: string;
+  capitalCollected: string;
+  capitalPending: string;
+}
+
+export interface PortfolioPositionItem {
+  status: string;
+  loanCount: number;
+  totalPrincipal: string;
+  totalOutstanding: string;
+}
+
+export interface PortfolioPositionReport {
+  items: PortfolioPositionItem[];
 }
 
 // ---- Pagination ----

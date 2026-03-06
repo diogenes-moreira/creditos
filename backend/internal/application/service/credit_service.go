@@ -240,7 +240,7 @@ func (s *CreditService) CancelLoan(ctx context.Context, adminID, loanID uuid.UUI
 	return loan, nil
 }
 
-func (s *CreditService) PrepayLoan(ctx context.Context, adminID, loanID uuid.UUID, amount decimal.Decimal) (*model.Loan, error) {
+func (s *CreditService) PrepayLoan(ctx context.Context, adminID, loanID uuid.UUID, amount decimal.Decimal, strategy model.PrepaymentStrategy) (*model.Loan, error) {
 	loan, err := s.loanRepo.FindByIDWithInstallments(ctx, loanID)
 	if err != nil {
 		return nil, err
@@ -249,49 +249,70 @@ func (s *CreditService) PrepayLoan(ctx context.Context, adminID, loanID uuid.UUI
 		return nil, fmt.Errorf("can only prepay active loans")
 	}
 
-	remaining := amount
-	for i := range loan.Installments {
-		if remaining.IsZero() || !remaining.IsPositive() {
-			break
-		}
-		inst := &loan.Installments[i]
-		if inst.Status == model.InstallmentPaid {
-			continue
-		}
-		applied, surplus, err := inst.ApplyPayment(remaining)
-		if err != nil {
-			return nil, err
-		}
-		remaining = surplus
-		if err := s.installmentRepo.Update(ctx, inst); err != nil {
-			return nil, err
-		}
-		_ = applied
+	// Compute outstanding principal from unpaid installments
+	outstandingPrincipal := loan.OutstandingPrincipal()
+	if !amount.IsPositive() || amount.GreaterThan(outstandingPrincipal) {
+		return nil, fmt.Errorf("prepayment amount must be between 0 and outstanding principal (%s)", outstandingPrincipal.StringFixed(2))
 	}
 
-	if loan.CheckCompletion() {
-		_ = loan.Complete()
+	newOutstandingPrincipal := outstandingPrincipal.Sub(amount)
+
+	// Get IVA rate for recalculation
+	prepayClient, _ := s.clientRepo.FindByID(ctx, loan.ClientID)
+	ivaRate := decimal.NewFromInt(21)
+	if prepayClient != nil {
+		ivaRate = prepayClient.IVARate
 	}
 
-	// Recalculate remaining installments if credit line has recalculate enabled
-	if loan.Status == model.LoanActive {
-		cl, clErr := s.creditLineRepo.FindByID(ctx, loan.CreditLineID)
-		if clErr == nil && cl.RecalculateOnPrepay {
-			prepayClient, _ := s.clientRepo.FindByID(ctx, loan.ClientID)
-			prepayIVARate := decimal.NewFromInt(21)
-			if prepayClient != nil {
-				prepayIVARate = prepayClient.IVARate
+	if newOutstandingPrincipal.IsZero() {
+		// Prepay covers all remaining capital — mark all unpaid installments as paid
+		for i := range loan.Installments {
+			inst := &loan.Installments[i]
+			if inst.Status == model.InstallmentPaid {
+				continue
 			}
-			loan.RecalculateRemainingInstallments(loan.InterestRate, prepayIVARate)
+			inst.PaidAmount = inst.TotalAmount
+			inst.RemainingAmount = decimal.Zero
+			inst.Status = model.InstallmentPaid
+			if err := s.installmentRepo.Update(ctx, inst); err != nil {
+				return nil, err
+			}
+		}
+		_ = loan.Complete()
+	} else {
+		// Recalculate remaining installments with reduced principal
+		switch strategy {
+		case model.PrepaymentReduceTerm:
+			removedIDs := loan.RecalculateReducingTerm(newOutstandingPrincipal, loan.InterestRate, ivaRate)
+			if len(removedIDs) > 0 {
+				if err := s.installmentRepo.DeleteBatch(ctx, removedIDs); err != nil {
+					return nil, fmt.Errorf("failed to delete excess installments: %w", err)
+				}
+			}
 			for i := range loan.Installments {
 				inst := &loan.Installments[i]
-				if inst.Status == model.InstallmentPending {
+				if inst.Status != model.InstallmentPaid {
+					if err := s.installmentRepo.Update(ctx, inst); err != nil {
+						return nil, err
+					}
+				}
+			}
+			s.audit.Record(ctx, &adminID, "recalculate_reduce_term", "loan", loan.ID.String(), fmt.Sprintf("Installments reduced after prepayment, %d removed", len(removedIDs)))
+		default:
+			loan.RecalculateRemainingInstallments(newOutstandingPrincipal, loan.InterestRate, ivaRate)
+			for i := range loan.Installments {
+				inst := &loan.Installments[i]
+				if inst.Status != model.InstallmentPaid {
 					if err := s.installmentRepo.Update(ctx, inst); err != nil {
 						return nil, err
 					}
 				}
 			}
 			s.audit.Record(ctx, &adminID, "recalculate_installments", "loan", loan.ID.String(), "Remaining installments recalculated after prepayment")
+		}
+
+		if loan.CheckCompletion() {
+			_ = loan.Complete()
 		}
 	}
 

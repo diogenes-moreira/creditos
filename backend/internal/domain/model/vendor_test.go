@@ -52,7 +52,7 @@ func TestNewVendor(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			vendor, err := model.NewVendor(uuid.New(), tt.businessName, tt.cuit, tt.phone, "Av. Siempreviva 742", "Villanueva", "Córdoba")
+			vendor, err := model.NewVendor(uuid.New(), tt.businessName, tt.cuit, tt.phone, "Av. Siempreviva 742", "Villanueva", "Córdoba", "Argentina")
 			if tt.wantErr {
 				require.Error(t, err)
 				assert.Contains(t, err.Error(), tt.errMsg)
@@ -70,7 +70,7 @@ func TestNewVendor(t *testing.T) {
 }
 
 func TestVendor_ActivateDeactivate(t *testing.T) {
-	vendor, err := model.NewVendor(uuid.New(), "Test", "20-12345678-6", "123", "addr", "city", "prov")
+	vendor, err := model.NewVendor(uuid.New(), "Test", "20-12345678-6", "123", "addr", "city", "prov", "Argentina")
 	require.NoError(t, err)
 	assert.True(t, vendor.IsActive)
 
@@ -82,10 +82,10 @@ func TestVendor_ActivateDeactivate(t *testing.T) {
 }
 
 func TestVendor_UpdateProfile(t *testing.T) {
-	vendor, err := model.NewVendor(uuid.New(), "Test", "20-12345678-6", "123", "old addr", "old city", "old prov")
+	vendor, err := model.NewVendor(uuid.New(), "Test", "20-12345678-6", "123", "old addr", "old city", "old prov", "Argentina")
 	require.NoError(t, err)
 
-	vendor.UpdateProfile("999", "new addr", "new city", "new prov")
+	vendor.UpdateProfile("999", "new addr", "new city", "new prov", "Chile")
 	assert.Equal(t, "999", vendor.Phone)
 	assert.Equal(t, "new addr", vendor.Address)
 	assert.Equal(t, "new city", vendor.City)
@@ -93,10 +93,10 @@ func TestVendor_UpdateProfile(t *testing.T) {
 }
 
 func TestVendor_UpdateProfile_PartialUpdate(t *testing.T) {
-	vendor, err := model.NewVendor(uuid.New(), "Test", "20-12345678-6", "123", "old addr", "old city", "old prov")
+	vendor, err := model.NewVendor(uuid.New(), "Test", "20-12345678-6", "123", "old addr", "old city", "old prov", "Argentina")
 	require.NoError(t, err)
 
-	vendor.UpdateProfile("999", "", "", "")
+	vendor.UpdateProfile("999", "", "", "", "")
 	assert.Equal(t, "999", vendor.Phone)
 	assert.Equal(t, "old addr", vendor.Address)
 	assert.Equal(t, "old city", vendor.City)

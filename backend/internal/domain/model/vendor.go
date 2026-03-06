@@ -19,13 +19,14 @@ type Vendor struct {
 	Address      string         `gorm:"not null"`
 	City         string         `gorm:"not null"`
 	Province     string         `gorm:"not null"`
+	Country      string         `gorm:"not null;default:'Argentina'"`
 	IsActive     bool           `gorm:"not null;default:true"`
 	CreatedAt    time.Time      `gorm:"not null"`
 	UpdatedAt    time.Time      `gorm:"not null"`
 	DeletedAt    gorm.DeletedAt `gorm:"index"`
 }
 
-func NewVendor(userID uuid.UUID, businessName, cuit, phone, address, city, province string) (*Vendor, error) {
+func NewVendor(userID uuid.UUID, businessName, cuit, phone, address, city, province, country string) (*Vendor, error) {
 	if businessName == "" {
 		return nil, fmt.Errorf("business name is required")
 	}
@@ -47,6 +48,7 @@ func NewVendor(userID uuid.UUID, businessName, cuit, phone, address, city, provi
 		Address:      address,
 		City:         city,
 		Province:     province,
+		Country:      country,
 		IsActive:     true,
 	}, nil
 }
@@ -59,7 +61,7 @@ func (v *Vendor) Deactivate() {
 	v.IsActive = false
 }
 
-func (v *Vendor) UpdateProfile(phone, address, city, province string) {
+func (v *Vendor) UpdateProfile(phone, address, city, province, country string) {
 	if phone != "" {
 		v.Phone = phone
 	}
@@ -71,5 +73,8 @@ func (v *Vendor) UpdateProfile(phone, address, city, province string) {
 	}
 	if province != "" {
 		v.Province = province
+	}
+	if country != "" {
+		v.Country = country
 	}
 }

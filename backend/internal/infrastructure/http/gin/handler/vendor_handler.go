@@ -87,7 +87,7 @@ func (h *VendorHandler) UpdateProfile(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
-	vendor, err := h.vendorService.UpdateProfile(c.Request.Context(), userID, req.Phone, req.Address, req.City, req.Province)
+	vendor, err := h.vendorService.UpdateProfile(c.Request.Context(), userID, req.Phone, req.Address, req.City, req.Province, req.Country)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
 		return
@@ -253,7 +253,7 @@ func (h *VendorHandler) RegisterClient(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
-	client, user, err := h.clientService.Register(c.Request.Context(), req.Email, req.Password, req.FirstName, req.LastName, req.DNI, req.CUIT, req.DateOfBirth, req.Phone, req.Address, req.City, req.Province, req.IsPEP)
+	client, user, err := h.clientService.Register(c.Request.Context(), req.Email, req.Password, req.FirstName, req.LastName, req.DNI, req.CUIT, req.DateOfBirth, req.Phone, req.Address, req.City, req.Province, req.Country, req.IsPEP)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
 		return
@@ -415,7 +415,7 @@ func (h *VendorHandler) AdminRegisterVendor(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
-	vendor, user, err := h.vendorService.Register(c.Request.Context(), req.Email, req.Password, req.BusinessName, req.CUIT, req.Phone, req.Address, req.City, req.Province)
+	vendor, user, err := h.vendorService.Register(c.Request.Context(), req.Email, req.Password, req.BusinessName, req.CUIT, req.Phone, req.Address, req.City, req.Province, req.Country)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
 		return

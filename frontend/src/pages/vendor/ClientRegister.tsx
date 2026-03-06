@@ -25,6 +25,7 @@ import { vendorRegisterClient } from "../../api/endpoints";
 import { useNotification } from "../../contexts/NotificationContext";
 import { getErrorMessage } from "../../api/errorUtils";
 import type { Client } from "../../api/types";
+import LocationSelector from "../../components/LocationSelector";
 
 const schema = z.object({
   email: z.string().email(),
@@ -36,6 +37,7 @@ const schema = z.object({
   dateOfBirth: z.string().min(1),
   phone: z.string().min(8),
   address: z.string().min(1),
+  country: z.string().min(1),
   city: z.string().min(1),
   province: z.string().min(1),
   isPEP: z.boolean(),
@@ -53,6 +55,8 @@ const ClientRegister: React.FC = () => {
   const {
     control,
     handleSubmit,
+    watch,
+    setValue,
     formState: { errors },
   } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -66,6 +70,7 @@ const ClientRegister: React.FC = () => {
       dateOfBirth: "",
       phone: "",
       address: "",
+      country: "Argentina",
       city: "",
       province: "",
       isPEP: false,
@@ -349,42 +354,17 @@ const ClientRegister: React.FC = () => {
                   )}
                 />
               </Grid>
-              <Grid item xs={12} sm={6}>
-                <Controller
-                  name="city"
-                  control={control}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      fullWidth
-                      label={t("registration.city")}
-                      error={!!errors.city}
-                      helperText={
-                        errors.city ? t("vendor.fieldRequired") : undefined
-                      }
-                    />
-                  )}
-                />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <Controller
-                  name="province"
-                  control={control}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      fullWidth
-                      label={t("registration.province")}
-                      error={!!errors.province}
-                      helperText={
-                        errors.province
-                          ? t("vendor.fieldRequired")
-                          : undefined
-                      }
-                    />
-                  )}
-                />
-              </Grid>
+              <LocationSelector
+                country={watch("country")}
+                province={watch("province")}
+                city={watch("city")}
+                onChange={(field, value) => setValue(field, value, { shouldValidate: true })}
+                errors={{
+                  country: !!errors.country,
+                  province: !!errors.province,
+                  city: !!errors.city,
+                }}
+              />
               <Grid item xs={12}>
                 <Controller
                   name="isPEP"

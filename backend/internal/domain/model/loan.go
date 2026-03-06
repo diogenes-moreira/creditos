@@ -2,11 +2,19 @@ package model
 
 import (
 	"fmt"
+	"math"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/shopspring/decimal"
 	"gorm.io/gorm"
+)
+
+type PrepaymentStrategy string
+
+const (
+	PrepaymentReduceInstallment PrepaymentStrategy = "reduce_installment"
+	PrepaymentReduceTerm        PrepaymentStrategy = "reduce_term"
 )
 
 type LoanStatus string
@@ -179,15 +187,13 @@ func (l *Loan) TotalPaid() decimal.Decimal {
 	return total
 }
 
-// RecalculateRemainingInstallments recalculates interest for pending installments
-// based on the outstanding principal after a prepayment.
-func (l *Loan) RecalculateRemainingInstallments(interestRate, ivaRate decimal.Decimal) {
+// RecalculateRemainingInstallments recalculates interest for unpaid installments
+// based on the given outstanding principal after a capital prepayment.
+func (l *Loan) RecalculateRemainingInstallments(outstandingPrincipal, interestRate, ivaRate decimal.Decimal) {
 	var pendingIndices []int
-	outstandingPrincipal := decimal.NewFromInt(0)
 	for i, inst := range l.Installments {
-		if inst.Status == InstallmentPending {
+		if inst.Status != InstallmentPaid {
 			pendingIndices = append(pendingIndices, i)
-			outstandingPrincipal = outstandingPrincipal.Add(inst.CapitalAmount)
 		}
 	}
 
@@ -224,6 +230,123 @@ func (l *Loan) RecalculateRemainingInstallments(interestRate, ivaRate decimal.De
 		inst.RemainingAmount = calc.Total
 		inst.PaidAmount = decimal.NewFromInt(0)
 	}
+}
+
+// RecalculateReducingTerm keeps the original installment amount and reduces the
+// number of remaining installments after a prepayment. Returns the UUIDs of
+// installments that were removed from the loan so the caller can delete them.
+func (l *Loan) RecalculateReducingTerm(outstandingPrincipal, interestRate, ivaRate decimal.Decimal) []uuid.UUID {
+	var pendingIndices []int
+	for i, inst := range l.Installments {
+		if inst.Status != InstallmentPaid {
+			pendingIndices = append(pendingIndices, i)
+		}
+	}
+
+	if len(pendingIndices) == 0 || outstandingPrincipal.IsZero() {
+		return nil
+	}
+
+	pendingCount := len(pendingIndices)
+	monthlyRate := interestRate.Div(decimal.NewFromInt(12))
+	var newN int
+
+	switch l.AmortizationType {
+	case AmortizationFrench:
+		if monthlyRate.IsZero() {
+			originalCapital := l.Principal.Div(decimal.NewFromInt(int64(l.NumInstallments)))
+			newNDec := outstandingPrincipal.Div(originalCapital)
+			newN = int(math.Ceil(newNDec.InexactFloat64()))
+		} else {
+			// Original PMT = P * r * (1+r)^n / ((1+r)^n - 1)
+			r, _ := monthlyRate.Float64()
+			n := float64(l.NumInstallments)
+			pow := math.Pow(1+r, n)
+			pmt := l.Principal.Mul(monthlyRate).Mul(decimal.NewFromFloat(pow)).Div(decimal.NewFromFloat(pow - 1))
+
+			// newN = ceil(-log(1 - outstanding*r/PMT) / log(1+r))
+			oR, _ := outstandingPrincipal.Mul(monthlyRate).Div(pmt).Float64()
+			inner := 1 - oR
+			if inner <= 0 {
+				return nil // cannot reduce term
+			}
+			newNFloat := math.Ceil(-math.Log(inner) / math.Log(1+r))
+			newN = int(newNFloat)
+		}
+	case AmortizationGerman:
+		originalCapital := l.Principal.Div(decimal.NewFromInt(int64(l.NumInstallments)))
+		newNDec := outstandingPrincipal.Div(originalCapital)
+		newN = int(math.Ceil(newNDec.InexactFloat64()))
+	}
+
+	if newN < 1 {
+		newN = 1
+	}
+	if newN >= pendingCount {
+		return nil // no reduction possible
+	}
+
+	// Collect due dates for the installments we'll keep
+	dueDates := make([]time.Time, pendingCount)
+	for j, idx := range pendingIndices {
+		dueDates[j] = l.Installments[idx].DueDate
+	}
+
+	// Recalculate the first newN pending installments
+	startDate := dueDates[0].AddDate(0, -1, 0)
+	var schedule AmortizationSchedule
+	switch l.AmortizationType {
+	case AmortizationFrench:
+		schedule = CalculateFrenchAmortization(outstandingPrincipal, interestRate, newN, startDate, ivaRate)
+	case AmortizationGerman:
+		schedule = CalculateGermanAmortization(outstandingPrincipal, interestRate, newN, startDate, ivaRate)
+	}
+
+	// Update the first newN pending installments
+	for j := 0; j < newN; j++ {
+		idx := pendingIndices[j]
+		calc := schedule.Installments[j]
+		inst := &l.Installments[idx]
+		inst.CapitalAmount = calc.Capital
+		inst.InterestAmount = calc.Interest
+		inst.IVAAmount = calc.IVA
+		inst.TotalAmount = calc.Total
+		inst.RemainingAmount = calc.Total
+		inst.PaidAmount = decimal.NewFromInt(0)
+	}
+
+	// Collect IDs of excess installments to delete
+	var removedIDs []uuid.UUID
+	for j := newN; j < pendingCount; j++ {
+		idx := pendingIndices[j]
+		removedIDs = append(removedIDs, l.Installments[idx].ID)
+	}
+
+	// Remove excess installments from the slice
+	removeSet := make(map[uuid.UUID]bool, len(removedIDs))
+	for _, rid := range removedIDs {
+		removeSet[rid] = true
+	}
+	kept := make([]Installment, 0, len(l.Installments)-len(removedIDs))
+	for _, inst := range l.Installments {
+		if !removeSet[inst.ID] {
+			kept = append(kept, inst)
+		}
+	}
+	l.Installments = kept
+
+	return removedIDs
+}
+
+// OutstandingPrincipal returns the sum of capital amounts for all unpaid installments.
+func (l *Loan) OutstandingPrincipal() decimal.Decimal {
+	total := decimal.Zero
+	for _, inst := range l.Installments {
+		if inst.Status != InstallmentPaid {
+			total = total.Add(inst.CapitalAmount)
+		}
+	}
+	return total
 }
 
 func (l *Loan) TotalRemaining() decimal.Decimal {

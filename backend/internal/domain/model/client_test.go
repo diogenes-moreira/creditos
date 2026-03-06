@@ -193,7 +193,7 @@ func TestNewClient(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			client, err := model.NewClient(
 				tt.userID, tt.firstName, tt.lastName, tt.dni, tt.cuit,
-				tt.dob, tt.phone, tt.address, tt.city, tt.province, tt.isPEP,
+				tt.dob, tt.phone, tt.address, tt.city, tt.province, "Argentina", tt.isPEP,
 			)
 			if tt.wantErr {
 				require.Error(t, err)
@@ -216,7 +216,7 @@ func TestNewClient(t *testing.T) {
 func TestClient_FullName(t *testing.T) {
 	client, err := model.NewClient(
 		uuid.New(), "Juan", "Perez", validDNI(), validCUIT(),
-		validDOB(), "+541155551234", "Addr", "City", "Prov", false,
+		validDOB(), "+541155551234", "Addr", "City", "Prov", "Argentina", false,
 	)
 	require.NoError(t, err)
 	assert.Equal(t, "Juan Perez", client.FullName())
@@ -225,7 +225,7 @@ func TestClient_FullName(t *testing.T) {
 func TestClient_Block(t *testing.T) {
 	client, err := model.NewClient(
 		uuid.New(), "Juan", "Perez", validDNI(), validCUIT(),
-		validDOB(), "+541155551234", "Addr", "City", "Prov", false,
+		validDOB(), "+541155551234", "Addr", "City", "Prov", "Argentina", false,
 	)
 	require.NoError(t, err)
 	assert.False(t, client.IsBlocked)
@@ -237,7 +237,7 @@ func TestClient_Block(t *testing.T) {
 func TestClient_Unblock(t *testing.T) {
 	client, err := model.NewClient(
 		uuid.New(), "Juan", "Perez", validDNI(), validCUIT(),
-		validDOB(), "+541155551234", "Addr", "City", "Prov", false,
+		validDOB(), "+541155551234", "Addr", "City", "Prov", "Argentina", false,
 	)
 	require.NoError(t, err)
 
@@ -251,18 +251,19 @@ func TestClient_Unblock(t *testing.T) {
 func TestClient_UpdateProfile(t *testing.T) {
 	client, err := model.NewClient(
 		uuid.New(), "Juan", "Perez", validDNI(), validCUIT(),
-		validDOB(), "+541155551234", "Addr", "City", "Prov", false,
+		validDOB(), "+541155551234", "Addr", "City", "Prov", "Argentina", false,
 	)
 	require.NoError(t, err)
 
-	client.UpdateProfile("+541199998888", "New Addr", "New City", "New Prov")
+	client.UpdateProfile("+541199998888", "New Addr", "New City", "New Prov", "Chile")
 	assert.Equal(t, "+541199998888", client.Phone)
 	assert.Equal(t, "New Addr", client.Address)
 	assert.Equal(t, "New City", client.City)
 	assert.Equal(t, "New Prov", client.Province)
+	assert.Equal(t, "Chile", client.Country)
 
 	// Empty values should not overwrite
-	client.UpdateProfile("", "", "", "")
+	client.UpdateProfile("", "", "", "", "")
 	assert.Equal(t, "+541199998888", client.Phone)
 	assert.Equal(t, "New Addr", client.Address)
 }
@@ -270,7 +271,7 @@ func TestClient_UpdateProfile(t *testing.T) {
 func TestClient_SetMercadoPagoLink(t *testing.T) {
 	client, err := model.NewClient(
 		uuid.New(), "Juan", "Perez", validDNI(), validCUIT(),
-		validDOB(), "+541155551234", "Addr", "City", "Prov", false,
+		validDOB(), "+541155551234", "Addr", "City", "Prov", "Argentina", false,
 	)
 	require.NoError(t, err)
 

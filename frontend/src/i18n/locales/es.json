@@ -60,6 +60,7 @@
     "address": "Dirección",
     "city": "Ciudad",
     "province": "Provincia",
+    "country": "País",
     "isPEP": "¿Es Persona Expuesta Políticamente (PEP)?",
     "submit": "Crear cuenta",
     "confirmPassword": "Confirmar contraseña"
@@ -91,7 +92,8 @@
     "purchaseHistory": "Historial de compras",
     "vendorBalance": "Saldo",
     "vendorProfile": "Perfil",
-    "vendors": "Vendedores"
+    "vendors": "Vendedores",
+    "reports": "Informes"
   },
   "dashboard": {
     "welcome": "Bienvenido",
@@ -191,6 +193,7 @@
     "requestSuccess": "Solicitud enviada exitosamente",
     "requestError": "Error al solicitar el crédito",
     "noInstallments": "Sin cuotas",
+    "downloadSchedule": "Descargar PDF",
     "iva": "IVA",
     "ivaRate": "Tasa de IVA"
   },
@@ -314,7 +317,24 @@
     "pendingCapital": "Capital pendiente",
     "accumulatedInterest": "Intereses acumulados (vencidos)",
     "accumulatedIVA": "IVA acumulado (vencidos)",
-    "settlementTotal": "Total a liquidar"
+    "settlementTotal": "Total a liquidar",
+    "payInstallment": "Pagar cuota",
+    "prepayAmount": "Monto a prepagar",
+    "registerClient": "Registrar cliente",
+    "clientCreated": "Cliente registrado exitosamente",
+    "clientCreateError": "Error al registrar el cliente",
+    "prepayStrategy": "Estrategia de recálculo",
+    "prepayReduceInstallment": "Reducir monto de cuota (mantener plazo)",
+    "prepayReduceTerm": "Reducir cantidad de cuotas (mantener monto)",
+    "comments": "Comentarios",
+    "commentsPlaceholder": "Agregar comentarios sobre el cliente...",
+    "commentsUpdated": "Comentarios actualizados",
+    "commentsUpdateError": "Error al actualizar comentarios",
+    "simulateCancellation": "Simular cancelación",
+    "simulationError": "Error al simular la cancelación",
+    "downloadReceipt": "Descargar comprobante",
+    "receiptReady": "El comprobante de pago con el plan de cuotas está listo para descargar.",
+    "receiptDownloadError": "Error al descargar el comprobante"
   },
   "profile": {
     "title": "Mi perfil",
@@ -444,6 +464,23 @@
     "selectCreditLine": "Seleccionar línea de crédito",
     "saleAmount": "Monto de la venta ($)",
     "saleDescription": "Descripción"
+  },
+  "reports": {
+    "title": "Informes financieros",
+    "description": "Métricas financieras del portafolio: intereses, IVA, capital y posición por estado",
+    "from": "Desde",
+    "to": "Hasta",
+    "filter": "Filtrar",
+    "interestAccrued": "Intereses devengados",
+    "interestCollected": "Intereses cobrados",
+    "ivaAccrued": "IVA devengado",
+    "ivaCollected": "IVA cobrado",
+    "capitalCollected": "Capital cobrado",
+    "capitalPending": "Capital pendiente",
+    "portfolioPosition": "Posición del portafolio",
+    "loanCount": "Cantidad de préstamos",
+    "totalPrincipal": "Capital total",
+    "totalOutstanding": "Saldo pendiente"
   },
   "status": {
     "pending": "Pendiente",

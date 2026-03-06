@@ -18,12 +18,14 @@ import {
   CircularProgress,
 } from "@mui/material";
 import { getProfile, updateProfile, updateMercadoPago } from "../../api/endpoints";
+import LocationSelector from "../../components/LocationSelector";
 
 const profileSchema = z.object({
   firstName: z.string().min(1, "Nombre requerido"),
   lastName: z.string().min(1, "Apellido requerido"),
   phone: z.string().min(1, "Telefono requerido"),
   address: z.string().min(1, "Direccion requerida"),
+  country: z.string().min(1, "Pais requerido"),
   city: z.string().min(1, "Ciudad requerida"),
   province: z.string().min(1, "Provincia requerida"),
 });
@@ -49,6 +51,8 @@ const Profile: React.FC = () => {
   const {
     control: profileControl,
     handleSubmit: handleProfileSubmit,
+    watch: watchProfile,
+    setValue: setProfileValue,
     formState: { errors: profileErrors },
   } = useForm<ProfileForm>({
     resolver: zodResolver(profileSchema),
@@ -57,6 +61,7 @@ const Profile: React.FC = () => {
       lastName: profile.lastName,
       phone: profile.phone,
       address: profile.address,
+      country: profile.country || "Argentina",
       city: profile.city,
       province: profile.province,
     } : undefined,
@@ -142,24 +147,17 @@ const Profile: React.FC = () => {
                   )}
                 />
               </Grid>
-              <Grid item xs={12} sm={6}>
-                <Controller
-                  name="city"
-                  control={profileControl}
-                  render={({ field }) => (
-                    <TextField {...field} fullWidth label={t("registration.city")} error={!!profileErrors.city} helperText={profileErrors.city?.message} />
-                  )}
-                />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <Controller
-                  name="province"
-                  control={profileControl}
-                  render={({ field }) => (
-                    <TextField {...field} fullWidth label={t("registration.province")} error={!!profileErrors.province} helperText={profileErrors.province?.message} />
-                  )}
-                />
-              </Grid>
+              <LocationSelector
+                country={watchProfile("country")}
+                province={watchProfile("province")}
+                city={watchProfile("city")}
+                onChange={(field, value) => setProfileValue(field as keyof ProfileForm, value, { shouldValidate: true })}
+                errors={{
+                  country: !!profileErrors.country,
+                  province: !!profileErrors.province,
+                  city: !!profileErrors.city,
+                }}
+              />
               <Grid item xs={12}>
                 <Typography variant="body2" color="text.secondary" mb={1}>
                   Email: {profile?.email} | DNI: {profile?.dni}

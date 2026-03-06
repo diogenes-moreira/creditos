@@ -23,6 +23,8 @@ type Client struct {
 	Address         string         `gorm:"not null"`
 	City            string         `gorm:"not null"`
 	Province        string         `gorm:"not null"`
+	Country         string         `gorm:"not null;default:'Argentina'"`
+	Comments        string         `gorm:"type:text"`
 	IsPEP           bool            `gorm:"not null;default:false"`
 	IVARate         decimal.Decimal `gorm:"type:decimal(5,2);not null;default:21.00"`
 	MercadoPagoLink string          `gorm:""`
@@ -32,7 +34,7 @@ type Client struct {
 	DeletedAt       gorm.DeletedAt `gorm:"index"`
 }
 
-func NewClient(userID uuid.UUID, firstName, lastName, dni, cuit string, dob time.Time, phone, address, city, province string, isPEP bool) (*Client, error) {
+func NewClient(userID uuid.UUID, firstName, lastName, dni, cuit string, dob time.Time, phone, address, city, province, country string, isPEP bool) (*Client, error) {
 	if firstName == "" || lastName == "" {
 		return nil, fmt.Errorf("first name and last name are required")
 	}
@@ -65,6 +67,7 @@ func NewClient(userID uuid.UUID, firstName, lastName, dni, cuit string, dob time
 		Address:     address,
 		City:        city,
 		Province:    province,
+		Country:     country,
 		IsPEP:       isPEP,
 	}, nil
 }
@@ -103,7 +106,7 @@ func (c *Client) SetIVARate(rate decimal.Decimal) {
 	c.IVARate = rate
 }
 
-func (c *Client) UpdateProfile(phone, address, city, province string) {
+func (c *Client) UpdateProfile(phone, address, city, province, country string) {
 	if phone != "" {
 		c.Phone = phone
 	}
@@ -116,4 +119,11 @@ func (c *Client) UpdateProfile(phone, address, city, province string) {
 	if province != "" {
 		c.Province = province
 	}
+	if country != "" {
+		c.Country = country
+	}
+}
+
+func (c *Client) SetComments(comments string) {
+	c.Comments = comments
 }

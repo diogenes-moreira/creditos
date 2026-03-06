@@ -12,6 +12,7 @@ type RegisterRequest struct {
 	Address     string `json:"address" binding:"required"`
 	City        string `json:"city" binding:"required"`
 	Province    string `json:"province" binding:"required"`
+	Country     string `json:"country"`
 	IsPEP       bool   `json:"isPEP"`
 }
 
@@ -25,6 +26,7 @@ type UpdateProfileRequest struct {
 	Address  string `json:"address"`
 	City     string `json:"city"`
 	Province string `json:"province"`
+	Country  string `json:"country"`
 }
 
 type MercadoPagoLinkRequest struct {
@@ -81,11 +83,16 @@ type AdjustPaymentRequest struct {
 }
 
 type PrepayLoanRequest struct {
-	Amount string `json:"amount" binding:"required"`
+	Amount   string `json:"amount" binding:"required"`
+	Strategy string `json:"strategy,omitempty"`
 }
 
 type UpdateIVARateRequest struct {
 	IVARate float64 `json:"ivaRate" binding:"required,min=0,max=100"`
+}
+
+type UpdateCommentsRequest struct {
+	Comments string `json:"comments"`
 }
 
 type SearchClientsRequest struct {
@@ -108,6 +115,7 @@ type RegisterVendorRequest struct {
 	Address      string `json:"address" binding:"required"`
 	City         string `json:"city" binding:"required"`
 	Province     string `json:"province" binding:"required"`
+	Country      string `json:"country"`
 }
 
 type UpdateVendorProfileRequest struct {
@@ -115,6 +123,7 @@ type UpdateVendorProfileRequest struct {
 	Address  string `json:"address"`
 	City     string `json:"city"`
 	Province string `json:"province"`
+	Country  string `json:"country"`
 }
 
 type RecordPurchaseRequest struct {
@@ -145,6 +154,7 @@ type RegisterClientByVendorRequest struct {
 	Address     string `json:"address" binding:"required"`
 	City        string `json:"city" binding:"required"`
 	Province    string `json:"province" binding:"required"`
+	Country     string `json:"country"`
 	IsPEP       bool   `json:"isPEP"`
 }
 

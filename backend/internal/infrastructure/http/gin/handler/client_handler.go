@@ -74,7 +74,7 @@ func (h *ClientHandler) UpdateProfile(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
-	client, err := h.clientService.UpdateProfile(c.Request.Context(), userID, req.Phone, req.Address, req.City, req.Province)
+	client, err := h.clientService.UpdateProfile(c.Request.Context(), userID, req.Phone, req.Address, req.City, req.Province, req.Country)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
 		return
@@ -105,6 +105,38 @@ func (h *ClientHandler) SetMercadoPagoLink(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "MercadoPago link updated"})
+}
+
+// AdminRegisterClient godoc
+// @Summary Register a new client
+// @Description Admin creates a client account with all personal data
+// @Tags Admin Clients
+// @Accept json
+// @Produce json
+// @Param request body dto.RegisterRequest true "Client registration data"
+// @Success 201 {object} dto.ClientResponse
+// @Failure 400 {object} dto.ErrorResponse
+// @Security BearerAuth
+// @Router /admin/clients [post]
+func (h *ClientHandler) AdminRegisterClient(c *gin.Context) {
+	var req dto.RegisterRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
+		return
+	}
+	client, user, err := h.clientService.Register(
+		c.Request.Context(),
+		req.Email, req.Password,
+		req.FirstName, req.LastName,
+		req.DNI, req.CUIT, req.DateOfBirth,
+		req.Phone, req.Address, req.City, req.Province, req.Country,
+		req.IsPEP,
+	)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
+		return
+	}
+	c.JSON(http.StatusCreated, dto.ToClientResponse(client, user.Email))
 }
 
 // ListClients godoc
@@ -190,6 +222,37 @@ func (h *ClientHandler) UpdateIVARate(c *gin.Context) {
 		return
 	}
 	client, err := h.clientService.UpdateIVARate(c.Request.Context(), adminID, clientID, req.IVARate)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, dto.ToClientResponse(client, client.User.Email))
+}
+
+// UpdateComments godoc
+// @Summary Update comments for a client
+// @Tags Admin Clients
+// @Accept json
+// @Produce json
+// @Param id path string true "Client UUID"
+// @Param request body dto.UpdateCommentsRequest true "Comments"
+// @Success 200 {object} dto.ClientResponse
+// @Failure 400 {object} dto.ErrorResponse
+// @Security BearerAuth
+// @Router /admin/clients/{id}/comments [put]
+func (h *ClientHandler) UpdateComments(c *gin.Context) {
+	adminID := c.MustGet("userID").(uuid.UUID)
+	clientID, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "invalid client ID"})
+		return
+	}
+	var req dto.UpdateCommentsRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
+		return
+	}
+	client, err := h.clientService.UpdateComments(c.Request.Context(), adminID, clientID, req.Comments)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
 		return

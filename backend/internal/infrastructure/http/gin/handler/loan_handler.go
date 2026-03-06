@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"io"
 	"net/http"
 
 	"github.com/diogenes-moreira/creditos/backend/internal/application/dto"
@@ -16,14 +17,16 @@ type LoanHandler struct {
 	creditService  *service.CreditService
 	paymentService *service.PaymentService
 	clientRepo     port.ClientRepository
+	pdfService     port.PDFService
 	defaultIVARate decimal.Decimal
 }
 
-func NewLoanHandler(creditService *service.CreditService, paymentService *service.PaymentService, clientRepo port.ClientRepository, defaultIVARate float64) *LoanHandler {
+func NewLoanHandler(creditService *service.CreditService, paymentService *service.PaymentService, clientRepo port.ClientRepository, defaultIVARate float64, pdfService port.PDFService) *LoanHandler {
 	return &LoanHandler{
 		creditService:  creditService,
 		paymentService: paymentService,
 		clientRepo:     clientRepo,
+		pdfService:     pdfService,
 		defaultIVARate: decimal.NewFromFloat(defaultIVARate),
 	}
 }
@@ -278,7 +281,15 @@ func (h *LoanHandler) PrepayLoan(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "invalid amount"})
 		return
 	}
-	loan, err := h.creditService.PrepayLoan(c.Request.Context(), adminID, loanID, amount)
+	strategy := model.PrepaymentReduceInstallment
+	if req.Strategy != "" {
+		strategy = model.PrepaymentStrategy(req.Strategy)
+		if strategy != model.PrepaymentReduceInstallment && strategy != model.PrepaymentReduceTerm {
+			c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "invalid strategy, must be reduce_installment or reduce_term"})
+			return
+		}
+	}
+	loan, err := h.creditService.PrepayLoan(c.Request.Context(), adminID, loanID, amount, strategy)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
 		return
@@ -423,4 +434,108 @@ func (h *LoanHandler) AdminRecordPayment(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusCreated, dto.ToPaymentResponse(payment))
+}
+
+// GetPaymentReceipt generates and returns a PDF receipt for a specific payment
+func (h *LoanHandler) GetPaymentReceipt(c *gin.Context) {
+	loanID, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "invalid loan ID"})
+		return
+	}
+	paymentID, err := uuid.Parse(c.Param("paymentId"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "invalid payment ID"})
+		return
+	}
+
+	payment, err := h.paymentService.GetPaymentByID(c.Request.Context(), paymentID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, dto.ErrorResponse{Error: "payment not found"})
+		return
+	}
+	if payment.LoanID != loanID {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "payment does not belong to this loan"})
+		return
+	}
+
+	loan, err := h.creditService.GetLoanDetail(c.Request.Context(), loanID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, dto.ErrorResponse{Error: "loan not found"})
+		return
+	}
+
+	client, err := h.clientRepo.FindByID(c.Request.Context(), loan.ClientID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, dto.ErrorResponse{Error: "client not found"})
+		return
+	}
+
+	reader, err := h.pdfService.GeneratePaymentReceipt(payment, loan, client)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "failed to generate receipt"})
+		return
+	}
+
+	c.Header("Content-Type", "application/pdf")
+	c.Header("Content-Disposition", "attachment; filename=recibo-"+paymentID.String()[:8]+".pdf")
+	io.Copy(c.Writer, reader)
+}
+
+// SimulateCancellation returns the early cancellation settlement breakdown
+func (h *LoanHandler) SimulateCancellation(c *gin.Context) {
+	loanID, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "invalid loan ID"})
+		return
+	}
+
+	loan, err := h.creditService.GetLoanDetail(c.Request.Context(), loanID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, dto.ErrorResponse{Error: "loan not found"})
+		return
+	}
+	if loan.Status != model.LoanActive {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "can only simulate cancellation for active loans"})
+		return
+	}
+
+	pc, ai, aiva, total := loan.CancellationSettlement()
+	c.JSON(http.StatusOK, dto.CancellationSettlementResponse{
+		PendingCapital:      pc.StringFixed(2),
+		AccumulatedInterest: ai.StringFixed(2),
+		AccumulatedIVA:      aiva.StringFixed(2),
+		Total:               total.StringFixed(2),
+	})
+}
+
+// DownloadLoanSchedule generates and returns a PDF with the loan installment schedule
+func (h *LoanHandler) DownloadLoanSchedule(c *gin.Context) {
+	loanID, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "invalid loan ID"})
+		return
+	}
+
+	loan, err := h.creditService.GetLoanDetail(c.Request.Context(), loanID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, dto.ErrorResponse{Error: "loan not found"})
+		return
+	}
+
+	client, err := h.clientRepo.FindByID(c.Request.Context(), loan.ClientID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, dto.ErrorResponse{Error: "client not found"})
+		return
+	}
+
+	reader, err := h.pdfService.GenerateLoanSchedule(loan, loan.Installments, client)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "failed to generate PDF"})
+		return
+	}
+
+	c.Header("Content-Type", "application/pdf")
+	c.Header("Content-Disposition", "attachment; filename=plan-cuotas-"+loanID.String()[:8]+".pdf")
+	io.Copy(c.Writer, reader)
 }

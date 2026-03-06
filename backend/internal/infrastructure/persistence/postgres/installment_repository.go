@@ -56,3 +56,10 @@ func (r *InstallmentRepository) FindOverdue(ctx context.Context) ([]model.Instal
 func (r *InstallmentRepository) Update(ctx context.Context, installment *model.Installment) error {
 	return r.db.WithContext(ctx).Save(installment).Error
 }
+
+func (r *InstallmentRepository) DeleteBatch(ctx context.Context, ids []uuid.UUID) error {
+	if len(ids) == 0 {
+		return nil
+	}
+	return r.db.WithContext(ctx).Delete(&model.Installment{}, "id IN ?", ids).Error
+}

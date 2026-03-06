@@ -45,7 +45,7 @@ func (h *AuthHandler) Register(c *gin.Context) {
 	client, user, err := h.clientService.Register(
 		c.Request.Context(), req.Email, req.Password,
 		req.FirstName, req.LastName, req.DNI, req.CUIT, req.DateOfBirth,
-		req.Phone, req.Address, req.City, req.Province, req.IsPEP,
+		req.Phone, req.Address, req.City, req.Province, req.Country, req.IsPEP,
 	)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})

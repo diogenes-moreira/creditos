@@ -81,6 +81,8 @@ func (r *Router) setupRoutes(jwtSecret string) {
 	vendorPaymentService := service.NewVendorPaymentService(vendorPaymentRepo, vendorAccountRepo, vendorMovementRepo, vendorRepo, auditService)
 	withdrawalRepo := postgres.NewWithdrawalRequestRepository(r.db)
 	withdrawalService := service.NewWithdrawalService(withdrawalRepo, vendorRepo, vendorAccountRepo, vendorPaymentRepo, vendorMovementRepo, auditService)
+	reportRepo := postgres.NewReportRepository(r.db)
+	reportService := service.NewReportService(reportRepo)
 
 	// Handlers
 	healthHandler := handler.NewHealthHandler(r.db)
@@ -88,11 +90,12 @@ func (r *Router) setupRoutes(jwtSecret string) {
 	clientHandler := handler.NewClientHandler(clientService, creditService, paymentService, purchaseRepo, accountRepo, movementRepo)
 	accountHandler := handler.NewAccountHandler(accountService, clientRepo)
 	creditHandler := handler.NewCreditHandler(creditService)
-	loanHandler := handler.NewLoanHandler(creditService, paymentService, clientRepo, r.defaultIVARate)
+	loanHandler := handler.NewLoanHandler(creditService, paymentService, clientRepo, r.defaultIVARate, pdfGenerator)
 	paymentHandler := handler.NewPaymentHandler(paymentService, clientRepo)
 	dashboardHandler := handler.NewDashboardHandler(dashboardService)
 	auditHandler := handler.NewAuditHandler(auditService)
 	vendorHandler := handler.NewVendorHandler(vendorService, purchaseService, vendorPaymentService, withdrawalService, pdfGenerator, vendorRepo, vendorAccountRepo, vendorMovementRepo, clientService, creditService)
+	reportHandler := handler.NewReportHandler(reportService)
 
 	// Health
 	r.engine.GET("/health", healthHandler.Health)
@@ -153,10 +156,12 @@ func (r *Router) setupRoutes(jwtSecret string) {
 	adminRoutes := authenticated.Group("/admin")
 	adminRoutes.Use(middleware.RequireRole(userRepo, model.RoleAdmin))
 	{
+		adminRoutes.POST("/clients", clientHandler.AdminRegisterClient)
 		adminRoutes.GET("/clients", clientHandler.ListClients)
 		adminRoutes.GET("/clients/search", clientHandler.ListClients)
 		adminRoutes.GET("/clients/:id", clientHandler.GetClient)
 		adminRoutes.PUT("/clients/:id/iva-rate", clientHandler.UpdateIVARate)
+		adminRoutes.PUT("/clients/:id/comments", clientHandler.UpdateComments)
 		adminRoutes.POST("/clients/:id/block", clientHandler.BlockClient)
 		adminRoutes.POST("/clients/:id/unblock", clientHandler.UnblockClient)
 		adminRoutes.GET("/clients/:id/loans", clientHandler.GetClientLoans)
@@ -180,14 +185,18 @@ func (r *Router) setupRoutes(jwtSecret string) {
 		adminRoutes.POST("/loans/:id/cancel", loanHandler.CancelLoan)
 		adminRoutes.POST("/loans/:id/prepay", loanHandler.PrepayLoan)
 		adminRoutes.POST("/loans/:id/payments", loanHandler.AdminRecordPayment)
-
-		adminRoutes.PUT("/payments/:id/adjust", paymentHandler.AdjustPayment)
+		adminRoutes.GET("/loans/:id/payments/:paymentId/receipt", loanHandler.GetPaymentReceipt)
+		adminRoutes.GET("/loans/:id/schedule-pdf", loanHandler.DownloadLoanSchedule)
+		adminRoutes.GET("/loans/:id/simulate-cancellation", loanHandler.SimulateCancellation)
 
 		adminRoutes.GET("/dashboard/portfolio", dashboardHandler.GetPortfolio)
 		adminRoutes.GET("/dashboard/delinquency", dashboardHandler.GetDelinquency)
 		adminRoutes.GET("/dashboard/kpis", dashboardHandler.GetKPIs)
 		adminRoutes.GET("/dashboard/trends/disbursements", dashboardHandler.GetDisbursementTrend)
 		adminRoutes.GET("/dashboard/trends/collections", dashboardHandler.GetCollectionTrend)
+
+		adminRoutes.GET("/reports/financial", reportHandler.GetFinancialReport)
+		adminRoutes.GET("/reports/portfolio", reportHandler.GetPortfolioPosition)
 
 		adminRoutes.GET("/audit", auditHandler.GetAuditLogs)
 

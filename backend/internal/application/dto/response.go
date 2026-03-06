@@ -24,6 +24,8 @@ type ClientResponse struct {
 	Address         string `json:"address"`
 	City            string `json:"city"`
 	Province        string `json:"province"`
+	Country         string `json:"country"`
+	Comments        string `json:"comments,omitempty"`
 	IsPEP           bool   `json:"isPEP"`
 	IVARate         string `json:"ivaRate"`
 	MercadoPagoLink string `json:"mercadoPagoLink,omitempty"`
@@ -180,6 +182,7 @@ type VendorResponse struct {
 	Address      string `json:"address"`
 	City         string `json:"city"`
 	Province     string `json:"province"`
+	Country      string `json:"country"`
 	IsActive     bool   `json:"isActive"`
 	Email        string `json:"email"`
 	CreatedAt    string `json:"createdAt"`
@@ -236,6 +239,26 @@ type WithdrawalRequestResponse struct {
 	RequestedAt     string  `json:"requestedAt"`
 	ProcessedAt     *string `json:"processedAt,omitempty"`
 	PaymentID       *string `json:"paymentId,omitempty"`
+}
+
+type FinancialReportResponse struct {
+	InterestAccrued   string `json:"interestAccrued"`
+	InterestCollected string `json:"interestCollected"`
+	IVAAccrued        string `json:"ivaAccrued"`
+	IVACollected      string `json:"ivaCollected"`
+	CapitalCollected  string `json:"capitalCollected"`
+	CapitalPending    string `json:"capitalPending"`
+}
+
+type PortfolioPositionItemResponse struct {
+	Status           string `json:"status"`
+	LoanCount        int64  `json:"loanCount"`
+	TotalPrincipal   string `json:"totalPrincipal"`
+	TotalOutstanding string `json:"totalOutstanding"`
+}
+
+type PortfolioPositionResponse struct {
+	Items []PortfolioPositionItemResponse `json:"items"`
 }
 
 type ErrorResponse struct {
