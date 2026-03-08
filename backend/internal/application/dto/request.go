@@ -181,10 +181,18 @@ type RejectWithdrawalRequest struct {
 }
 
 type RequestOTPRequest struct {
-	Email string `json:"email" binding:"required,email"`
+	Email   string `json:"email" binding:"omitempty,email"`
+	Phone   string `json:"phone" binding:"omitempty"`
+	Channel string `json:"channel" binding:"omitempty,oneof=email phone"`
 }
 
 type VerifyOTPRequest struct {
-	Email string `json:"email" binding:"required,email"`
-	Code  string `json:"code" binding:"required,len=6"`
+	Email   string `json:"email" binding:"omitempty,email"`
+	Phone   string `json:"phone" binding:"omitempty"`
+	Channel string `json:"channel" binding:"omitempty,oneof=email phone"`
+	Code    string `json:"code" binding:"required,len=6"`
+}
+
+type FirebaseLoginRequest struct {
+	IDToken string `json:"idToken" binding:"required"`
 }

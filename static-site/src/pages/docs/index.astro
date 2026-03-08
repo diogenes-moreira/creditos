@@ -1,0 +1,165 @@
+---
+import DocsLayout from '../../components/DocsLayout.astro';
+---
+
+<DocsLayout title="Documentation" description="Prestia platform documentation — architecture, authentication and user roles">
+  <h1>Prestia Documentation</h1>
+  <p class="lead">Prestia is a comprehensive microcredit management platform built for financial institutions, cooperatives and credit companies across Latin America.</p>
+
+  <section id="architecture">
+    <h2>Architecture</h2>
+    <p>The system follows a <strong>hexagonal architecture</strong> (ports &amp; adapters) organized into three main components:</p>
+
+    <h3>Backend (Go)</h3>
+    <ul>
+      <li><strong>Domain layer</strong> — Rich domain models with business logic (User, Client, Loan, CreditLine, Installment, Payment, etc.)</li>
+      <li><strong>Application layer</strong> — Services that orchestrate use cases (ClientService, CreditService, PaymentService, etc.)</li>
+      <li><strong>Infrastructure layer</strong> — Adapters for persistence (PostgreSQL/GORM), HTTP (Gin), authentication (JWT + Firebase), messaging, PDF generation, and storage</li>
+    </ul>
+
+    <h3>Frontend (React)</h3>
+    <ul>
+      <li>Single-page application with <strong>Material UI</strong></li>
+      <li>Role-based routing (admin, client, vendor portals)</li>
+      <li>Internationalization with <strong>i18next</strong> (Spanish, English, Portuguese)</li>
+      <li>Axios-based API client with JWT interceptors</li>
+    </ul>
+
+    <h3>Static Site (Astro)</h3>
+    <ul>
+      <li>Marketing landing page and documentation</li>
+      <li>Multi-language support (es, en, pt)</li>
+      <li>Static generation for fast loading</li>
+    </ul>
+
+    <div class="diagram">
+      <pre><code>┌─────────────┐   ┌──────────────┐   ┌────────────────┐
+│  React SPA  │   │  Astro Site  │   │  Mobile (TBD)  │
+└──────┬──────┘   └──────────────┘   └────────┬───────┘
+       │                                      │
+       ▼                                      ▼
+┌─────────────────────────────────────────────────────┐
+│                   REST API (Gin)                    │
+├─────────────────────────────────────────────────────┤
+│  Auth │ Clients │ Loans │ Payments │ Vendors │ Audit│
+├─────────────────────────────────────────────────────┤
+│              Application Services                    │
+├─────────────────────────────────────────────────────┤
+│                 Domain Models                        │
+├─────────────────────────────────────────────────────┤
+│  PostgreSQL  │  Firebase Auth  │  GCS  │  SMTP      │
+└─────────────────────────────────────────────────────┘</code></pre>
+    </div>
+  </section>
+
+  <section id="auth-flows">
+    <h2>Authentication</h2>
+    <p>Prestia supports multiple authentication methods depending on user role:</p>
+
+    <h3>Client &amp; Vendor Login (OTP)</h3>
+    <p>Clients and vendors authenticate via one-time password (OTP) with two channel options:</p>
+    <ol>
+      <li><strong>Email OTP</strong> — The backend generates a 6-digit code, sends it via email. The user submits the code to <code>POST /api/v1/auth/verify-otp</code> to receive a JWT.</li>
+      <li><strong>SMS OTP (Firebase Phone Auth)</strong> — The frontend uses Firebase SDK to send an SMS via <code>signInWithPhoneNumber</code>. After verifying the code client-side, the Firebase ID token is sent to <code>POST /api/v1/auth/firebase-login</code> to exchange for an app JWT.</li>
+    </ol>
+
+    <h3>Admin Login (Google OAuth)</h3>
+    <p>Administrators authenticate via Google OAuth through Firebase:</p>
+    <ol>
+      <li>Frontend triggers <code>signInWithPopup</code> using Firebase GoogleAuthProvider</li>
+      <li>The resulting Firebase ID token is sent to <code>POST /api/v1/auth/firebase-login</code></li>
+      <li>Backend verifies the token, checks the sign-in provider is <code>google.com</code>, validates the user has admin role, and returns an app JWT</li>
+    </ol>
+
+    <h3>Legacy Login (Password)</h3>
+    <p>Email + password authentication is also available via <code>POST /api/v1/auth/login</code> for backward compatibility.</p>
+
+    <h3>JWT Tokens</h3>
+    <p>All authenticated API requests require a Bearer token in the <code>Authorization</code> header. Tokens are issued for 24 hours and contain the user ID and role.</p>
+    <div class="code-block">
+      <pre><code>Authorization: Bearer &lt;jwt-token&gt;</code></pre>
+    </div>
+  </section>
+
+  <section id="roles">
+    <h2>User Roles</h2>
+    <p>The system defines three roles with differentiated access:</p>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Role</th>
+          <th>Description</th>
+          <th>Login Method</th>
+          <th>Key Capabilities</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>admin</code></td>
+          <td>System administrator</td>
+          <td>Google OAuth</td>
+          <td>Full portfolio management, credit approvals, client management, audit logs, dashboard KPIs, vendor management, reports</td>
+        </tr>
+        <tr>
+          <td><code>client</code></td>
+          <td>Borrower / end user</td>
+          <td>Email or SMS OTP</td>
+          <td>View account &amp; balance, request loans, view installments, make payments, manage profile</td>
+        </tr>
+        <tr>
+          <td><code>vendor</code></td>
+          <td>Affiliated merchant</td>
+          <td>Email or SMS OTP</td>
+          <td>Register credit sales, search clients, request credit lines, view balance &amp; payments, request withdrawals</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section id="amortization">
+    <h2>Amortization Systems</h2>
+    <p>Prestia supports two amortization systems for loan repayment:</p>
+
+    <h3>French System (Fixed Installment)</h3>
+    <p>Each installment has the same total amount. Early installments are interest-heavy; later ones are principal-heavy. This is the most common system in consumer lending.</p>
+
+    <h3>German System (Fixed Principal)</h3>
+    <p>Each installment repays the same amount of principal, with decreasing interest. Total installment amount decreases over time. Beneficial for borrowers who can handle higher initial payments.</p>
+  </section>
+
+  <section id="audit">
+    <h2>Audit Trail</h2>
+    <p>Every operation in the system is logged with:</p>
+    <ul>
+      <li><strong>User ID</strong> — Who performed the action</li>
+      <li><strong>Timestamp</strong> — When it happened</li>
+      <li><strong>IP address</strong> — Origin of the request</li>
+      <li><strong>User-Agent</strong> — Client application identifier</li>
+      <li><strong>Action</strong> — Description of what was done</li>
+      <li><strong>Entity type &amp; ID</strong> — What was affected</li>
+    </ul>
+    <p>Audit logs are queryable from the admin panel with pagination support.</p>
+  </section>
+</DocsLayout>
+
+<style>
+  h1 { font-size: 2rem; margin-bottom: 0.5rem; color: #1a1a1a; }
+  .lead { font-size: 1.1rem; color: #555; margin-bottom: 2rem; line-height: 1.6; }
+  section { margin-bottom: 3rem; }
+  h2 { font-size: 1.5rem; color: #1565C0; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid #e3f2fd; }
+  h3 { font-size: 1.15rem; color: #333; margin: 1.5rem 0 0.5rem; }
+  p { line-height: 1.7; color: #444; margin-bottom: 1rem; }
+  ul, ol { margin-bottom: 1rem; padding-left: 1.5rem; }
+  li { line-height: 1.6; color: #444; margin-bottom: 0.3rem; }
+  code { background: #f5f5f5; padding: 0.15rem 0.4rem; border-radius: 4px; font-size: 0.9em; color: #c62828; }
+  pre code { background: none; padding: 0; color: inherit; }
+  .diagram pre, .code-block pre {
+    background: #1e293b; color: #e2e8f0; padding: 1.5rem; border-radius: 8px;
+    overflow-x: auto; font-size: 0.85rem; line-height: 1.5;
+  }
+  table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+  th { background: #f5f5f5; text-align: left; padding: 0.75rem; font-weight: 600; border-bottom: 2px solid #ddd; }
+  td { padding: 0.75rem; border-bottom: 1px solid #eee; vertical-align: top; }
+  tr:hover td { background: #fafafa; }
+</style>

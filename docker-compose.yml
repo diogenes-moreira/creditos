@@ -31,11 +31,13 @@ services:
       GIN_MODE: release
       JWT_SECRET: docker-dev-secret
       LOCAL_STORAGE_PATH: /app/storage
+      FIREBASE_CREDENTIALS_FILE: /app/firebase-credentials.json
     depends_on:
       postgres:
         condition: service_healthy
     volumes:
       - backend_storage:/app/storage
+      - ./backend/firebase-credentials.json:/app/firebase-credentials.json:ro
 
   frontend:
     build:

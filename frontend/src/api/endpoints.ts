@@ -5,6 +5,7 @@ import type {
   AuthResponse,
   RequestOTPRequest,
   VerifyOTPRequest,
+  FirebaseLoginRequest,
   Profile,
   UpdateProfileRequest,
   UpdateMercadoPagoRequest,
@@ -66,6 +67,11 @@ export const requestOTP = async (data: RequestOTPRequest): Promise<{ message: st
 
 export const verifyOTP = async (data: VerifyOTPRequest): Promise<AuthResponse> => {
   const res = await apiClient.post("/auth/verify-otp", data);
+  return res.data;
+};
+
+export const firebaseLogin = async (data: FirebaseLoginRequest): Promise<AuthResponse> => {
+  const res = await apiClient.post("/auth/firebase-login", data);
   return res.data;
 };
 

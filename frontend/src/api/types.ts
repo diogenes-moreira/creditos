@@ -428,12 +428,21 @@ export interface PortfolioPositionReport {
 
 // ---- OTP ----
 export interface RequestOTPRequest {
-  email: string;
+  email?: string;
+  phone?: string;
+  channel?: "email" | "phone";
 }
 
 export interface VerifyOTPRequest {
-  email: string;
+  email?: string;
+  phone?: string;
+  channel?: "email" | "phone";
   code: string;
+}
+
+// ---- Firebase Auth ----
+export interface FirebaseLoginRequest {
+  idToken: string;
 }
 
 // ---- Pagination ----

@@ -1,0 +1,103 @@
+---
+import Layout from '../layouts/Layout.astro';
+
+interface Props {
+  title: string;
+  description?: string;
+}
+const { title, description } = Astro.props;
+---
+
+<Layout title={`${title} — Prestia Docs`} description={description} lang="en">
+  <nav class="docs-nav">
+    <div class="docs-nav-container">
+      <a href="/" class="docs-logo"><img src="/images/logo.png" alt="Prestia" class="logo-img" /> Prestia</a>
+      <div class="docs-nav-links">
+        <a href="/docs">Docs</a>
+        <a href="/docs/api">API Reference</a>
+        <a href="/">Home</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="docs-wrapper">
+    <aside class="docs-sidebar">
+      <h3>Documentation</h3>
+      <ul>
+        <li><a href="/docs">Overview</a></li>
+        <li><a href="/docs/api">API Reference</a></li>
+      </ul>
+      <h3>Topics</h3>
+      <ul>
+        <li><a href="/docs#architecture">Architecture</a></li>
+        <li><a href="/docs#auth-flows">Authentication</a></li>
+        <li><a href="/docs#roles">User Roles</a></li>
+      </ul>
+    </aside>
+
+    <main class="docs-content">
+      <slot />
+    </main>
+  </div>
+
+  <footer class="docs-footer">
+    <p>&copy; 2026 Prestia. All rights reserved.</p>
+  </footer>
+</Layout>
+
+<style>
+  .docs-nav {
+    position: fixed; top: 0; width: 100%; background: rgba(255,255,255,0.97);
+    backdrop-filter: blur(10px); z-index: 100; border-bottom: 1px solid #e0e0e0;
+  }
+  .docs-nav-container {
+    max-width: 1200px; margin: 0 auto; padding: 0.8rem 2rem;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .docs-logo {
+    font-size: 1.3rem; font-weight: 700; color: #1565C0;
+    display: flex; align-items: center; gap: 0.5rem;
+  }
+  .logo-img { height: 40px; width: auto; border-radius: 8px; }
+  .docs-nav-links { display: flex; gap: 1.5rem; align-items: center; }
+  .docs-nav-links a { font-weight: 500; color: #444; font-size: 0.95rem; }
+  .docs-nav-links a:hover { color: #1565C0; }
+
+  .docs-wrapper {
+    max-width: 1200px; margin: 0 auto; padding: 5rem 2rem 3rem;
+    display: grid; grid-template-columns: 220px 1fr; gap: 3rem;
+  }
+
+  .docs-sidebar {
+    position: sticky; top: 5rem; height: fit-content;
+    border-right: 1px solid #e8e8e8; padding-right: 2rem;
+  }
+  .docs-sidebar h3 {
+    font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px;
+    color: #888; margin: 1.5rem 0 0.5rem; font-weight: 600;
+  }
+  .docs-sidebar h3:first-child { margin-top: 0; }
+  .docs-sidebar ul { list-style: none; padding: 0; }
+  .docs-sidebar li { margin-bottom: 0.3rem; }
+  .docs-sidebar a {
+    color: #555; font-size: 0.9rem; padding: 0.3rem 0; display: block;
+  }
+  .docs-sidebar a:hover { color: #1565C0; }
+
+  .docs-content {
+    min-width: 0;
+  }
+
+  .docs-footer {
+    text-align: center; padding: 2rem; color: #999; font-size: 0.85rem;
+    border-top: 1px solid #e8e8e8;
+  }
+
+  @media (max-width: 768px) {
+    .docs-wrapper { grid-template-columns: 1fr; }
+    .docs-sidebar {
+      position: static; border-right: none; border-bottom: 1px solid #e8e8e8;
+      padding-right: 0; padding-bottom: 1.5rem; margin-bottom: 1.5rem;
+    }
+  }
+</style>

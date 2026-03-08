@@ -37,8 +37,8 @@ func (s *OTPService) RequestOTP(ctx context.Context, email string) error {
 		return fmt.Errorf("user not found")
 	}
 
-	if user.Role != model.RoleClient {
-		return fmt.Errorf("OTP login is only available for clients")
+	if user.Role != model.RoleClient && user.Role != model.RoleVendor {
+		return fmt.Errorf("OTP login is only available for clients and vendors")
 	}
 
 	if !user.IsActive {

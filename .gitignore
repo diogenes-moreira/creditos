@@ -40,6 +40,12 @@ docker-compose.override.yml
 
 # Binaries
 backend/bin/
+backend/server
+backend/seed
+
+# Firebase credentials
+**/firebase-credentials.json
+**/firebase-service-account.json
 
 # PDF output
 *.pdf

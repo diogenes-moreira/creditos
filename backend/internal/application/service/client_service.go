@@ -60,6 +60,7 @@ func (s *ClientService) Register(ctx context.Context, email, firstName, lastName
 	if err != nil {
 		return nil, nil, err
 	}
+	user.SetPhone(phone)
 
 	if err := s.userRepo.Create(ctx, user); err != nil {
 		return nil, nil, fmt.Errorf("failed to create user: %w", err)

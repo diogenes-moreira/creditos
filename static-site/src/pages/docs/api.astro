@@ -1,0 +1,330 @@
+---
+import DocsLayout from '../../components/DocsLayout.astro';
+
+const authResponseJson = `{
+  "token": "eyJhbGciOiJIUzI1NiIs...",
+  "user": {
+    "id": "uuid",
+    "email": "user@example.com",
+    "phone": "+5411...",
+    "role": "client"
+  }
+}`;
+
+const errorJson = `{
+  "error": "description of what went wrong"
+}`;
+---
+
+<DocsLayout title="API Reference" description="Prestia REST API reference — all endpoints for auth, clients, loans, payments, vendors and admin">
+  <h1>API Reference</h1>
+  <p class="lead">All endpoints are served under <code>/api/v1</code>. Authenticated endpoints require a <code>Authorization: Bearer &lt;token&gt;</code> header.</p>
+
+  <nav class="api-toc">
+    <h3>Sections</h3>
+    <ul>
+      <li><a href="#health">Health</a></li>
+      <li><a href="#auth">Authentication</a></li>
+      <li><a href="#client">Client Portal</a></li>
+      <li><a href="#vendor">Vendor Portal</a></li>
+      <li><a href="#admin-clients">Admin — Clients</a></li>
+      <li><a href="#admin-credit-lines">Admin — Credit Lines</a></li>
+      <li><a href="#admin-loans">Admin — Loans</a></li>
+      <li><a href="#admin-dashboard">Admin — Dashboard</a></li>
+      <li><a href="#admin-reports">Admin — Reports</a></li>
+      <li><a href="#admin-vendors">Admin — Vendors</a></li>
+      <li><a href="#admin-audit">Admin — Audit</a></li>
+    </ul>
+  </nav>
+
+  <!-- Health -->
+  <section id="health">
+    <h2>Health</h2>
+    <table class="endpoint-table">
+      <thead><tr><th>Method</th><th>Path</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><span class="get">GET</span></td><td><code>/health</code></td><td>Liveness check</td></tr>
+        <tr><td><span class="get">GET</span></td><td><code>/health/ready</code></td><td>Readiness check (database connectivity)</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- Auth -->
+  <section id="auth">
+    <h2>Authentication</h2>
+    <p>All auth endpoints are public (no token required).</p>
+    <table class="endpoint-table">
+      <thead><tr><th>Method</th><th>Path</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><span class="post">POST</span></td>
+          <td><code>/api/v1/auth/register</code></td>
+          <td>Register a new client account. Body: <code>email</code>, <code>password</code>, <code>firstName</code>, <code>lastName</code>, <code>dni</code>, <code>cuit</code>, <code>phone</code>, <code>dateOfBirth</code>, <code>address</code>, <code>city</code>, <code>province</code>.</td>
+        </tr>
+        <tr>
+          <td><span class="post">POST</span></td>
+          <td><code>/api/v1/auth/login</code></td>
+          <td>Login with email and password. Returns JWT token and user data.</td>
+        </tr>
+        <tr>
+          <td><span class="post">POST</span></td>
+          <td><code>/api/v1/auth/request-otp</code></td>
+          <td>Request a one-time password. Body: <code>email</code> or <code>phone</code>, <code>channel</code> (<code>"email"</code> or <code>"phone"</code>). Email channel sends a 6-digit code. Phone channel validates the user exists (SMS sent client-side via Firebase).</td>
+        </tr>
+        <tr>
+          <td><span class="post">POST</span></td>
+          <td><code>/api/v1/auth/verify-otp</code></td>
+          <td>Verify an email OTP code. Body: <code>email</code>, <code>code</code> (6 digits). Returns JWT token and user data.</td>
+        </tr>
+        <tr>
+          <td><span class="post">POST</span></td>
+          <td><code>/api/v1/auth/firebase-login</code></td>
+          <td>Exchange a Firebase ID token for an app JWT. Body: <code>idToken</code>. Used for both SMS OTP (phone auth) and Google OAuth (admin). Google sign-in is restricted to admin role.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>Auth Response Format</h3>
+    <div class="code-block">
+      <pre><code>{authResponseJson}</code></pre>
+    </div>
+  </section>
+
+  <!-- Client Portal -->
+  <section id="client">
+    <h2>Client Portal</h2>
+    <p>Requires authentication. Accessible by <code>client</code> and <code>admin</code> roles.</p>
+    <table class="endpoint-table">
+      <thead><tr><th>Method</th><th>Path</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><span class="get">GET</span></td><td><code>/api/v1/me/profile</code></td><td>Get current client profile</td></tr>
+        <tr><td><span class="put">PUT</span></td><td><code>/api/v1/me/profile</code></td><td>Update profile data</td></tr>
+        <tr><td><span class="put">PUT</span></td><td><code>/api/v1/me/mercadopago</code></td><td>Update MercadoPago payment link</td></tr>
+        <tr><td><span class="get">GET</span></td><td><code>/api/v1/me/account</code></td><td>Get current account summary (balance)</td></tr>
+        <tr><td><span class="get">GET</span></td><td><code>/api/v1/me/account/movements</code></td><td>List account movements (credits &amp; debits)</td></tr>
+        <tr><td><span class="get">GET</span></td><td><code>/api/v1/me/loans</code></td><td>List client's loans</td></tr>
+        <tr><td><span class="get">GET</span></td><td><code>/api/v1/me/loans/:id</code></td><td>Get loan detail with installment schedule</td></tr>
+        <tr><td><span class="post">POST</span></td><td><code>/api/v1/me/loans</code></td><td>Request a new loan. Body: <code>creditLineId</code>, <code>amount</code>, <code>installments</code>.</td></tr>
+        <tr><td><span class="post">POST</span></td><td><code>/api/v1/me/loans/:loanId/payments</code></td><td>Record a payment on a loan installment</td></tr>
+        <tr><td><span class="get">GET</span></td><td><code>/api/v1/me/payments</code></td><td>List all client payments</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Loan Simulation</h3>
+    <p>Available to any authenticated user:</p>
+    <table class="endpoint-table">
+      <thead><tr><th>Method</th><th>Path</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><span class="post">POST</span></td><td><code>/api/v1/loans/simulate</code></td><td>Simulate a loan. Body: <code>amount</code>, <code>installments</code>, <code>interestRate</code>, <code>amortizationType</code> (<code>"french"</code> or <code>"german"</code>). Returns installment schedule.</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- Vendor Portal -->
+  <section id="vendor">
+    <h2>Vendor Portal</h2>
+    <p>Requires authentication. Accessible by <code>vendor</code> role only.</p>
+    <table class="endpoint-table">
+      <thead><tr><th>Method</th><th>Path</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><span class="get">GET</span></td><td><code>/api/v1/me/vendor/profile</code></td><td>Get vendor profile</td></tr>
+        <tr><td><span class="put">PUT</span></td><td><code>/api/v1/me/vendor/profile</code></td><td>Update vendor profile</td></tr>
+        <tr><td><span class="get">GET</span></td><td><code>/api/v1/me/vendor/account</code></td><td>Get vendor account (balance owed by the platform)</td></tr>
+        <tr><td><span class="get">GET</span></td><td><code>/api/v1/me/vendor/account/movements</code></td><td>List vendor account movements</td></tr>
+        <tr><td><span class="get">GET</span></td><td><code>/api/v1/me/vendor/purchases</code></td><td>List recorded credit purchases</td></tr>
+        <tr><td><span class="post">POST</span></td><td><code>/api/v1/me/vendor/purchases</code></td><td>Record a credit sale against client's credit line</td></tr>
+        <tr><td><span class="get">GET</span></td><td><code>/api/v1/me/vendor/clients/search</code></td><td>Search clients by name, DNI or email</td></tr>
+        <tr><td><span class="post">POST</span></td><td><code>/api/v1/me/vendor/clients/register</code></td><td>Register a new client from the vendor portal</td></tr>
+        <tr><td><span class="get">GET</span></td><td><code>/api/v1/me/vendor/clients/:id/credit-lines</code></td><td>Get client's available credit lines</td></tr>
+        <tr><td><span class="post">POST</span></td><td><code>/api/v1/me/vendor/clients/:id/credit-lines</code></td><td>Request a credit line for a client</td></tr>
+        <tr><td><span class="post">POST</span></td><td><code>/api/v1/me/vendor/withdrawals</code></td><td>Request a withdrawal of earned balance</td></tr>
+        <tr><td><span class="get">GET</span></td><td><code>/api/v1/me/vendor/withdrawals</code></td><td>List vendor's withdrawal requests</td></tr>
+        <tr><td><span class="get">GET</span></td><td><code>/api/v1/me/vendor/payments/:id/receipt</code></td><td>Download payment receipt PDF</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- Admin: Clients -->
+  <section id="admin-clients">
+    <h2>Admin — Clients</h2>
+    <p>Requires <code>admin</code> role.</p>
+    <table class="endpoint-table">
+      <thead><tr><th>Method</th><th>Path</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><span class="post">POST</span></td><td><code>/api/v1/admin/clients</code></td><td>Register a new client (admin-initiated)</td></tr>
+        <tr><td><span class="get">GET</span></td><td><code>/api/v1/admin/clients</code></td><td>List all clients (paginated). Query: <code>page</code>, <code>limit</code>, <code>search</code>.</td></tr>
+        <tr><td><span class="get">GET</span></td><td><code>/api/v1/admin/clients/:id</code></td><td>Get client detail</td></tr>
+        <tr><td><span class="put">PUT</span></td><td><code>/api/v1/admin/clients/:id/iva-rate</code></td><td>Update client's IVA tax rate</td></tr>
+        <tr><td><span class="put">PUT</span></td><td><code>/api/v1/admin/clients/:id/comments</code></td><td>Update admin comments on client</td></tr>
+        <tr><td><span class="post">POST</span></td><td><code>/api/v1/admin/clients/:id/block</code></td><td>Block a client (disables login and operations)</td></tr>
+        <tr><td><span class="post">POST</span></td><td><code>/api/v1/admin/clients/:id/unblock</code></td><td>Unblock a client</td></tr>
+        <tr><td><span class="get">GET</span></td><td><code>/api/v1/admin/clients/:id/loans</code></td><td>Get all loans for a client</td></tr>
+        <tr><td><span class="get">GET</span></td><td><code>/api/v1/admin/clients/:id/credit-lines</code></td><td>Get client's credit lines</td></tr>
+        <tr><td><span class="get">GET</span></td><td><code>/api/v1/admin/clients/:id/payments</code></td><td>Get client's payment history</td></tr>
+        <tr><td><span class="get">GET</span></td><td><code>/api/v1/admin/clients/:id/purchases</code></td><td>Get client's vendor purchases</td></tr>
+        <tr><td><span class="get">GET</span></td><td><code>/api/v1/admin/clients/:id/account</code></td><td>Get client's account summary</td></tr>
+        <tr><td><span class="get">GET</span></td><td><code>/api/v1/admin/clients/:id/account/movements</code></td><td>Get client's account movements</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- Admin: Credit Lines -->
+  <section id="admin-credit-lines">
+    <h2>Admin — Credit Lines</h2>
+    <p>Requires <code>admin</code> role.</p>
+    <table class="endpoint-table">
+      <thead><tr><th>Method</th><th>Path</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><span class="post">POST</span></td><td><code>/api/v1/admin/credit-lines</code></td><td>Create a new credit line for a client</td></tr>
+        <tr><td><span class="get">GET</span></td><td><code>/api/v1/admin/credit-lines/pending</code></td><td>List credit lines pending approval</td></tr>
+        <tr><td><span class="put">PUT</span></td><td><code>/api/v1/admin/credit-lines/:id</code></td><td>Update credit line parameters</td></tr>
+        <tr><td><span class="post">POST</span></td><td><code>/api/v1/admin/credit-lines/:id/approve</code></td><td>Approve a credit line</td></tr>
+        <tr><td><span class="post">POST</span></td><td><code>/api/v1/admin/credit-lines/:id/reject</code></td><td>Reject a credit line. Body: <code>reason</code>.</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- Admin: Loans -->
+  <section id="admin-loans">
+    <h2>Admin — Loans</h2>
+    <p>Requires <code>admin</code> role.</p>
+    <table class="endpoint-table">
+      <thead><tr><th>Method</th><th>Path</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><span class="post">POST</span></td><td><code>/api/v1/admin/loans</code></td><td>Create a loan (admin-initiated)</td></tr>
+        <tr><td><span class="post">POST</span></td><td><code>/api/v1/admin/loans/withdrawal</code></td><td>Create a withdrawal-type loan</td></tr>
+        <tr><td><span class="get">GET</span></td><td><code>/api/v1/admin/loans/pending</code></td><td>List loans pending admin action</td></tr>
+        <tr><td><span class="post">POST</span></td><td><code>/api/v1/admin/loans/:id/approve</code></td><td>Approve a loan application</td></tr>
+        <tr><td><span class="post">POST</span></td><td><code>/api/v1/admin/loans/:id/disburse</code></td><td>Disburse an approved loan (credits client account)</td></tr>
+        <tr><td><span class="post">POST</span></td><td><code>/api/v1/admin/loans/:id/cancel</code></td><td>Cancel a loan</td></tr>
+        <tr><td><span class="post">POST</span></td><td><code>/api/v1/admin/loans/:id/prepay</code></td><td>Process early principal prepayment. Body: <code>amount</code>.</td></tr>
+        <tr><td><span class="post">POST</span></td><td><code>/api/v1/admin/loans/:id/payments</code></td><td>Record a payment on behalf of a client</td></tr>
+        <tr><td><span class="get">GET</span></td><td><code>/api/v1/admin/loans/:id/payments/:paymentId/receipt</code></td><td>Download payment receipt PDF</td></tr>
+        <tr><td><span class="get">GET</span></td><td><code>/api/v1/admin/loans/:id/schedule-pdf</code></td><td>Download loan schedule as PDF</td></tr>
+        <tr><td><span class="get">GET</span></td><td><code>/api/v1/admin/loans/:id/simulate-cancellation</code></td><td>Simulate early cancellation (shows remaining balance)</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- Admin: Dashboard -->
+  <section id="admin-dashboard">
+    <h2>Admin — Dashboard</h2>
+    <p>Requires <code>admin</code> role. These endpoints power the admin dashboard KPIs.</p>
+    <table class="endpoint-table">
+      <thead><tr><th>Method</th><th>Path</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><span class="get">GET</span></td><td><code>/api/v1/admin/dashboard/portfolio</code></td><td>Portfolio summary (total disbursed, outstanding, clients)</td></tr>
+        <tr><td><span class="get">GET</span></td><td><code>/api/v1/admin/dashboard/delinquency</code></td><td>Delinquency metrics (PAR 30/60/90)</td></tr>
+        <tr><td><span class="get">GET</span></td><td><code>/api/v1/admin/dashboard/kpis</code></td><td>Key performance indicators</td></tr>
+        <tr><td><span class="get">GET</span></td><td><code>/api/v1/admin/dashboard/trends/disbursements</code></td><td>Disbursement trend over time</td></tr>
+        <tr><td><span class="get">GET</span></td><td><code>/api/v1/admin/dashboard/trends/collections</code></td><td>Collection trend over time</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- Admin: Reports -->
+  <section id="admin-reports">
+    <h2>Admin — Reports</h2>
+    <p>Requires <code>admin</code> role.</p>
+    <table class="endpoint-table">
+      <thead><tr><th>Method</th><th>Path</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><span class="get">GET</span></td><td><code>/api/v1/admin/reports/financial</code></td><td>Financial report (revenue, expenses, profit)</td></tr>
+        <tr><td><span class="get">GET</span></td><td><code>/api/v1/admin/reports/portfolio</code></td><td>Portfolio position report</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- Admin: Vendors -->
+  <section id="admin-vendors">
+    <h2>Admin — Vendors</h2>
+    <p>Requires <code>admin</code> role.</p>
+    <table class="endpoint-table">
+      <thead><tr><th>Method</th><th>Path</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><span class="get">GET</span></td><td><code>/api/v1/admin/vendors</code></td><td>List all vendors</td></tr>
+        <tr><td><span class="get">GET</span></td><td><code>/api/v1/admin/vendors/:id</code></td><td>Get vendor detail</td></tr>
+        <tr><td><span class="post">POST</span></td><td><code>/api/v1/admin/vendors</code></td><td>Register a new vendor</td></tr>
+        <tr><td><span class="post">POST</span></td><td><code>/api/v1/admin/vendors/:id/activate</code></td><td>Activate a vendor</td></tr>
+        <tr><td><span class="post">POST</span></td><td><code>/api/v1/admin/vendors/:id/deactivate</code></td><td>Deactivate a vendor</td></tr>
+        <tr><td><span class="get">GET</span></td><td><code>/api/v1/admin/vendors/:id/purchases</code></td><td>Get vendor's purchase records</td></tr>
+        <tr><td><span class="post">POST</span></td><td><code>/api/v1/admin/vendors/:id/purchases</code></td><td>Record a purchase for a vendor</td></tr>
+        <tr><td><span class="get">GET</span></td><td><code>/api/v1/admin/vendors/:id/payments</code></td><td>Get vendor's payment history</td></tr>
+        <tr><td><span class="post">POST</span></td><td><code>/api/v1/admin/vendors/:id/payments</code></td><td>Record a payment to a vendor</td></tr>
+        <tr><td><span class="get">GET</span></td><td><code>/api/v1/admin/vendors/:id/withdrawals</code></td><td>Get vendor's withdrawal requests</td></tr>
+        <tr><td><span class="get">GET</span></td><td><code>/api/v1/admin/vendors/:id/payments/:paymentId/receipt</code></td><td>Download vendor payment receipt PDF</td></tr>
+        <tr><td><span class="get">GET</span></td><td><code>/api/v1/admin/withdrawals/pending</code></td><td>List pending withdrawal requests</td></tr>
+        <tr><td><span class="post">POST</span></td><td><code>/api/v1/admin/withdrawals/:id/approve</code></td><td>Approve a withdrawal request</td></tr>
+        <tr><td><span class="post">POST</span></td><td><code>/api/v1/admin/withdrawals/:id/reject</code></td><td>Reject a withdrawal request</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- Admin: Audit -->
+  <section id="admin-audit">
+    <h2>Admin — Audit</h2>
+    <p>Requires <code>admin</code> role.</p>
+    <table class="endpoint-table">
+      <thead><tr><th>Method</th><th>Path</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><span class="get">GET</span></td><td><code>/api/v1/admin/audit</code></td><td>Query audit logs. Supports pagination with <code>page</code> and <code>limit</code> parameters.</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section id="errors">
+    <h2>Error Responses</h2>
+    <p>All error responses follow this format:</p>
+    <div class="code-block">
+      <pre><code>{errorJson}</code></pre>
+    </div>
+    <table class="endpoint-table">
+      <thead><tr><th>Status</th><th>Meaning</th></tr></thead>
+      <tbody>
+        <tr><td><code>400</code></td><td>Bad request — invalid input or business rule violation</td></tr>
+        <tr><td><code>401</code></td><td>Unauthorized — missing or invalid token</td></tr>
+        <tr><td><code>403</code></td><td>Forbidden — insufficient role permissions</td></tr>
+        <tr><td><code>404</code></td><td>Not found — resource does not exist</td></tr>
+        <tr><td><code>500</code></td><td>Internal server error</td></tr>
+      </tbody>
+    </table>
+  </section>
+</DocsLayout>
+
+<style>
+  h1 { font-size: 2rem; margin-bottom: 0.5rem; color: #1a1a1a; }
+  .lead { font-size: 1.1rem; color: #555; margin-bottom: 2rem; line-height: 1.6; }
+  section { margin-bottom: 3rem; }
+  h2 { font-size: 1.5rem; color: #1565C0; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid #e3f2fd; }
+  h3 { font-size: 1.15rem; color: #333; margin: 1.5rem 0 0.5rem; }
+  p { line-height: 1.7; color: #444; margin-bottom: 1rem; }
+  code { background: #f5f5f5; padding: 0.15rem 0.4rem; border-radius: 4px; font-size: 0.9em; color: #c62828; }
+  pre code { background: none; padding: 0; color: inherit; }
+  .code-block pre {
+    background: #1e293b; color: #e2e8f0; padding: 1.5rem; border-radius: 8px;
+    overflow-x: auto; font-size: 0.85rem; line-height: 1.5;
+  }
+
+  .api-toc {
+    background: #f8f9fa; border: 1px solid #e8e8e8; border-radius: 8px;
+    padding: 1rem 1.5rem; margin-bottom: 2rem;
+  }
+  .api-toc h3 { margin: 0 0 0.5rem; font-size: 0.85rem; text-transform: uppercase; color: #888; letter-spacing: 0.5px; }
+  .api-toc ul { list-style: none; padding: 0; display: flex; flex-wrap: wrap; gap: 0.5rem 1.5rem; }
+  .api-toc a { font-size: 0.9rem; color: #1565C0; }
+
+  .endpoint-table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+  .endpoint-table th { background: #f5f5f5; text-align: left; padding: 0.6rem 0.75rem; font-weight: 600; font-size: 0.85rem; border-bottom: 2px solid #ddd; }
+  .endpoint-table td { padding: 0.6rem 0.75rem; border-bottom: 1px solid #eee; vertical-align: top; font-size: 0.9rem; }
+  .endpoint-table tr:hover td { background: #fafafa; }
+  .endpoint-table td code { font-size: 0.85em; }
+
+  .get, .post, .put, .delete {
+    display: inline-block; padding: 0.15rem 0.5rem; border-radius: 4px;
+    font-size: 0.75rem; font-weight: 700; letter-spacing: 0.3px; font-family: monospace;
+  }
+  .get { background: #e8f5e9; color: #2e7d32; }
+  .post { background: #e3f2fd; color: #1565C0; }
+  .put { background: #fff3e0; color: #e65100; }
+  .delete { background: #ffebee; color: #c62828; }
+</style>

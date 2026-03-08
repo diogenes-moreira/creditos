@@ -20,6 +20,7 @@ export const translations: Record<Lang, Record<string, string>> = {
     'nav.modules': 'Módulos',
     'nav.tech': 'Tecnología',
     'nav.requestDemo': 'Solicitar demo',
+    'nav.docs': 'Documentación',
     'nav.menuLabel': 'Menú',
 
     // Hero
@@ -206,6 +207,7 @@ export const translations: Record<Lang, Record<string, string>> = {
     'nav.modules': 'Modules',
     'nav.tech': 'Technology',
     'nav.requestDemo': 'Request demo',
+    'nav.docs': 'Documentation',
     'nav.menuLabel': 'Menu',
 
     // Hero
@@ -392,6 +394,7 @@ export const translations: Record<Lang, Record<string, string>> = {
     'nav.modules': 'Módulos',
     'nav.tech': 'Tecnologia',
     'nav.requestDemo': 'Solicitar demo',
+    'nav.docs': 'Documentação',
     'nav.menuLabel': 'Menu',
 
     // Hero

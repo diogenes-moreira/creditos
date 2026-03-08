@@ -10,11 +10,13 @@ import (
 	"github.com/diogenes-moreira/creditos/backend/internal/infrastructure/config"
 	"github.com/diogenes-moreira/creditos/backend/internal/infrastructure/persistence/postgres"
 	"github.com/google/uuid"
+	"github.com/joho/godotenv"
 	"github.com/shopspring/decimal"
 	"gorm.io/gorm"
 )
 
 func main() {
+	_ = godotenv.Load()
 	cfg := config.Load()
 	db, err := postgres.NewConnection(cfg.DB)
 	if err != nil {
@@ -52,15 +54,16 @@ func main() {
 }
 
 func seedAdmins(db *gorm.DB) {
-	admins := []struct{ email, name string }{
-		{"admin@prestia.com.ar", "Admin Principal"},
-		{"supervisor@prestia.com.ar", "Supervisor"},
+	admins := []struct{ email, name, phone string }{
+		{"admin@prestia.com.ar", "Admin Principal", "+5491140510100"},
+		{"supervisor@prestia.com.ar", "Supervisor", "+5491140510101"},
 	}
 	for _, a := range admins {
 		user := &model.User{
 			ID:          uuid.New(),
 			FirebaseUID: uuid.New().String(),
 			Email:       a.email,
+			Phone:       a.phone,
 			Role:        model.RoleAdmin,
 			IsActive:    true,
 		}
@@ -86,10 +89,12 @@ func seedClients(db *gorm.DB, count int) []model.Client {
 		ln := lastNames[rand.Intn(len(lastNames))]
 		email := fmt.Sprintf("%s.%s.%d@email.com", fn, ln, i)
 
+		phoneNum := fmt.Sprintf("+5411%d", 40000000+rand.Intn(20000000))
 		user := &model.User{
 			ID:          uuid.New(),
 			FirebaseUID: uuid.New().String(),
 			Email:       email,
+			Phone:       phoneNum,
 			Role:        model.RoleClient,
 			IsActive:    true,
 		}

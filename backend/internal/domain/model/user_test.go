@@ -135,3 +135,25 @@ func TestUser_RecordLogin(t *testing.T) {
 	user.RecordLogin()
 	require.NotNil(t, user.LastLoginAt)
 }
+
+func TestUser_SetPhone(t *testing.T) {
+	user, err := model.NewUser("uid", "test@example.com", model.RoleClient)
+	require.NoError(t, err)
+	assert.Empty(t, user.Phone)
+
+	user.SetPhone("+5491140510100")
+	assert.Equal(t, "+5491140510100", user.Phone)
+
+	user.SetPhone("+5491199999999")
+	assert.Equal(t, "+5491199999999", user.Phone)
+}
+
+func TestUser_IsVendor(t *testing.T) {
+	user, err := model.NewUser("uid", "test@example.com", model.RoleVendor)
+	require.NoError(t, err)
+	assert.True(t, user.IsVendor())
+
+	clientUser, err := model.NewUser("uid2", "client@example.com", model.RoleClient)
+	require.NoError(t, err)
+	assert.False(t, clientUser.IsVendor())
+}

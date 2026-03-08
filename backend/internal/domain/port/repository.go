@@ -14,6 +14,7 @@ type UserRepository interface {
 	FindByID(ctx context.Context, id uuid.UUID) (*model.User, error)
 	FindByFirebaseUID(ctx context.Context, uid string) (*model.User, error)
 	FindByEmail(ctx context.Context, email string) (*model.User, error)
+	FindByPhone(ctx context.Context, phone string) (*model.User, error)
 	Update(ctx context.Context, user *model.User) error
 }
 

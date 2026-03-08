@@ -57,7 +57,15 @@
     "otpError": "Invalid or expired code",
     "requestOtp": "Send code",
     "sendingOtp": "Sending code...",
-    "verifyingOtp": "Verifying..."
+    "verifyingOtp": "Verifying...",
+    "phoneNumber": "Phone number",
+    "otpChannelEmail": "Email",
+    "otpChannelPhone": "SMS",
+    "otpSentPhone": "We sent a code via SMS to your phone",
+    "googleSignIn": "Sign in with Google",
+    "sendingSms": "Sending SMS...",
+    "smsError": "Error sending SMS",
+    "googleError": "Error signing in with Google"
   },
   "registration": {
     "title": "Create account",

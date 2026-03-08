@@ -88,9 +88,12 @@ func (r *Router) setupRoutes(jwtSecret string) {
 	reportRepo := postgres.NewReportRepository(r.db)
 	reportService := service.NewReportService(reportRepo)
 
+	// Firebase verifier (nil in dev mode)
+	firebaseVerifier := auth.NewFirebaseTokenVerifierOrNil()
+
 	// Handlers
 	healthHandler := handler.NewHealthHandler(r.db)
-	authHandler := handler.NewAuthHandler(clientService, userRepo, authService, otpService)
+	authHandler := handler.NewAuthHandler(clientService, userRepo, authService, otpService, firebaseVerifier)
 	clientHandler := handler.NewClientHandler(clientService, creditService, paymentService, purchaseRepo, accountRepo, movementRepo)
 	accountHandler := handler.NewAccountHandler(accountService, clientRepo)
 	creditHandler := handler.NewCreditHandler(creditService)
@@ -115,6 +118,7 @@ func (r *Router) setupRoutes(jwtSecret string) {
 	api.POST("/auth/login", authHandler.Login)
 	api.POST("/auth/request-otp", authHandler.RequestOTP)
 	api.POST("/auth/verify-otp", authHandler.VerifyOTP)
+	api.POST("/auth/firebase-login", authHandler.FirebaseLogin)
 
 	// Authenticated routes
 	authenticated := api.Group("")

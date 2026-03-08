@@ -20,6 +20,7 @@ type User struct {
 	ID          uuid.UUID      `gorm:"type:uuid;primaryKey"`
 	FirebaseUID string         `gorm:"uniqueIndex;not null"`
 	Email       string         `gorm:"uniqueIndex;not null"`
+	Phone       string         `gorm:"index"`
 	Role        UserRole       `gorm:"type:varchar(20);not null;default:'client'"`
 	IsActive    bool           `gorm:"not null;default:true"`
 	LastLoginAt *time.Time     `gorm:""`
@@ -67,4 +68,8 @@ func (u *User) IsAdmin() bool {
 
 func (u *User) IsVendor() bool {
 	return u.Role == RoleVendor
+}
+
+func (u *User) SetPhone(phone string) {
+	u.Phone = phone
 }

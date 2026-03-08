@@ -4,6 +4,7 @@ import (
 	"log"
 
 	_ "github.com/diogenes-moreira/creditos/backend/docs"
+	"github.com/joho/godotenv"
 
 	"github.com/diogenes-moreira/creditos/backend/internal/domain/model"
 	"github.com/diogenes-moreira/creditos/backend/internal/infrastructure/config"
@@ -31,6 +32,7 @@ import (
 // @name Authorization
 // @description Enter your bearer token in the format: Bearer {token}
 func main() {
+	_ = godotenv.Load()
 	cfg := config.Load()
 
 	gin.SetMode(cfg.Server.Mode)

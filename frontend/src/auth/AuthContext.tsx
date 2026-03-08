@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from "react";
 import type { User, LoginRequest, RegisterRequest } from "../api/types";
-import { login as apiLogin, register as apiRegister, requestOTP as apiRequestOTP, verifyOTP as apiVerifyOTP } from "../api/endpoints";
+import { login as apiLogin, register as apiRegister, requestOTP as apiRequestOTP, verifyOTP as apiVerifyOTP, firebaseLogin as apiFirebaseLogin } from "../api/endpoints";
 
 interface AuthState {
   token: string | null;
@@ -11,6 +11,7 @@ interface AuthState {
   register: (data: RegisterRequest) => Promise<void>;
   requestOTP: (email: string) => Promise<void>;
   verifyOTP: (email: string, code: string) => Promise<void>;
+  firebaseLogin: (idToken: string) => Promise<void>;
   logout: () => void;
 }
 
@@ -36,33 +37,36 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsLoading(false);
   }, []);
 
-  const login = useCallback(async (data: LoginRequest) => {
-    const response = await apiLogin(data);
+  const handleAuthResponse = useCallback((response: { token: string; user: User }) => {
     localStorage.setItem("token", response.token);
     localStorage.setItem("user", JSON.stringify(response.user));
     setToken(response.token);
     setUser(response.user);
   }, []);
+
+  const login = useCallback(async (data: LoginRequest) => {
+    const response = await apiLogin(data);
+    handleAuthResponse(response);
+  }, [handleAuthResponse]);
 
   const register = useCallback(async (data: RegisterRequest) => {
     const response = await apiRegister(data);
-    localStorage.setItem("token", response.token);
-    localStorage.setItem("user", JSON.stringify(response.user));
-    setToken(response.token);
-    setUser(response.user);
-  }, []);
+    handleAuthResponse(response);
+  }, [handleAuthResponse]);
 
   const requestOTP = useCallback(async (email: string) => {
-    await apiRequestOTP({ email });
+    await apiRequestOTP({ email, channel: "email" });
   }, []);
 
   const verifyOTP = useCallback(async (email: string, code: string) => {
-    const response = await apiVerifyOTP({ email, code });
-    localStorage.setItem("token", response.token);
-    localStorage.setItem("user", JSON.stringify(response.user));
-    setToken(response.token);
-    setUser(response.user);
-  }, []);
+    const response = await apiVerifyOTP({ email, code, channel: "email" });
+    handleAuthResponse(response);
+  }, [handleAuthResponse]);
+
+  const firebaseLogin = useCallback(async (idToken: string) => {
+    const response = await apiFirebaseLogin({ idToken });
+    handleAuthResponse(response);
+  }, [handleAuthResponse]);
 
   const logout = useCallback(() => {
     localStorage.removeItem("token");
@@ -82,6 +86,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         register,
         requestOTP,
         verifyOTP,
+        firebaseLogin,
         logout,
       }}
     >

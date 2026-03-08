@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useNavigate, Link as RouterLink } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import {
   Box,
   Card,
@@ -7,56 +7,64 @@ import {
   Typography,
   TextField,
   Button,
-  Link,
   InputAdornment,
   Tabs,
   Tab,
   Alert,
+  ToggleButtonGroup,
+  ToggleButton,
 } from "@mui/material";
 import {
   Email as EmailIcon,
+  Phone as PhoneIcon,
+  Google as GoogleIcon,
 } from "@mui/icons-material";
 import { useAuth } from "../../auth/AuthContext";
 import { useTranslation } from "react-i18next";
 import LanguageSwitcher from "../../components/LanguageSwitcher";
 import { useNotification } from "../../contexts/NotificationContext";
 import { getErrorMessage } from "../../api/errorUtils";
+import { useFirebasePhoneAuth } from "../../firebase/useFirebasePhoneAuth";
+import { useFirebaseGoogleAuth } from "../../firebase/useFirebaseGoogleAuth";
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
-  const { login, requestOTP, verifyOTP } = useAuth();
+  const { login, requestOTP, verifyOTP, firebaseLogin } = useAuth();
   const { t } = useTranslation();
   const { showError } = useNotification();
 
-  const [tab, setTab] = useState(0); // 0 = client (OTP), 1 = admin/vendor
+  const [tab, setTab] = useState(0); // 0 = client/vendor (OTP), 1 = admin (Google OAuth)
+  const [channel, setChannel] = useState<"email" | "phone">("email");
   const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [otpCode, setOtpCode] = useState("");
   const [otpSent, setOtpSent] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const handleAdminLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email) return;
-    setLoading(true);
-    try {
-      await login({ email });
-      navigate("/dashboard");
-    } catch (err: unknown) {
-      showError(getErrorMessage(err, t("auth.invalidCredentials")));
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { sendSMS, verifyCode, loading: smsLoading } = useFirebasePhoneAuth();
+  const { signInWithGoogle, loading: googleLoading } = useFirebaseGoogleAuth();
 
   const handleRequestOTP = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email) return;
+    if (channel === "email" && !email) return;
+    if (channel === "phone" && !phone) return;
     setLoading(true);
     try {
-      await requestOTP(email);
+      if (channel === "email") {
+        await requestOTP(email);
+      } else {
+        await sendSMS(phone, "recaptcha-container");
+      }
       setOtpSent(true);
     } catch (err: unknown) {
-      showError(getErrorMessage(err, t("auth.invalidCredentials")));
+      showError(
+        getErrorMessage(
+          err,
+          channel === "phone"
+            ? t("auth.smsError")
+            : t("auth.invalidCredentials")
+        )
+      );
     } finally {
       setLoading(false);
     }
@@ -64,10 +72,16 @@ const Login: React.FC = () => {
 
   const handleVerifyOTP = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !otpCode) return;
+    if (!otpCode) return;
     setLoading(true);
     try {
-      await verifyOTP(email, otpCode);
+      if (channel === "email") {
+        await verifyOTP(email, otpCode);
+      } else {
+        // Phone: verify via Firebase, then send ID token to backend
+        const idToken = await verifyCode(otpCode);
+        await firebaseLogin(idToken);
+      }
       navigate("/dashboard");
     } catch (err: unknown) {
       showError(getErrorMessage(err, t("auth.otpError")));
@@ -76,10 +90,22 @@ const Login: React.FC = () => {
     }
   };
 
+  const handleGoogleLogin = async () => {
+    try {
+      const idToken = await signInWithGoogle();
+      await firebaseLogin(idToken);
+      navigate("/dashboard");
+    } catch (err: unknown) {
+      showError(getErrorMessage(err, t("auth.googleError")));
+    }
+  };
+
   const resetOtpFlow = () => {
     setOtpSent(false);
     setOtpCode("");
   };
+
+  const isLoading = loading || smsLoading || googleLoading;
 
   return (
     <Box
@@ -88,15 +114,23 @@ const Login: React.FC = () => {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        background: "linear-gradient(135deg, #1565C0 0%, #0D47A1 50%, #1B5E20 100%)",
+        background:
+          "linear-gradient(135deg, #1565C0 0%, #0D47A1 50%, #1B5E20 100%)",
         p: 2,
       }}
     >
       <Card sx={{ maxWidth: 440, width: "100%", p: 1 }}>
         <CardContent>
           <Box textAlign="center" mb={2}>
-            <Box sx={{ display: "flex", justifyContent: "flex-end" }}><LanguageSwitcher /></Box>
-            <Box component="img" src="/logo.png" alt="Prestia" sx={{ height: 56, mb: 1 }} />
+            <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
+              <LanguageSwitcher />
+            </Box>
+            <Box
+              component="img"
+              src="/logo.png"
+              alt="Prestia"
+              sx={{ height: 56, mb: 1 }}
+            />
             <Typography variant="h5" fontWeight={700} color="primary.main">
               {t("common.appName")}
             </Typography>
@@ -107,7 +141,10 @@ const Login: React.FC = () => {
 
           <Tabs
             value={tab}
-            onChange={(_, v) => { setTab(v); resetOtpFlow(); }}
+            onChange={(_, v) => {
+              setTab(v);
+              resetOtpFlow();
+            }}
             variant="fullWidth"
             sx={{ mb: 2 }}
           >
@@ -115,33 +152,78 @@ const Login: React.FC = () => {
             <Tab label={t("auth.adminLogin")} />
           </Tabs>
 
-          {/* Client OTP Login */}
+          {/* Client/Vendor OTP Login */}
           {tab === 0 && !otpSent && (
             <form onSubmit={handleRequestOTP}>
-              <TextField
-                fullWidth
-                label={t("auth.email")}
-                type="email"
-                margin="normal"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <EmailIcon color="action" />
-                    </InputAdornment>
-                  ),
+              <ToggleButtonGroup
+                value={channel}
+                exclusive
+                onChange={(_, v) => {
+                  if (v) setChannel(v);
                 }}
-              />
+                fullWidth
+                sx={{ mb: 2 }}
+              >
+                <ToggleButton value="email">
+                  <EmailIcon sx={{ mr: 0.5 }} fontSize="small" />
+                  {t("auth.otpChannelEmail")}
+                </ToggleButton>
+                <ToggleButton value="phone">
+                  <PhoneIcon sx={{ mr: 0.5 }} fontSize="small" />
+                  {t("auth.otpChannelPhone")}
+                </ToggleButton>
+              </ToggleButtonGroup>
+
+              {channel === "email" ? (
+                <TextField
+                  fullWidth
+                  label={t("auth.email")}
+                  type="email"
+                  margin="normal"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <EmailIcon color="action" />
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+              ) : (
+                <TextField
+                  fullWidth
+                  label={t("auth.phoneNumber")}
+                  type="tel"
+                  margin="normal"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="+54 11 4051 0100"
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <PhoneIcon color="action" />
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+              )}
               <Button
                 type="submit"
                 fullWidth
                 variant="contained"
                 size="large"
-                disabled={loading || !email}
+                disabled={
+                  isLoading ||
+                  (channel === "email" ? !email : !phone)
+                }
                 sx={{ mt: 2, mb: 2, py: 1.5 }}
               >
-                {loading ? t("auth.sendingOtp") : t("auth.requestOtp")}
+                {isLoading
+                  ? channel === "phone"
+                    ? t("auth.sendingSms")
+                    : t("auth.sendingOtp")
+                  : t("auth.requestOtp")}
               </Button>
             </form>
           )}
@@ -150,7 +232,9 @@ const Login: React.FC = () => {
           {tab === 0 && otpSent && (
             <form onSubmit={handleVerifyOTP}>
               <Alert severity="info" sx={{ mb: 2 }}>
-                {t("auth.otpSent")}
+                {channel === "phone"
+                  ? t("auth.otpSentPhone")
+                  : t("auth.otpSent")}
               </Alert>
               <TextField
                 fullWidth
@@ -168,10 +252,10 @@ const Login: React.FC = () => {
                 fullWidth
                 variant="contained"
                 size="large"
-                disabled={loading || otpCode.length !== 6}
+                disabled={isLoading || otpCode.length !== 6}
                 sx={{ mt: 2, mb: 1, py: 1.5 }}
               >
-                {loading ? t("auth.verifyingOtp") : t("auth.verifyOtp")}
+                {isLoading ? t("auth.verifyingOtp") : t("auth.verifyOtp")}
               </Button>
               <Button
                 fullWidth
@@ -184,47 +268,28 @@ const Login: React.FC = () => {
             </form>
           )}
 
-          {/* Admin/Vendor Login */}
+          {/* Admin Login (Google OAuth) */}
           {tab === 1 && (
-            <form onSubmit={handleAdminLogin}>
-              <TextField
-                fullWidth
-                label={t("auth.email")}
-                type="email"
-                margin="normal"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <EmailIcon color="action" />
-                    </InputAdornment>
-                  ),
-                }}
-              />
+            <Box>
               <Button
-                type="submit"
                 fullWidth
                 variant="contained"
                 size="large"
-                disabled={loading || !email}
+                startIcon={<GoogleIcon />}
+                onClick={handleGoogleLogin}
+                disabled={googleLoading}
                 sx={{ mt: 2, mb: 2, py: 1.5 }}
               >
-                {loading ? t("common.loading") : t("auth.login")}
+                {googleLoading
+                  ? t("common.loading")
+                  : t("auth.googleSignIn")}
               </Button>
-            </form>
+            </Box>
           )}
 
-          <Box textAlign="center">
-            <Typography variant="body2" color="text.secondary">
-              {t("auth.noAccount")}{" "}
-              <Link component={RouterLink} to="/register" underline="hover">
-                {t("auth.registerHere")}
-              </Link>
-            </Typography>
-          </Box>
         </CardContent>
       </Card>
+      <div id="recaptcha-container" />
     </Box>
   );
 };

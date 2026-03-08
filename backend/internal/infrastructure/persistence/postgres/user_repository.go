@@ -45,6 +45,14 @@ func (r *UserRepository) FindByEmail(ctx context.Context, email string) (*model.
 	return &user, nil
 }
 
+func (r *UserRepository) FindByPhone(ctx context.Context, phone string) (*model.User, error) {
+	var user model.User
+	if err := r.db.WithContext(ctx).First(&user, "phone = ?", phone).Error; err != nil {
+		return nil, fmt.Errorf("user not found: %w", err)
+	}
+	return &user, nil
+}
+
 func (r *UserRepository) Update(ctx context.Context, user *model.User) error {
 	return r.db.WithContext(ctx).Save(user).Error
 }

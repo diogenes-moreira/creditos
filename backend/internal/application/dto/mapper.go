@@ -9,6 +9,7 @@ func ToUserResponse(u *model.User) UserResponse {
 	return UserResponse{
 		ID:    u.ID.String(),
 		Email: u.Email,
+		Phone: u.Phone,
 		Role:  string(u.Role),
 	}
 }
