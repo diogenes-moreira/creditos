@@ -103,7 +103,7 @@ const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const drawer = (
     <Box>
       <Box sx={{ p: 2, display: "flex", alignItems: "center", gap: 1.5 }}>
-        <Box component="img" src="/logo.png" alt="Prestia" sx={{ height: 32 }} />
+        <Box component="img" src={`${import.meta.env.BASE_URL}logo.png`} alt="Prestia" sx={{ height: 32 }} />
         <Typography variant="h6" color="primary" fontWeight={700} noWrap>
           Prestia
         </Typography>

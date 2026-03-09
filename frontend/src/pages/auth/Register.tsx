@@ -79,7 +79,7 @@ const Register: React.FC = () => {
       <Card sx={{ maxWidth: 640, width: "100%", p: 1 }}>
         <CardContent>
           <Box textAlign="center" mb={3}>
-            <Box component="img" src="/logo.png" alt="Prestia" sx={{ height: 56, mb: 1 }} />
+            <Box component="img" src={`${import.meta.env.BASE_URL}logo.png`} alt="Prestia" sx={{ height: 56, mb: 1 }} />
             <Typography variant="h5" fontWeight={700} color="primary.main">
               {t("common.appName")}
             </Typography>

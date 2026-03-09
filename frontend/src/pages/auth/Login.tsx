@@ -127,7 +127,7 @@ const Login: React.FC = () => {
             </Box>
             <Box
               component="img"
-              src="/logo.png"
+              src={`${import.meta.env.BASE_URL}logo.png`}
               alt="Prestia"
               sx={{ height: 56, mb: 1 }}
             />

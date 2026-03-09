@@ -15,11 +15,26 @@
     ],
     "rewrites": [
       {
-        "source": "/demo/**",
+        "source": "/demo/api/**",
         "run": {
           "serviceId": "prestia-app",
           "region": "us-central1"
         }
+      },
+      {
+        "source": "/demo/health",
+        "run": {
+          "serviceId": "prestia-app",
+          "region": "us-central1"
+        }
+      },
+      {
+        "source": "/demo/**",
+        "destination": "/demo/index.html"
+      },
+      {
+        "source": "/demo",
+        "destination": "/demo/index.html"
       }
     ]
   }
