@@ -12,6 +12,15 @@
           }
         ]
       }
+    ],
+    "rewrites": [
+      {
+        "source": "/demo/**",
+        "run": {
+          "serviceId": "prestia-app",
+          "region": "us-central1"
+        }
+      }
     ]
   }
 }

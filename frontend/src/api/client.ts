@@ -1,7 +1,9 @@
 import axios from "axios";
 
+const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+
 const apiClient = axios.create({
-  baseURL: "/api/v1",
+  baseURL: `${base}/api/v1`,
   headers: {
     "Content-Type": "application/json",
   },
@@ -21,7 +23,7 @@ apiClient.interceptors.response.use(
     if (error.response?.status === 401) {
       localStorage.removeItem("token");
       localStorage.removeItem("user");
-      window.location.href = "/login";
+      window.location.href = `${base}/login`;
     }
     return Promise.reject(error);
   }

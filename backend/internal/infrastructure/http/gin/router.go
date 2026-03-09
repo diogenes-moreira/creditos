@@ -104,14 +104,19 @@ func (r *Router) setupRoutes(jwtSecret string) {
 	vendorHandler := handler.NewVendorHandler(vendorService, purchaseService, vendorPaymentService, withdrawalService, pdfGenerator, vendorRepo, vendorAccountRepo, vendorMovementRepo, clientService, creditService)
 	reportHandler := handler.NewReportHandler(reportService)
 
-	// Health
+	// Base path prefix (e.g. "/demo" when behind Firebase Hosting rewrite)
+	basePath := os.Getenv("BASE_PATH")
+
+	// Health (always at root for probes)
 	r.engine.GET("/health", healthHandler.Health)
 	r.engine.GET("/health/ready", healthHandler.Ready)
 
-	// Swagger
-	r.engine.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+	base := r.engine.Group(basePath)
 
-	api := r.engine.Group("/api/v1")
+	// Swagger
+	base.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+
+	api := base.Group("/api/v1")
 
 	// Auth (public)
 	api.POST("/auth/register", authHandler.Register)
@@ -229,12 +234,18 @@ func (r *Router) setupRoutes(jwtSecret string) {
 
 	// Serve frontend SPA if FRONTEND_DIR is set
 	if frontendDir := os.Getenv("FRONTEND_DIR"); frontendDir != "" {
-		r.engine.Static("/assets", filepath.Join(frontendDir, "assets"))
+		assetsPrefix := basePath + "/assets"
+		r.engine.Static(assetsPrefix, filepath.Join(frontendDir, "assets"))
 		r.engine.NoRoute(func(c *gin.Context) {
 			path := c.Request.URL.Path
 			// Serve static files if they exist
-			if !strings.HasPrefix(path, "/api/") && !strings.HasPrefix(path, "/swagger/") && !strings.HasPrefix(path, "/health") {
-				filePath := filepath.Join(frontendDir, path)
+			if !strings.HasPrefix(path, basePath+"/api/") && !strings.HasPrefix(path, basePath+"/swagger/") && !strings.HasPrefix(path, "/health") {
+				// Strip base path to find the file on disk
+				relPath := strings.TrimPrefix(path, basePath)
+				if relPath == "" {
+					relPath = "/"
+				}
+				filePath := filepath.Join(frontendDir, relPath)
 				if info, err := os.Stat(filePath); err == nil && !info.IsDir() {
 					c.File(filePath)
 					return
