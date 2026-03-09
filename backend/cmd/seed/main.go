@@ -57,6 +57,7 @@ func seedAdmins(db *gorm.DB) {
 	admins := []struct{ email, name, phone string }{
 		{"admin@prestia.com.ar", "Admin Principal", "+5491140510100"},
 		{"supervisor@prestia.com.ar", "Supervisor", "+5491140510101"},
+		{"diogenes.moreira@gmail.com", "Diogenes Moreira", "+541140510104"},
 	}
 	for _, a := range admins {
 		user := &model.User{
