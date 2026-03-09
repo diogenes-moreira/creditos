@@ -1,7 +1,5 @@
-import React, { useMemo } from "react";
-import { Autocomplete, TextField, Grid } from "@mui/material";
-import { Country, State, City } from "country-state-city";
-import type { ICountry, IState } from "country-state-city";
+import React, { useMemo, useState, useEffect } from "react";
+import { Autocomplete, TextField, Grid, CircularProgress } from "@mui/material";
 import { useTranslation } from "react-i18next";
 
 const LATAM_CODES = [
@@ -17,6 +15,8 @@ interface LocationSelectorProps {
   errors?: { country?: boolean; province?: boolean; city?: boolean };
 }
 
+type GeoModule = typeof import("country-state-city");
+
 const LocationSelector: React.FC<LocationSelectorProps> = ({
   country,
   province,
@@ -25,10 +25,15 @@ const LocationSelector: React.FC<LocationSelectorProps> = ({
   errors,
 }) => {
   const { t } = useTranslation();
+  const [geo, setGeo] = useState<GeoModule | null>(null);
+
+  useEffect(() => {
+    import("country-state-city").then(setGeo);
+  }, []);
 
   const countries = useMemo(
-    () => Country.getAllCountries().filter((c) => LATAM_CODES.includes(c.isoCode)),
-    []
+    () => geo ? geo.Country.getAllCountries().filter((c) => LATAM_CODES.includes(c.isoCode)) : [],
+    [geo]
   );
 
   const selectedCountry = useMemo(
@@ -37,8 +42,8 @@ const LocationSelector: React.FC<LocationSelectorProps> = ({
   );
 
   const states = useMemo(
-    () => (selectedCountry ? State.getStatesOfCountry(selectedCountry.isoCode) : []),
-    [selectedCountry]
+    () => (geo && selectedCountry ? geo.State.getStatesOfCountry(selectedCountry.isoCode) : []),
+    [geo, selectedCountry]
   );
 
   const selectedState = useMemo(
@@ -48,18 +53,26 @@ const LocationSelector: React.FC<LocationSelectorProps> = ({
 
   const cityNames = useMemo(
     () =>
-      selectedCountry && selectedState
-        ? City.getCitiesOfState(selectedCountry.isoCode, selectedState.isoCode).map((c) => c.name)
+      geo && selectedCountry && selectedState
+        ? geo.City.getCitiesOfState(selectedCountry.isoCode, selectedState.isoCode).map((c) => c.name)
         : [],
-    [selectedCountry, selectedState]
+    [geo, selectedCountry, selectedState]
   );
+
+  if (!geo) {
+    return (
+      <Grid item xs={12} sx={{ display: "flex", justifyContent: "center", py: 2 }}>
+        <CircularProgress size={24} />
+      </Grid>
+    );
+  }
 
   return (
     <>
       <Grid item xs={12} sm={4}>
         <Autocomplete
           options={countries}
-          getOptionLabel={(o: ICountry) => o.name}
+          getOptionLabel={(o) => o.name}
           value={selectedCountry}
           onChange={(_, val) => {
             onChange("country", val?.name || "");
@@ -80,7 +93,7 @@ const LocationSelector: React.FC<LocationSelectorProps> = ({
       <Grid item xs={12} sm={4}>
         <Autocomplete
           options={states}
-          getOptionLabel={(o: IState) => o.name}
+          getOptionLabel={(o) => o.name}
           value={selectedState}
           onChange={(_, val) => {
             onChange("province", val?.name || "");
